@@ -14,6 +14,8 @@ export default function Navbar() {
     { href: "/app/market", label: "Market" },
     { href: "/app/flywheel", label: "Flywheel" },
     { href: "/app/agent-api", label: "Agent API" },
+    { href: "/app/admin/distill", label: "KOL Distill" },
+    { href: "/app/claim", label: "KOL Claim" },
   ];
 
   const isActive = (href: string) => location === href;
