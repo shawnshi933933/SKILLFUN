@@ -51,7 +51,7 @@ export default function Market() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Skill Market</h1>
+            <h1 className="text-3xl font-bold">Skill Fun</h1>
             <p className="text-muted-foreground mt-1">{mockSkills.length} Skills · {totalAgentBuys.toLocaleString()} Agent purchases</p>
           </div>
           <div className="flex items-center gap-2 bg-card border border-white/10 rounded-xl px-4 py-2 text-sm text-accent">

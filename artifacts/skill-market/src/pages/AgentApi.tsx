@@ -13,9 +13,9 @@ const ENDPOINTS = [
   { method: "POST", path: "/api/skills/:id/verify", desc: "Verify a signed access credential", params: "" },
 ];
 
-const TS_EXAMPLE = `import { SkillMarketAgent } from "@skillmarket/agent-sdk";
+const TS_EXAMPLE = `import { SkillFunAgent } from "@skillfun/agent-sdk";
 
-const agent = new SkillMarketAgent({
+const agent = new SkillFunAgent({
   identity: process.env.ERC8004_IDENTITY,  // ERC-8004 wallet
   budget: "10 USDC",
 });
@@ -38,9 +38,9 @@ const result = await agent.execute(credential, {
   input: { symbol: "ETH", timeframe: "1h" },
 });`;
 
-const PY_EXAMPLE = `from skillmarket import SkillMarketClient
+const PY_EXAMPLE = `from skillfun import SkillFunClient
 
-client = SkillMarketClient(
+client = SkillFunClient(
     identity_key=os.environ["ERC8004_KEY"],
     network="sepolia"
 )

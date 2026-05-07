@@ -83,9 +83,9 @@ export default function Claim() {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
                   <Shield className="w-6 h-6 text-primary" />
                 </div>
-                <h2 className="font-bold text-lg mb-1">Authorize SkillMarket</h2>
+                <h2 className="font-bold text-lg mb-1">Authorize SkillFun</h2>
                 <p className="text-sm text-muted-foreground">
-                  SkillMarket wants to verify you own{" "}
+                  SkillFun wants to verify you own{" "}
                   <span className="text-sky-400 font-medium">@{handle}</span>
                 </p>
               </div>

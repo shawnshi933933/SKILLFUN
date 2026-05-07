@@ -35,7 +35,7 @@ export default function Navbar() {
                   <Zap className="w-4 h-4 text-primary" />
                 </div>
                 <span className="font-bold text-lg tracking-tight text-foreground">
-                  Skill<span className="text-primary">Market</span>
+                  Skill<span className="text-primary">Fun</span>
                 </span>
               </div>
             </Link>

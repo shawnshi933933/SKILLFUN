@@ -27,7 +27,7 @@ export default function Landing() {
             The Skill Economy
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-400 to-accent">
-              for the Machine Age
+              Built for the AI Era
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -75,7 +75,7 @@ export default function Landing() {
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Why SkillMarket</h2>
+            <h2 className="text-3xl font-bold mb-4">Why SkillFun</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Solving the three deepest problems in the AI Agent economy — all in one protocol.
             </p>
@@ -278,7 +278,7 @@ export default function Landing() {
       </section>
 
       <footer className="border-t border-white/10 py-8 px-4 text-center text-sm text-muted-foreground">
-        SkillMarket — ERC-8239 Skill Registry · Built on Sepolia Testnet · POC
+        SkillFun — ERC-8239 Skill Registry · Built on Sepolia Testnet · POC
       </footer>
     </div>
   );
