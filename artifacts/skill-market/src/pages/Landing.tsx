@@ -151,7 +151,7 @@ export default function Landing() {
               ))}
             </div>
             <div className="mt-4 p-4 border border-primary/20 rounded-xl bg-primary/5 text-sm text-primary/80">
-              持股者再投资 → 联合曲线价格上升 → 吸引更多用户和 Agent → 使用量增加 → 飞轮持续加速
+              Shareholders reinvest → Bonding curve rises → More users and Agents attracted → Usage grows → Flywheel accelerates
             </div>
           </div>
         </div>
@@ -161,51 +161,48 @@ export default function Landing() {
       <section className="py-24 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">三类参与者，一个共同的 Skill 经济体</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">无论你是构建者、投资者还是自主 Agent，每一次交互都在为 Skill 创造价值。</p>
+            <h2 className="text-3xl font-bold mb-4">Three Ways to Participate</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">Whether you build, invest, or automate — every interaction generates value in the Skill Economy.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 icon: <Code2 className="w-6 h-6" />,
-                role: "创作者",
-                roleEn: "Creator",
+                role: "Creator",
                 color: "text-purple-400 bg-purple-500/10 border-purple-500/20",
                 glow: "from-purple-500/10",
                 bullets: [
-                  "将 AI Skill 铸造为 ERC-8239 NFT",
-                  "自主设定股份结构与定价",
-                  "每次调用均可获得 50% 使用费",
+                  "Mint AI Skills as ERC-8239 NFTs",
+                  "Set your own share structure and pricing",
+                  "Earn 50% of every usage fee, forever",
                 ],
-                cta: "开始创作",
+                cta: "Create a Skill",
                 href: "/app/create",
               },
               {
                 icon: <Users className="w-6 h-6" />,
-                role: "用户",
-                roleEn: "User",
+                role: "User",
                 color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
                 glow: "from-blue-500/10",
                 bullets: [
-                  "浏览市场，按需购买 Skill 访问权",
-                  "早期持股，随使用量增长获利",
-                  "持股者共享 30% 平台使用收益",
+                  "Browse the market and buy Skill access",
+                  "Invest in early shares to profit as usage grows",
+                  "Shareholders earn 30% of all platform fees",
                 ],
-                cta: "浏览市场",
+                cta: "Browse Market",
                 href: "/app/market",
               },
               {
                 icon: <Bot className="w-6 h-6" />,
                 role: "AI Agent",
-                roleEn: "Agent",
                 color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
                 glow: "from-cyan-500/10",
                 bullets: [
-                  "通过 REST API 自主发现 Skill",
-                  "x402 协议完成 USDC 微支付",
-                  "无需人工干预，全链路自动执行",
+                  "Discover Skills autonomously via REST API",
+                  "Pay via x402 protocol — USDC micropayments",
+                  "No human approval needed, end-to-end automated",
                 ],
-                cta: "查看 Agent API",
+                cta: "View Agent API",
                 href: "/app/agent-api",
               },
             ].map((r) => (
@@ -215,14 +212,11 @@ export default function Landing() {
                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-5 ${r.color}`}>
                     {r.icon}
                   </div>
-                  <div className="mb-1">
-                    <span className="font-bold text-xl">{r.role}</span>
-                    <span className="text-muted-foreground text-sm ml-2">/ {r.roleEn}</span>
-                  </div>
-                  <ul className="space-y-2 mt-4 mb-6 flex-1">
+                  <h3 className="font-bold text-xl mb-4">{r.role}</h3>
+                  <ul className="space-y-2 mb-6 flex-1">
                     {r.bullets.map((b) => (
                       <li key={b} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="text-primary mt-0.5">·</span>
+                        <span className="text-primary mt-0.5 shrink-0">·</span>
                         {b}
                       </li>
                     ))}
@@ -232,7 +226,7 @@ export default function Landing() {
                     size="sm"
                     className="border-white/20 hover:bg-white/5 w-full"
                     onClick={() => setLocation(r.href)}
-                    data-testid={`button-role-${r.roleEn.toLowerCase()}`}
+                    data-testid={`button-role-${r.role.toLowerCase().replace(" ", "-")}`}
                   >
                     {r.cta}
                   </Button>
