@@ -8,6 +8,7 @@ import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, Responsive
 import { Bot, User, Lock, Shield, AlertTriangle, Clock, ArrowLeft, Hash, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import SkillTryPanel from "@/components/SkillTryPanel";
 
 const COLORS = ["hsl(265,85%,65%)", "hsl(185,85%,55%)", "hsl(217,32%,40%)"];
 
@@ -122,6 +123,8 @@ export default function SkillDetail() {
                 ))}
               </div>
             </div>
+
+            <SkillTryPanel skillId={skill.id} skillName={skill.name} category={skill.category} />
 
             <Tabs defaultValue="versions">
               <TabsList className="bg-card border border-white/10">
