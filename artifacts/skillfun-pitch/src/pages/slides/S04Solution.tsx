@@ -143,7 +143,7 @@ export default function S04Solution() {
                 marginTop: "0.5vh"
               }}
             >
-              x402 micropayments
+              x402 payments
             </div>
           </div>
         </div>

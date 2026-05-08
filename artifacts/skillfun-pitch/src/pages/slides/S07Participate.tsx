@@ -189,7 +189,7 @@ export default function S07Participate() {
                   color: "#22D3EE"
                 }}
               >
-                Pay per call
+                Pay to license
               </div>
               <div
                 style={{
@@ -199,7 +199,7 @@ export default function S07Participate() {
                   marginTop: "0.5vh"
                 }}
               >
-                x402 HTTP micropayments — no subscriptions, no integration overhead
+                x402 HTTP payment grants call rights instantly — no subscriptions, no off-chain rails
               </div>
             </div>
           </div>

@@ -47,7 +47,7 @@ const steps = [
     n: 4,
     from: "B",
     to: "S",
-    label: "Submit per-call HTTP micropayment — no subscription, no off-chain rails",
+    label: "Submit x402 HTTP payment to acquire invocation rights — no subscription, no off-chain settlement",
     tags: [{ label: "x402", color: "teal" as const }],
   },
   {

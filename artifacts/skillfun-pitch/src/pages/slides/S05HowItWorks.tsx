@@ -213,7 +213,7 @@ export default function S05HowItWorks() {
                 marginTop: "2vh"
               }}
             >
-              Humans purchase access with crypto directly. Agents call via MCP or A2A — x402 routes micropayments per call automatically.
+              Humans pay once via crypto to license a skill. Agents pay via x402 to acquire call rights — settlement is instant and on-chain.
             </p>
           </div>
 

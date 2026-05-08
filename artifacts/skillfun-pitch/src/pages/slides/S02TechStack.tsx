@@ -103,7 +103,7 @@ export default function S02TechStack() {
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              HTTP-native micropayment gating — pay per API call with no subscriptions or off-chain rails
+              HTTP-native payment protocol — pay once to acquire call rights, settled on-chain, no subscriptions
             </div>
           </div>
 
