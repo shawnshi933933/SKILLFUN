@@ -61,36 +61,42 @@ const EXAMPLE_PROMPTS: Record<string, string[]> = {
 
 const THINKING_STEPS: Record<string, string[]> = {
   Trading: [
+    "Verifying content hash on IPFS...",
     "Loading market data feeds...",
     "Computing RSI, MACD, Bollinger Bands...",
     "Scanning on-chain order flow...",
     "Running signal model...",
   ],
   Code: [
+    "Verifying content hash on IPFS...",
     "Parsing contract bytecode...",
     "Running static analysis pass...",
     "Checking against vulnerability database...",
     "Generating security report...",
   ],
   Research: [
+    "Verifying content hash on IPFS...",
     "Querying protocol data sources...",
     "Aggregating liquidity metrics...",
     "Cross-referencing risk vectors...",
     "Composing research summary...",
   ],
   Analysis: [
+    "Verifying content hash on IPFS...",
     "Loading on-chain data...",
     "Running quantitative model...",
     "Backtesting assumptions...",
     "Generating analysis output...",
   ],
   Writing: [
+    "Verifying content hash on IPFS...",
     "Analyzing target audience...",
     "Structuring narrative arc...",
     "Drafting content...",
     "Polishing tone and style...",
   ],
   Social: [
+    "Verifying content hash on IPFS...",
     "Researching trending topics...",
     "Analyzing engagement patterns...",
     "Generating content variants...",
@@ -493,8 +499,8 @@ export default function SkillTryPanel({ skillId, skillName, category }: Props) {
             </div>
             <div className="text-xs text-muted-foreground">
               {remaining > 0
-                ? `${remaining} free trial${remaining !== 1 ? "s" : ""} remaining`
-                : "Trial limit reached — purchase for full access"}
+                ? `${remaining} free trial${remaining !== 1 ? "s" : ""} remaining · Platform covers x402 fee for previews`
+                : "Trial limit reached — purchase access via x402 for unlimited calls"}
             </div>
           </div>
         </div>
