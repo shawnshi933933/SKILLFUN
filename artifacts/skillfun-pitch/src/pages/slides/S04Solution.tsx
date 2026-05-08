@@ -158,7 +158,7 @@ export default function S04Solution() {
           fontWeight: 600
         }}
       >
-        04 / 11
+        04 / 12
       </div>
     </div>
   );

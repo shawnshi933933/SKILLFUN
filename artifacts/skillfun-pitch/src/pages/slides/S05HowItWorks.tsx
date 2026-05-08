@@ -289,7 +289,7 @@ export default function S05HowItWorks() {
           fontWeight: 600
         }}
       >
-        05 / 11
+        05 / 12
       </div>
     </div>
   );

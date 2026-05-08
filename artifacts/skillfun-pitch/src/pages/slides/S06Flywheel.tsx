@@ -354,7 +354,7 @@ export default function S06Flywheel() {
           fontWeight: 600
         }}
       >
-        06 / 11
+        07 / 12
       </div>
     </div>
   );
