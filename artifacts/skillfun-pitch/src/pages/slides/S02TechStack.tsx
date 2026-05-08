@@ -30,7 +30,6 @@ export default function S02TechStack() {
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
       />
-
       <div
         className="absolute inset-0 flex flex-col"
         style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "3vh", paddingBottom: "3vh" }}
@@ -149,9 +148,7 @@ export default function S02TechStack() {
               </div>
             </div>
             <div style={{ ...dividerStyle, background: "rgba(139,92,246,0.5)" }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#B0B4D0", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              NFT standard for tokenized AI skills — ownership, licensing, and royalty enforcement. SkillFun adopts this draft standard to build the SKILL token ecosystem on top of it.
-            </div>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#B0B4D0", fontSize: "1.35vw", lineHeight: 1.4 }}>NFT standard for tokenized AI skills — ownership, licensing, and royalty enforcement. SkillFun build the SKILL token ecosystem on top of it.</div>
           </div>
 
           <div style={rowStyle}>
@@ -178,7 +175,6 @@ export default function S02TechStack() {
 
         </div>
       </div>
-
       <div
         className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{
