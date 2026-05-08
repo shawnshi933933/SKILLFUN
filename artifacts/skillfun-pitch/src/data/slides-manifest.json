@@ -11,8 +11,8 @@
     "id": "a1b2c3d4-0002-4000-8000-000000000002",
     "position": 2,
     "filepath": "src/pages/slides/S02TechStack.tsx",
-    "title": "AI Agent Tech Stack",
-    "description": "Layered protocol diagram: MCP, A2A, ERC-8004, x402, ERC-8239",
+    "title": "Protocol Landscape",
+    "description": "7-layer AI agent protocol stack: MCP, A2A, ERC-8004, x402, ERC-8183, ERC-8239, ERC-8220",
     "speakerNotes": ""
   },
   {
