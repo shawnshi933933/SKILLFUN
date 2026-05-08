@@ -77,7 +77,7 @@ export default function S05HowItWorks() {
                   marginTop: "1.5vh"
                 }}
               >
-                Distill
+                Mint
               </div>
             </div>
             <p
@@ -89,7 +89,7 @@ export default function S05HowItWorks() {
                 marginTop: "2vh"
               }}
             >
-              A KOL or developer describes their expertise. SkillFun distills it into a structured, callable AI skill.
+              Package any AI capability as an ERC-8239 NFT — set licensing terms, royalty splits, and usage caps on-chain.
             </p>
           </div>
 
@@ -139,7 +139,7 @@ export default function S05HowItWorks() {
                   marginTop: "1.5vh"
                 }}
               >
-                Tokenize
+                List
               </div>
             </div>
             <p
@@ -151,7 +151,7 @@ export default function S05HowItWorks() {
                 marginTop: "2vh"
               }}
             >
-              Minted as an ERC-8239 NFT with embedded licensing terms, royalty splits, and usage caps.
+              Published to the SkillFun marketplace — discoverable by humans, developers, and autonomous agents alike.
             </p>
           </div>
 
@@ -201,7 +201,7 @@ export default function S05HowItWorks() {
                   marginTop: "1.5vh"
                 }}
               >
-                Deploy
+                Use
               </div>
             </div>
             <p
@@ -213,7 +213,7 @@ export default function S05HowItWorks() {
                 marginTop: "2vh"
               }}
             >
-              Listed on the SkillFun market. Any AI agent can discover and invoke it via MCP or A2A protocol.
+              Humans purchase access with crypto directly. Agents call via MCP or A2A — x402 routes micropayments per call automatically.
             </p>
           </div>
 
@@ -274,7 +274,7 @@ export default function S05HowItWorks() {
                 marginTop: "2vh"
               }}
             >
-              x402 routes micropayments on each call. Revenue splits automatically to creator, stakers, and platform.
+              Revenue splits automatically on every transaction — to creator, stakers, and platform. No manual settlement.
             </p>
           </div>
         </div>
