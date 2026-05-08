@@ -41,7 +41,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0006-4000-8000-000000000006",
-		"position": 7,
+		"position": 6,
 		"filepath": "src/pages/slides/S06A2A.tsx",
 		"title": "Zero-Human Transaction",
 		"description": "Agent-to-agent skill sale scenario: ERC-8004, ERC-8239, x402, ERC-8183 — no human in the loop",
@@ -49,7 +49,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0007-4000-8000-000000000007",
-		"position": 6,
+		"position": 8,
 		"filepath": "src/pages/slides/S06Flywheel.tsx",
 		"title": "Economic Flywheel",
 		"description": "Self-reinforcing token economy loop",
@@ -57,7 +57,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0008-4000-8000-000000000008",
-		"position": 8,
+		"position": 7,
 		"filepath": "src/pages/slides/S07Participate.tsx",
 		"title": "Three Ways to Participate",
 		"description": "Creators, Agents, KOLs — roles and rewards",
