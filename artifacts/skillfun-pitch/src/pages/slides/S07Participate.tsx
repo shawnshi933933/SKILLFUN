@@ -294,7 +294,7 @@ export default function S07Participate() {
           fontWeight: 600
         }}
       >
-        08 / 12
+        08 / 13
       </div>
     </div>
   );

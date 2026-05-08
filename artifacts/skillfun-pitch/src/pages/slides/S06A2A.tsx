@@ -278,7 +278,7 @@ export default function S06A2A() {
           fontWeight: 600,
         }}
       >
-        06 / 12
+        07 / 13
       </div>
     </div>
   );

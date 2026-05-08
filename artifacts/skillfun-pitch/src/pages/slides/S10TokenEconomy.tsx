@@ -342,7 +342,7 @@ export default function S10TokenEconomy() {
           fontWeight: 600
         }}
       >
-        11 / 12
+        12 / 13
       </div>
     </div>
   );
