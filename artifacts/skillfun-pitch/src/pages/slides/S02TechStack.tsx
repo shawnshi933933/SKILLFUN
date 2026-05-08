@@ -6,7 +6,7 @@ export default function S02TechStack() {
     gap: "0 2vw",
     background: "rgba(22,25,41,0.85)",
     borderRadius: "0.6vw",
-    padding: "1.2vh 2.8vw 1.2vh 2.8vw",
+    padding: "0.8vh 2.8vw",
     border: "1px solid rgba(240,240,248,0.08)"
   };
 
@@ -33,7 +33,7 @@ export default function S02TechStack() {
 
       <div
         className="absolute inset-0 flex flex-col"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "4.5vh", paddingBottom: "4.5vh" }}
+        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "3vh", paddingBottom: "3vh" }}
       >
         <span
           style={{
@@ -43,7 +43,7 @@ export default function S02TechStack() {
             fontWeight: 400,
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            marginBottom: "1vh"
+            marginBottom: "0.5vh"
           }}
         >
           Background
@@ -51,12 +51,12 @@ export default function S02TechStack() {
         <h2
           style={{
             fontFamily: "var(--font-display-family)",
-            fontSize: "3.8vw",
+            fontSize: "3.5vw",
             fontWeight: 800,
             color: "#F0F0F8",
             letterSpacing: "-0.02em",
             lineHeight: 1.05,
-            marginBottom: "0.6vh"
+            marginBottom: "0.4vh"
           }}
         >
           Protocol Landscape
@@ -64,10 +64,10 @@ export default function S02TechStack() {
         <p
           style={{
             fontFamily: "var(--font-body-family)",
-            fontSize: "1.75vw",
+            fontSize: "1.55vw",
             color: "#7B7F9E",
             fontWeight: 300,
-            marginBottom: "2vh"
+            marginBottom: "1.2vh"
           }}
         >
           Seven protocol layers are crystallizing for the AI agent economy — SkillFun builds on the capability layer
@@ -81,7 +81,7 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Communication</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
               Tool invocation (MCP) and agent-to-agent messaging (A2A) — Anthropic &amp; Google open specs
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Identity</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
               On-chain agent identity, trust scores, and verifiable credentials for autonomous agents
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Payment</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
               HTTP-native micropayment gating — pay per API call with no subscriptions or off-chain rails
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Commerce</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
               Standardized settlement and revenue-sharing contracts for agent service transactions
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function S02TechStack() {
               </div>
             </div>
             <div style={{ ...dividerStyle, background: "rgba(139,92,246,0.5)" }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#B0B4D0", fontSize: "1.5vw", lineHeight: 1.4 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#B0B4D0", fontSize: "1.35vw", lineHeight: 1.4 }}>
               NFT standard for tokenized AI skills — ownership, licensing, and royalty enforcement. SkillFun adopts this draft standard to build the SKILL token ecosystem on top of it.
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Governance</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
               Security and governance rails for the agent stack — ZK and TEE execution proofs
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Storage</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4, fontStyle: "italic" }}>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4, fontStyle: "italic" }}>
               Persistent agent memory and decentralized storage — standard not yet defined
             </div>
           </div>
