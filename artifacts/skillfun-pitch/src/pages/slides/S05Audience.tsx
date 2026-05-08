@@ -164,7 +164,7 @@ export default function S05Audience() {
             gridTemplateColumns: "1fr auto 1fr",
             gap: "0 2.5vw",
             flex: 1,
-            alignItems: "center",
+            alignItems: "stretch",
           }}
         >
           <UserCard
