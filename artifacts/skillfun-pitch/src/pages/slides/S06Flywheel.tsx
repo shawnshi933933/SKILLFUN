@@ -145,7 +145,7 @@ export default function S06Flywheel() {
                     color: "#F0F0F8"
                   }}
                 >
-                  Higher rewards attract KOLs
+                  Higher rewards attract more creators
                 </div>
                 <div
                   style={{
@@ -154,7 +154,7 @@ export default function S06Flywheel() {
                     color: "#7B7F9E"
                   }}
                 >
-                  who distill more high-quality skills into the market
+                  who register and list new skills on the platform
                 </div>
               </div>
             </div>
