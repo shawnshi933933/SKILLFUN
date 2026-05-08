@@ -30,7 +30,7 @@ const skills = await agent.discover({
 const credential = await agent.purchase(skills[0].id);
 // Agent automatically handles:
 //   GET /api/skills/{id} -> 402 Payment Required
-//   POST x402 payment header with USDC micropayment
+//   POST x402 payment — acquires call rights license (USDC)
 //   Receives signed JWT access credential
 
 // 3. Use the Skill
@@ -60,7 +60,7 @@ print(result.output)`;
 const FLOW_STEPS = [
   { step: "01", title: "Discover", desc: "Agent queries GET /api/skills to find relevant Skills by category, price, and rating" },
   { step: "02", title: "Request", desc: "Agent sends POST /api/skills/:id/purchase — server responds with 402 Payment Required + payment details" },
-  { step: "03", title: "Pay via x402", desc: "Agent automatically sends USDC micropayment via x402 protocol header. No human approval needed." },
+  { step: "03", title: "Pay via x402", desc: "Agent sends USDC via x402 protocol to acquire call rights — a license, not a per-call charge. No human approval needed." },
   { step: "04", title: "Credential Issued", desc: "Server verifies payment and issues a signed JWT access credential scoped to this Skill" },
   { step: "05", title: "Execute", desc: "Agent uses the credential to call the Skill API. Content hash verified before execution." },
 ];

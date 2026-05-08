@@ -37,7 +37,7 @@ const STATS = [
 const FLOW_NODES = [
   { id: 1, label: "Creator Mints", sub: "ERC-8239 NFT + IPFS hash", color: "border-primary/40 bg-primary/10 text-primary" },
   { id: 2, label: "Shares Sold", sub: "Early holders invest at base price", color: "border-blue-500/40 bg-blue-500/10 text-blue-400" },
-  { id: 3, label: "Agent / Human Uses", sub: "x402 micropayment per call", color: "border-accent/40 bg-accent/10 text-accent" },
+  { id: 3, label: "Agent / Human Uses", sub: "x402 payment — acquires call rights", color: "border-accent/40 bg-accent/10 text-accent" },
   { id: 4, label: "Fees Collected", sub: "Auto-split on each transaction", color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },
   { id: 5, label: "Holders Earn", sub: "Creator 50% · Holders 30% · Platform 20%", color: "border-purple-500/40 bg-purple-500/10 text-purple-400" },
   { id: 6, label: "KOL Claims", sub: "Attributions → promotion → more users", color: "border-amber-500/40 bg-amber-500/10 text-amber-400" },

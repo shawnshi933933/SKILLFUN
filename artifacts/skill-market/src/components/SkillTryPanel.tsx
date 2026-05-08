@@ -416,7 +416,7 @@ interface Props {
 }
 
 export default function SkillTryPanel({ skillId, skillName, category }: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [input, setInput] = useState("");
   const [phase, setPhase] = useState<"idle" | "thinking" | "streaming" | "done">("idle");
   const [thinkingStep, setThinkingStep] = useState(0);

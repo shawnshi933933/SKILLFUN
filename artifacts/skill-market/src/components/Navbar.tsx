@@ -40,6 +40,9 @@ export default function Navbar() {
               <span className="font-bold text-lg tracking-tight text-foreground">
                 Skill<span className="text-primary">Fun</span>
               </span>
+              <span className="text-xs font-semibold px-1.5 py-0.5 rounded border border-accent/40 text-accent bg-accent/10 tracking-wider">
+                DEMO
+              </span>
             </div>
           </Link>
 

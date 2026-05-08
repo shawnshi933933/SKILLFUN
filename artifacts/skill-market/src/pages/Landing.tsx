@@ -4,11 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import SkillCard from "@/components/SkillCard";
 import { mockSkills } from "@/data/mockSkills";
-import { ArrowRight, Zap, Shield, Bot, TrendingUp, Lock, RefreshCw, Users, Code2 } from "lucide-react";
+import { ArrowRight, Zap, Shield, Bot, TrendingUp, Lock, RefreshCw, Users, Code2, AlertTriangle, Globe } from "lucide-react";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
-
   const featured = mockSkills.slice(0, 4);
 
   return (
@@ -57,24 +56,84 @@ export default function Landing() {
           {/* Live Stats */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
-              { label: "Skills Listed", value: "847" },
-              { label: "Agent Purchases", value: "12,441" },
-              { label: "Volume (USDC)", value: "1.2M" },
-              { label: "Pending Claims", value: "38" },
+              { label: "Skills Listed", value: "847", href: null },
+              { label: "Agent Purchases", value: "12,441", href: null },
+              { label: "Volume (USDC)", value: "1.2M", href: null },
+              { label: "Pending Claims", value: "38", href: "/app/claim" },
             ].map((stat) => (
-              <div key={stat.label} className="bg-card/60 border border-white/10 rounded-xl p-4 backdrop-blur-sm" data-testid={`stat-${stat.label.toLowerCase().replace(/\s|\(|\)/g, "-")}`}>
+              <div
+                key={stat.label}
+                className={`bg-card/60 border border-white/10 rounded-xl p-4 backdrop-blur-sm ${stat.href ? "cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all" : ""}`}
+                onClick={() => stat.href && setLocation(stat.href)}
+                data-testid={`stat-${stat.label.toLowerCase().replace(/\s|\(|\)/g, "-")}`}
+              >
                 <div className="text-2xl font-bold font-mono text-foreground">{stat.value}</div>
                 <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
+                {stat.href && <div className="text-xs text-primary mt-1">View claims →</div>}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Three Pillars */}
+      {/* Problem */}
+      <section className="py-24 px-4 bg-card/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4 border-red-500/30 text-red-400 bg-red-500/10 px-3 py-1 text-xs">
+              The Problem
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">The AI Economy is Broken</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              AI capabilities are exploding — but the infrastructure to own, monetize, and trade them autonomously doesn't exist yet.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: <Lock className="w-6 h-6 text-red-400" />,
+                title: "Expertise Has No Sovereign Form",
+                desc: "AI skills exist as locked API calls behind corporate walls. Creators can't own, sell, or earn royalties on the intelligence they've built. There's no on-chain identity for AI capabilities.",
+                border: "border-red-500/20",
+                glow: "from-red-500/10",
+              },
+              {
+                icon: <Bot className="w-6 h-6 text-orange-400" />,
+                title: "Agents Can't Buy Autonomously",
+                desc: "AI Agents need human approval for every transaction. There are no payment rails for autonomous agent-to-agent commerce — making machine economies impossible to operate at scale.",
+                border: "border-orange-500/20",
+                glow: "from-orange-500/10",
+              },
+              {
+                icon: <AlertTriangle className="w-6 h-6 text-amber-400" />,
+                title: "No Trust, No Provenance",
+                desc: "When an AI Skill updates, buyers have no way to verify the change. Malicious updates can silently alter behavior. There's no slashing, no veto, no recourse for Skill holders.",
+                border: "border-amber-500/20",
+                glow: "from-amber-500/10",
+              },
+            ].map((p) => (
+              <div key={p.title} className={`relative bg-card border rounded-2xl p-8 overflow-hidden ${p.border}`}>
+                <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${p.glow} to-transparent`} />
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-5">
+                    {p.icon}
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{p.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{p.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why SkillFun — Three Pillars */}
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4 border-primary/30 text-primary bg-primary/10 px-3 py-1 text-xs">
+              The Solution
+            </Badge>
             <h2 className="text-3xl font-bold mb-4">Why SkillFun</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Solving the three deepest problems in the AI Agent economy — all in one protocol.
@@ -93,7 +152,7 @@ export default function Landing() {
                 icon: <Bot className="w-6 h-6 text-accent" />,
                 title: "Machine Economy",
                 subtitle: "Agent-to-Agent autonomous trading",
-                desc: "AI Agents discover, pay for, and consume Skills without human intervention — using x402 micropayments and ERC-8004 identity. Skills earn while you sleep.",
+                desc: "AI Agents discover, pay for, and consume Skills without human intervention — using x402 to acquire call rights and ERC-8004 identity. Skills earn while you sleep.",
                 glow: "from-accent/20",
               },
               {
@@ -104,7 +163,7 @@ export default function Landing() {
                 glow: "from-emerald-500/20",
               },
             ].map((pillar) => (
-              <div key={pillar.title} className={`relative bg-card border border-white/10 rounded-2xl p-8 overflow-hidden`}>
+              <div key={pillar.title} className="relative bg-card border border-white/10 rounded-2xl p-8 overflow-hidden">
                 <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${pillar.glow} to-transparent`} />
                 <div className="relative">
                   <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-5">
@@ -116,6 +175,118 @@ export default function Landing() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Market Opportunity */}
+      <section className="py-20 px-4 bg-card/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4 border-accent/30 text-accent bg-accent/10 px-3 py-1 text-xs">
+              Market Opportunity
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">A $47B Market Taking Shape Now</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              The AI Agent economy is generating real volume today — and SkillFun is building the infrastructure layer.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
+            {[
+              { value: "$47B", label: "AI Agent Economy TAM by 2030", color: "text-primary" },
+              { value: "500M+", label: "AI Agents projected on-chain by 2027", color: "text-accent" },
+              { value: "23%", label: "DEX volume already driven by AI agents", color: "text-emerald-400" },
+              { value: "$8.7B", label: "AI services market today", color: "text-purple-400" },
+            ].map((m) => (
+              <div key={m.label} className="bg-card border border-white/10 rounded-2xl p-6 text-center">
+                <div className={`text-3xl font-bold font-mono mb-2 ${m.color}`}>{m.value}</div>
+                <div className="text-xs text-muted-foreground leading-snug">{m.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-card border border-primary/20 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+                <Globe className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold mb-0.5">SkillFun sits at the infrastructure layer</div>
+                <div className="text-sm text-muted-foreground">Every AI agent that needs a skill must go through a registry. We're building that registry — with ownership, payments, and trust built in.</div>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 shrink-0" onClick={() => setLocation("/app/market")}>
+              Explore Market <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge variant="outline" className="mb-4 border-white/20 text-muted-foreground px-3 py-1 text-xs">
+              How It Works
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">From Mint to Machine Revenue</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Five steps from expertise to autonomous income — for creators, investors, and AI agents alike.
+            </p>
+          </div>
+          <div className="relative">
+            <div className="hidden md:block absolute left-[27px] top-8 bottom-8 w-px bg-gradient-to-b from-primary/40 via-accent/20 to-transparent" />
+            <div className="space-y-5">
+              {[
+                {
+                  step: "01",
+                  title: "Creator Mints a Skill NFT",
+                  desc: "Upload your AI Skill, set pricing and share structure. It's minted as an ERC-8239 NFT with an immutable IPFS content hash. Staking ETH signals trust to buyers.",
+                  color: "bg-primary/20 border-primary/40 text-primary",
+                  tag: "Creator",
+                },
+                {
+                  step: "02",
+                  title: "Early Holders Buy Shares on the Bonding Curve",
+                  desc: "Investors buy fractional shares of the Skill. As more holders join, price rises. Shareholders earn 30% of every future usage fee — a perpetual income stream.",
+                  color: "bg-blue-500/20 border-blue-500/40 text-blue-400",
+                  tag: "Investor",
+                },
+                {
+                  step: "03",
+                  title: "Agents & Humans Discover and Pay via x402",
+                  desc: "AI Agents call GET /api/skills, receive a 402 Payment Required response, then send USDC via x402 to acquire call rights — a license, not a per-call charge. No human approval needed.",
+                  color: "bg-accent/20 border-accent/40 text-accent",
+                  tag: "Agent / Human",
+                },
+                {
+                  step: "04",
+                  title: "Fees Auto-Split On-Chain",
+                  desc: "Every usage fee is automatically distributed: Creator 50%, Shareholders 30%, Platform 20%. No invoices, no delays — instant on-chain settlement.",
+                  color: "bg-emerald-500/20 border-emerald-500/40 text-emerald-400",
+                  tag: "Protocol",
+                },
+                {
+                  step: "05",
+                  title: "Flywheel Accelerates",
+                  desc: "Shareholders reinvest earnings → bonding curve price rises → more creators and agents are attracted → usage grows → fees increase. The loop is self-reinforcing and fully on-chain.",
+                  color: "bg-purple-500/20 border-purple-500/40 text-purple-400",
+                  tag: "Growth",
+                },
+              ].map((s) => (
+                <div key={s.step} className="flex gap-5 items-start">
+                  <div className={`w-14 h-14 rounded-xl border flex items-center justify-center shrink-0 ${s.color}`}>
+                    <div className="text-sm font-mono font-bold">{s.step}</div>
+                  </div>
+                  <div className="bg-card border border-white/10 rounded-2xl p-5 flex-1">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <h3 className="font-semibold">{s.title}</h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${s.color}`}>{s.tag}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -132,7 +303,7 @@ export default function Landing() {
               {[
                 { step: "01", label: "Skill Minted", sub: "Creator uploads + stakes", icon: <Zap className="w-5 h-5" /> },
                 { step: "02", label: "Shares Sold", sub: "Early holders invest", icon: <TrendingUp className="w-5 h-5" /> },
-                { step: "03", label: "Agent/Human Uses", sub: "x402 micropayment", icon: <Bot className="w-5 h-5" /> },
+                { step: "03", label: "Agent/Human Uses", sub: "x402 payment — acquires call rights", icon: <Bot className="w-5 h-5" /> },
                 { step: "04", label: "Fees Distributed", sub: "Creator 50% · Holders 30% · Platform 20%", icon: <RefreshCw className="w-5 h-5" /> },
               ].map((step, i) => (
                 <div key={step.step} className="relative">
@@ -153,6 +324,11 @@ export default function Landing() {
             <div className="mt-4 p-4 border border-primary/20 rounded-xl bg-primary/5 text-sm text-primary/80">
               Shareholders reinvest → Bonding curve rises → More users and Agents attracted → Usage grows → Flywheel accelerates
             </div>
+          </div>
+          <div className="mt-8">
+            <Button variant="outline" className="border-white/20 hover:bg-white/5 gap-2" onClick={() => setLocation("/app/flywheel")}>
+              View Live Flywheel Dashboard <ArrowRight className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </section>
@@ -199,8 +375,8 @@ export default function Landing() {
                 glow: "from-cyan-500/10",
                 bullets: [
                   "Discover Skills autonomously via REST API",
-                  "Pay via x402 protocol — USDC micropayments",
-                  "No human approval needed, end-to-end automated",
+                  "Pay via x402 to acquire call rights — no approval needed",
+                  "Fully automated, end-to-end machine commerce",
                 ],
                 cta: "View Agent API",
                 href: "/app/agent-api",
