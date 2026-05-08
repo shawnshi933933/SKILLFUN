@@ -255,7 +255,7 @@ export default function S08Market() {
           fontWeight: 600
         }}
       >
-        10 / 13
+        05 / 13
       </div>
     </div>
   );

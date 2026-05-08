@@ -98,7 +98,7 @@ export default function S07Participate() {
                 marginTop: "1.5vh"
               }}
             >
-              Developers and KOLs who distill expertise into callable skills and mint them as NFTs.
+              Developers who package their expertise into callable skills and mint them as NFTs.
             </p>
             <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
               <div style={{ height: 1, background: "rgba(139,92,246,0.24)", marginBottom: "1.8vh" }} />
@@ -294,7 +294,7 @@ export default function S07Participate() {
           fontWeight: 600
         }}
       >
-        08 / 13
+        09 / 13
       </div>
     </div>
   );

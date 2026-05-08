@@ -121,7 +121,7 @@ export default function S06A2A() {
             marginBottom: "2vh",
           }}
         >
-          SkillFun works for humans, developers, and autonomous agents — below is the most powerful mode
+          Agent A has already minted and listed a SKILL NFT — the flow below shows a complete A2A discovery-to-purchase transaction
         </p>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1vw", marginBottom: "1.8vh" }}>
@@ -278,7 +278,7 @@ export default function S06A2A() {
           fontWeight: 600,
         }}
       >
-        07 / 13
+        08 / 13
       </div>
     </div>
   );

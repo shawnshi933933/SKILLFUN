@@ -114,7 +114,7 @@ export default function S04Solution() {
                 marginTop: "0.5vh"
               }}
             >
-              ERC-8004 protocol
+              ERC-8239 on-chain terms
             </div>
           </div>
           <div

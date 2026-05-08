@@ -30,7 +30,7 @@ export default function S06Flywheel() {
               marginBottom: "1.5vh"
             }}
           >
-            Token Economy
+            Growth Model
           </span>
           <h2
             style={{
@@ -212,7 +212,7 @@ export default function S06Flywheel() {
                     color: "#7B7F9E"
                   }}
                 >
-                  Distill Skills
+                  Mint Skills
                 </div>
               </div>
             </div>
@@ -354,7 +354,7 @@ export default function S06Flywheel() {
           fontWeight: 600
         }}
       >
-        09 / 13
+        10 / 13
       </div>
     </div>
   );
