@@ -1,4 +1,21 @@
 export default function S02TechStack() {
+  const rowStyle: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "16vw 1px 1fr",
+    alignItems: "center",
+    gap: "0 2vw",
+    background: "rgba(22,25,41,0.85)",
+    borderRadius: "0.6vw",
+    padding: "1.2vh 2.8vw 1.2vh 2.8vw",
+    border: "1px solid rgba(240,240,248,0.08)"
+  };
+
+  const dividerStyle: React.CSSProperties = {
+    width: 1,
+    alignSelf: "stretch",
+    background: "rgba(240,240,248,0.12)"
+  };
+
   return (
     <div
       className="relative w-screen h-screen overflow-hidden"
@@ -58,102 +75,58 @@ export default function S02TechStack() {
 
         <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2.5vw",
-              background: "rgba(22,25,41,0.85)",
-              borderRadius: "0.6vw",
-              padding: "1.2vh 2.8vw",
-              border: "1px solid rgba(240,240,248,0.08)"
-            }}
-          >
-            <div style={{ minWidth: "13vw", display: "flex", alignItems: "baseline", gap: "0.6vw" }}>
+          <div style={rowStyle}>
+            <div>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>MCP + A2A</span>
-              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw" }}>Communication</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Communication</span>
             </div>
-            <div style={{ width: 1, height: "2.8vh", background: "rgba(240,240,248,0.12)", flexShrink: 0 }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.35 }}>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
               Tool invocation (MCP) and agent-to-agent messaging (A2A) — Anthropic &amp; Google open specs
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2.5vw",
-              background: "rgba(22,25,41,0.85)",
-              borderRadius: "0.6vw",
-              padding: "1.2vh 2.8vw",
-              border: "1px solid rgba(240,240,248,0.08)"
-            }}
-          >
-            <div style={{ minWidth: "13vw", display: "flex", alignItems: "baseline", gap: "0.6vw" }}>
+          <div style={rowStyle}>
+            <div>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8004</span>
-              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw" }}>Identity</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Identity</span>
             </div>
-            <div style={{ width: 1, height: "2.8vh", background: "rgba(240,240,248,0.12)", flexShrink: 0 }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.35 }}>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
               On-chain agent identity, trust scores, and verifiable credentials for autonomous agents
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2.5vw",
-              background: "rgba(22,25,41,0.85)",
-              borderRadius: "0.6vw",
-              padding: "1.2vh 2.8vw",
-              border: "1px solid rgba(240,240,248,0.08)"
-            }}
-          >
-            <div style={{ minWidth: "13vw", display: "flex", alignItems: "baseline", gap: "0.6vw" }}>
+          <div style={rowStyle}>
+            <div>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#22D3EE", fontSize: "1.5vw", fontWeight: 700 }}>x402</span>
-              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw" }}>Payment</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Payment</span>
             </div>
-            <div style={{ width: 1, height: "2.8vh", background: "rgba(240,240,248,0.12)", flexShrink: 0 }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.35 }}>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
               HTTP-native micropayment gating — pay per API call with no subscriptions or off-chain rails
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2.5vw",
-              background: "rgba(22,25,41,0.85)",
-              borderRadius: "0.6vw",
-              padding: "1.2vh 2.8vw",
-              border: "1px solid rgba(240,240,248,0.08)"
-            }}
-          >
-            <div style={{ minWidth: "13vw", display: "flex", alignItems: "baseline", gap: "0.6vw" }}>
+          <div style={rowStyle}>
+            <div>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#22D3EE", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8183</span>
-              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw" }}>Commerce</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Commerce</span>
             </div>
-            <div style={{ width: 1, height: "2.8vh", background: "rgba(240,240,248,0.12)", flexShrink: 0 }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.35 }}>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
               Standardized settlement and revenue-sharing contracts for agent service transactions
             </div>
           </div>
 
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2.5vw",
+              ...rowStyle,
               background: "rgba(139,92,246,0.13)",
-              borderRadius: "0.6vw",
-              padding: "1.2vh 2.8vw",
               border: "1px solid rgba(139,92,246,0.42)"
             }}
           >
-            <div style={{ minWidth: "13vw" }}>
+            <div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.6vw" }}>
                 <span style={{ fontFamily: "var(--font-display-family)", color: "#8B5CF6", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8239</span>
                 <span
@@ -165,7 +138,7 @@ export default function S02TechStack() {
                     background: "rgba(240,165,0,0.14)",
                     border: "1px solid rgba(240,165,0,0.32)",
                     borderRadius: "0.3vw",
-                    padding: "0.15vh 0.5vw"
+                    padding: "0.1vh 0.5vw"
                   }}
                 >
                   Draft
@@ -175,50 +148,30 @@ export default function S02TechStack() {
                 Capability — SkillFun builds here
               </div>
             </div>
-            <div style={{ width: 1, height: "3.5vh", background: "rgba(139,92,246,0.5)", flexShrink: 0 }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#B0B4D0", fontSize: "1.5vw", lineHeight: 1.35 }}>
+            <div style={{ ...dividerStyle, background: "rgba(139,92,246,0.5)" }} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#B0B4D0", fontSize: "1.5vw", lineHeight: 1.4 }}>
               NFT standard for tokenized AI skills — ownership, licensing, and royalty enforcement. SkillFun adopts this draft standard to build the SKILL token ecosystem on top of it.
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2.5vw",
-              background: "rgba(22,25,41,0.85)",
-              borderRadius: "0.6vw",
-              padding: "1.2vh 2.8vw",
-              border: "1px solid rgba(240,240,248,0.08)"
-            }}
-          >
-            <div style={{ minWidth: "13vw", display: "flex", alignItems: "baseline", gap: "0.6vw" }}>
+          <div style={rowStyle}>
+            <div>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8220</span>
-              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw" }}>Governance</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Governance</span>
             </div>
-            <div style={{ width: 1, height: "2.8vh", background: "rgba(240,240,248,0.12)", flexShrink: 0 }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.35 }}>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4 }}>
               Security and governance rails for the agent stack — ZK and TEE execution proofs
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2.5vw",
-              background: "rgba(22,25,41,0.85)",
-              borderRadius: "0.6vw",
-              padding: "1.2vh 2.8vw",
-              border: "1px solid rgba(240,240,248,0.08)"
-            }}
-          >
-            <div style={{ minWidth: "13vw", display: "flex", alignItems: "baseline", gap: "0.6vw" }}>
+          <div style={rowStyle}>
+            <div>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#7B7F9E", fontSize: "1.5vw", fontWeight: 700, fontStyle: "italic" }}>Memory</span>
-              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw" }}>Storage</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Storage</span>
             </div>
-            <div style={{ width: 1, height: "2.8vh", background: "rgba(240,240,248,0.12)", flexShrink: 0 }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.35, fontStyle: "italic" }}>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.5vw", lineHeight: 1.4, fontStyle: "italic" }}>
               Persistent agent memory and decentralized storage — standard not yet defined
             </div>
           </div>
