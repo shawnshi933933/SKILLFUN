@@ -170,18 +170,18 @@ export default function S05Audience() {
           <UserCard
             side="left"
             title="Human Users"
-            subtitle="Creators, developers, and companies"
+            subtitle="Developers, creators, and users"
             accent="#B4A0FF"
             borderColor="rgba(139,92,246,0.28)"
             bgColor="rgba(139,92,246,0.07)"
             items={[
               {
                 label: "Skill Creators",
-                desc: "Developers and KOLs package their expertise into callable skill NFTs and earn royalties on every invocation",
+                desc: "Developers package their expertise into callable skill NFTs and earn royalties on every invocation",
               },
               {
-                label: "Enterprises",
-                desc: "Companies license best-in-class skills to power their own AI workflows without building from scratch",
+                label: "Skill Users",
+                desc: "Anyone can discover and license skills to enhance their own products and workflows",
               },
               {
                 label: "Curators & Stakers",
