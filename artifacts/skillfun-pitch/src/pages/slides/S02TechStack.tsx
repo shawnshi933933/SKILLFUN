@@ -1,7 +1,7 @@
 export default function S02TechStack() {
   const rowStyle: React.CSSProperties = {
     display: "grid",
-    gridTemplateColumns: "16vw 1px 1fr",
+    gridTemplateColumns: "20vw 1px 1fr",
     alignItems: "center",
     gap: "0 2vw",
     background: "rgba(22,25,41,0.85)",
@@ -76,7 +76,7 @@ export default function S02TechStack() {
         <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
 
           <div style={rowStyle}>
-            <div>
+            <div style={{ whiteSpace: "nowrap" }}>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>MCP + A2A</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Communication</span>
             </div>
@@ -87,7 +87,7 @@ export default function S02TechStack() {
           </div>
 
           <div style={rowStyle}>
-            <div>
+            <div style={{ whiteSpace: "nowrap" }}>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8004</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Identity</span>
             </div>
@@ -98,7 +98,7 @@ export default function S02TechStack() {
           </div>
 
           <div style={rowStyle}>
-            <div>
+            <div style={{ whiteSpace: "nowrap" }}>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#22D3EE", fontSize: "1.5vw", fontWeight: 700 }}>x402</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Payment</span>
             </div>
@@ -109,7 +109,7 @@ export default function S02TechStack() {
           </div>
 
           <div style={rowStyle}>
-            <div>
+            <div style={{ whiteSpace: "nowrap" }}>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#22D3EE", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8183</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Commerce</span>
             </div>
@@ -155,7 +155,7 @@ export default function S02TechStack() {
           </div>
 
           <div style={rowStyle}>
-            <div>
+            <div style={{ whiteSpace: "nowrap" }}>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8220</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Governance</span>
             </div>
@@ -166,7 +166,7 @@ export default function S02TechStack() {
           </div>
 
           <div style={rowStyle}>
-            <div>
+            <div style={{ whiteSpace: "nowrap" }}>
               <span style={{ fontFamily: "var(--font-display-family)", color: "#7B7F9E", fontSize: "1.5vw", fontWeight: 700, fontStyle: "italic" }}>Memory</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Storage</span>
             </div>
