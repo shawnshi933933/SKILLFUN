@@ -86,17 +86,6 @@ export default function S01Cover() {
           >
             Seed Round · 2026
           </span>
-          <div style={{ height: "0.12vh", width: "3.5vw", background: "#22D3EE" }} />
-          <span
-            style={{
-              fontFamily: "var(--font-body-family)",
-              color: "#7B7F9E",
-              fontSize: "1.6vw",
-              fontWeight: 300
-            }}
-          >
-            skillfun.ai
-          </span>
         </div>
       </div>
 
