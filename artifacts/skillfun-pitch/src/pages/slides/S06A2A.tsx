@@ -121,8 +121,37 @@ export default function S06A2A() {
             marginBottom: "2vh",
           }}
         >
-          One agent sells a skill to another — fully autonomous, end to end
+          SkillFun works for humans, developers, and autonomous agents — below is the most powerful mode
         </p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "1vw", marginBottom: "1.8vh" }}>
+          {[
+            { label: "Human → Skill", active: false },
+            { label: "Developer API", active: false },
+            { label: "Agent → Agent", active: true },
+          ].map(({ label, active }) => (
+            <div
+              key={label}
+              style={{
+                fontFamily: "var(--font-body-family)",
+                fontSize: "1.2vw",
+                fontWeight: active ? 600 : 400,
+                color: active ? "#22D3EE" : "#3D4160",
+                background: active ? "rgba(34,211,238,0.10)" : "rgba(255,255,255,0.03)",
+                border: active ? "1px solid rgba(34,211,238,0.4)" : "1px solid rgba(255,255,255,0.07)",
+                borderRadius: "0.4vw",
+                padding: "0.4vh 1.2vw",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {active && <span style={{ marginRight: "0.4vw", color: "#22D3EE" }}>▶</span>}
+              {label}
+            </div>
+          ))}
+          <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.1vw", color: "#3D4160", marginLeft: "0.5vw" }}>
+            — scenario shown below
+          </div>
+        </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 1.5vw", marginBottom: "1.8vh" }}>
           {[
@@ -235,7 +264,7 @@ export default function S06A2A() {
             fontWeight: 700,
             letterSpacing: "0.01em",
           }}>
-            No human approved any of these steps.
+            In Agent-to-Agent mode — fully autonomous, zero human involvement required.
           </span>
         </div>
       </div>
