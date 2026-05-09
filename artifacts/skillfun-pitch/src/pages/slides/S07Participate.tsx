@@ -84,7 +84,7 @@ export default function S07Participate() {
 
       <div
         className="absolute inset-0 flex flex-col"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "4vh", paddingBottom: "4.5vh" }}
+        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "3.5vh", paddingBottom: "3.5vh" }}
       >
         <span
           style={{
@@ -94,7 +94,7 @@ export default function S07Participate() {
             fontWeight: 400,
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            marginBottom: "0.8vh"
+            marginBottom: "0.6vh"
           }}
         >
           Participants
@@ -102,27 +102,28 @@ export default function S07Participate() {
         <h2
           style={{
             fontFamily: "var(--font-display-family)",
-            fontSize: "3.8vw",
+            fontSize: "3.4vw",
             fontWeight: 800,
             color: "#F0F0F8",
             letterSpacing: "-0.02em",
             lineHeight: 1.05,
-            marginBottom: "3vh"
+            marginBottom: "2vh"
           }}
         >
           Five Ways to Participate
         </h2>
 
-        <div className="flex gap-[1.8vw]" style={{ flex: 1 }}>
+        <div className="flex gap-[1.4vw]" style={{ flex: 1, minHeight: 0 }}>
           {roles.map((role) => (
             <div
               key={role.tag}
               className="flex flex-col"
               style={{
                 flex: 1,
+                minHeight: 0,
                 background: role.cardBg,
-                borderRadius: "1vw",
-                padding: "2.2vh 2vw",
+                borderRadius: "0.8vw",
+                padding: "1.8vh 1.6vw",
                 border: `1px solid ${role.cardBorder}`
               }}
             >
@@ -130,16 +131,16 @@ export default function S07Participate() {
                 style={{
                   display: "inline-block",
                   background: role.tagBg,
-                  borderRadius: "0.4vw",
-                  padding: "0.4vh 1vw",
-                  marginBottom: "1.5vh",
+                  borderRadius: "0.35vw",
+                  padding: "0.3vh 0.8vw",
+                  marginBottom: "1vh",
                   width: "fit-content"
                 }}
               >
                 <span
                   style={{
                     fontFamily: "var(--font-display-family)",
-                    fontSize: "1.1vw",
+                    fontSize: "1vw",
                     fontWeight: 700,
                     color: role.tagColor,
                     letterSpacing: "0.06em"
@@ -151,11 +152,11 @@ export default function S07Participate() {
               <div
                 style={{
                   fontFamily: "var(--font-display-family)",
-                  fontSize: "2vw",
+                  fontSize: "1.8vw",
                   fontWeight: 800,
                   color: "#F0F0F8",
                   lineHeight: 1.1,
-                  marginBottom: "1.2vh"
+                  marginBottom: "1vh"
                 }}
               >
                 {role.title}
@@ -163,19 +164,19 @@ export default function S07Participate() {
               <p
                 style={{
                   fontFamily: "var(--font-body-family)",
-                  fontSize: "1.45vw",
+                  fontSize: "1.3vw",
                   color: "#7B7F9E",
-                  lineHeight: 1.45
+                  lineHeight: 1.4
                 }}
               >
                 {role.body}
               </p>
-              <div style={{ marginTop: "auto", paddingTop: "2vh" }}>
-                <div style={{ height: 1, background: role.dividerColor, marginBottom: "1.4vh" }} />
+              <div style={{ marginTop: "auto", paddingTop: "1.4vh" }}>
+                <div style={{ height: 1, background: role.dividerColor, marginBottom: "1vh" }} />
                 <div
                   style={{
                     fontFamily: "var(--font-display-family)",
-                    fontSize: "1.5vw",
+                    fontSize: "1.35vw",
                     fontWeight: 700,
                     color: role.earnColor
                   }}
@@ -185,7 +186,7 @@ export default function S07Participate() {
                 <div
                   style={{
                     fontFamily: "var(--font-body-family)",
-                    fontSize: "1.25vw",
+                    fontSize: "1.1vw",
                     color: "#7B7F9E",
                     marginTop: "0.4vh",
                     lineHeight: 1.35
