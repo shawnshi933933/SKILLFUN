@@ -3,7 +3,7 @@ export default function S13Evolution() {
     {
       ver: "1.0",
       name: "Skill Hub",
-      example: "skills.sh",
+      example: "e.g. skills.sh",
       color: "#4B5280",
       border: "rgba(75,82,128,0.35)",
       bg: "rgba(75,82,128,0.08)",
@@ -23,7 +23,7 @@ export default function S13Evolution() {
     {
       ver: "2.0",
       name: "MCP Market",
-      example: "mcpmarket.com",
+      example: "e.g. mcpmarket.com",
       color: "#0EA5E9",
       border: "rgba(14,165,233,0.30)",
       bg: "rgba(14,165,233,0.07)",
@@ -43,7 +43,7 @@ export default function S13Evolution() {
     {
       ver: "3.0",
       name: "SkillFun",
-      example: "skillfun.xyz",
+      example: "",
       color: "#8B5CF6",
       border: "rgba(139,92,246,0.45)",
       bg: "rgba(139,92,246,0.10)",
