@@ -9,7 +9,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0002-4000-8000-000000000002",
-		"position": 2,
+		"position": 3,
 		"filepath": "src/pages/slides/S02TechStack.tsx",
 		"title": "Protocol Landscape",
 		"description": "7-layer AI agent protocol stack: MCP, A2A, ERC-8004, x402, ERC-8183, ERC-8239, ERC-8220",
@@ -17,7 +17,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0015-4000-8000-000000000015",
-		"position": 3,
+		"position": 4,
 		"filepath": "src/pages/slides/S13Evolution.tsx",
 		"title": "Market Evolution",
 		"description": "Skill Economy v1.0 SkillHub → v2.0 MCP Market → v3.0 SkillFun",
@@ -25,7 +25,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0003-4000-8000-000000000003",
-		"position": 4,
+		"position": 2,
 		"filepath": "src/pages/slides/S03Problem.tsx",
 		"title": "The Problem",
 		"description": "AI skills are commoditized, unmonetized, and non-transferable",
