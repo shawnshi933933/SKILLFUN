@@ -96,8 +96,16 @@
     "speakerNotes": ""
   },
   {
-    "id": "a1b2c3d4-0013-4000-8000-000000000013",
+    "id": "a1b2c3d4-0014-4000-8000-000000000014",
     "position": 13,
+    "filepath": "src/pages/slides/S12Encryption.tsx",
+    "title": "Encrypted Skill Protection",
+    "description": "Optional AES-256 + KMS encryption for high-value Skills — pay to invoke, payload never exposed",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0013-4000-8000-000000000013",
+    "position": 14,
     "filepath": "src/pages/slides/S11TeamAsk.tsx",
     "title": "Team & Ask",
     "description": "Core team and seed round ask",
