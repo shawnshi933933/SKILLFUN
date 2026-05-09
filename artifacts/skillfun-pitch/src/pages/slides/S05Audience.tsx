@@ -300,7 +300,7 @@ export default function S05Audience() {
           fontWeight: 600,
         }}
       >
-        06 / 13
+        06 / 14
       </div>
     </div>
   );

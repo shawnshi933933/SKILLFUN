@@ -162,7 +162,7 @@ export default function S02TechStack() {
           fontWeight: 600
         }}
       >
-        02 / 13
+        02 / 14
       </div>
     </div>
   );
