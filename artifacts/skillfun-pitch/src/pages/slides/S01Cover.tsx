@@ -98,7 +98,7 @@ export default function S01Cover() {
           fontWeight: 600
         }}
       >
-        01 / 14
+        01 / 15
       </div>
     </div>
   );

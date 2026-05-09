@@ -362,7 +362,7 @@ export default function S11TeamAsk() {
           fontWeight: 600
         }}
       >
-        14 / 14
+        15 / 15
       </div>
     </div>
   );
