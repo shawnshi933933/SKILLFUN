@@ -44,9 +44,7 @@ export default function S02TechStack() {
             textTransform: "uppercase",
             marginBottom: "0.5vh"
           }}
-        >
-          Background
-        </span>
+        >TECH Background</span>
         <h2
           style={{
             fontFamily: "var(--font-display-family)",
