@@ -159,28 +159,66 @@ export default function S06Flywheel() {
               </div>
             </div>
 
-            {/* ── SKILL supply box (top-left, outside ring) ── */}
+            {/* ── SKILL supply cluster (top-left, outside ring) ── */}
             <div
               className="absolute"
-              style={{ top: "4%", left: "4%", textAlign: "center" }}
+              style={{ top: "1%", left: "1%" }}
             >
+              {/* Section label */}
               <div
                 style={{
-                  background: "rgba(139,92,246,0.12)",
-                  border: "1px solid rgba(139,92,246,0.35)",
-                  borderRadius: "0.5vw",
-                  padding: "0.6vh 1vw",
-                  display: "inline-block"
+                  fontFamily: "var(--font-body-family)",
+                  fontSize: "0.9vw",
+                  fontWeight: 700,
+                  color: "#8B5CF6",
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  marginBottom: "0.6vh",
+                  paddingLeft: "0.2vw"
                 }}
               >
-                <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.9vw", color: "#8B5CF6", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                  SKILL NFT
+                SKILL NFT
+              </div>
+
+              {/* Creator + Owner as role boxes */}
+              <div style={{ display: "flex", gap: "0.5vw" }}>
+                <div
+                  style={{
+                    background: "rgba(139,92,246,0.13)",
+                    border: "1px solid rgba(139,92,246,0.38)",
+                    borderRadius: "0.5vw",
+                    padding: "0.7vh 1.1vw",
+                    textAlign: "center"
+                  }}
+                >
+                  <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.25vw", fontWeight: 700, color: "#8B5CF6" }}>Creator</div>
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.95vw", color: "#7B7F9E" }}>Mint Skills</div>
                 </div>
-                <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.85vw", color: "#7B7F9E", marginTop: "0.2vh" }}>
-                  Creator → Owner
+                <div
+                  style={{
+                    background: "rgba(180,160,255,0.10)",
+                    border: "1px solid rgba(180,160,255,0.32)",
+                    borderRadius: "0.5vw",
+                    padding: "0.7vh 1.1vw",
+                    textAlign: "center"
+                  }}
+                >
+                  <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.25vw", fontWeight: 700, color: "#B4A0FF" }}>Owner</div>
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.95vw", color: "#7B7F9E" }}>Set Price</div>
                 </div>
               </div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.9vw", color: "#8B5CF6", marginTop: "0.4vh", opacity: 0.7 }}>
+
+              {/* feeds in label */}
+              <div
+                style={{
+                  fontFamily: "var(--font-body-family)",
+                  fontSize: "0.9vw",
+                  color: "#8B5CF6",
+                  marginTop: "0.5vh",
+                  opacity: 0.65,
+                  paddingLeft: "0.2vw"
+                }}
+              >
                 feeds in ↘
               </div>
             </div>
