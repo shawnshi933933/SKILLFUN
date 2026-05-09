@@ -11,3 +11,9 @@ id = "1bI6qw_nP-kzDKfdNayK6"
 uri = "file://.local/outputs/SKILL-MARKET.pdf"
 type = "pdf"
 title = "SKILL MARKET.pdf"
+
+[[outputs]]
+id = "J04zNWBWGoIvp9y-ukfbx"
+uri = "file://.local/outputs/SKILL-MARKET.pptx"
+type = "slides"
+title = "SKILL MARKET.pptx"
