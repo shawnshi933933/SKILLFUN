@@ -202,7 +202,7 @@ export default function S07Participate() {
               <div
                 style={{
                   flexShrink: 0,
-                  height: "11vh",
+                  height: "13vh",
                   paddingTop: "1.1vh",
                   overflow: "hidden"
                 }}
