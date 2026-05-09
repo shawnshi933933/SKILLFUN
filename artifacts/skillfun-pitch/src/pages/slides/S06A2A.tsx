@@ -48,7 +48,7 @@ const steps = [
     n: 4,
     from: "B",
     to: "S",
-    label: "Agent B submits x402 HTTP payment for the Bundle — final price auto-calculated (Base + Markup), call rights acquired instantly",
+    label: "Agent B submits x402 HTTP payment per SKILL invocation — routed via Bundle, price = SKILL Base Price + Curator Markup, call rights acquired instantly",
     tags: [{ label: "x402", color: "teal" as const }],
   },
   {
@@ -62,7 +62,7 @@ const steps = [
     n: 6,
     from: "S",
     to: "B",
-    label: "MCP Server executes the Bundle, returns result to Agent B — fully autonomous, zero human approval required",
+    label: "MCP Server routes to the target SKILL(s) within the Bundle, executes, and returns result to Agent B — fully autonomous, zero human approval required",
     tags: [{ label: "MCP", color: "muted" as const }],
   },
 ];

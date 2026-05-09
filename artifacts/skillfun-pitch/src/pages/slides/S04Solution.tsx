@@ -152,7 +152,7 @@ export default function S04Solution() {
                 lineHeight: 1.5
               }}
             >
-              Curators package multiple Skills into a single composite tool with orchestration rules — registered as one MCP tool in the unified endpoint.
+              Curators don't need to own the Skills they bundle. They act as distributors — curating a collection and routing users to the right Skills. Users pay per SKILL invocation; Curator earns a Markup on each call routed through their Bundle.
             </p>
             <div style={{ marginTop: "auto", paddingTop: "1.8vh" }}>
               <div style={{ height: 1, background: "rgba(180,160,255,0.20)", marginBottom: "1.2vh" }} />
