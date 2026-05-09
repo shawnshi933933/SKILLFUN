@@ -42,7 +42,7 @@ export default function S14Architecture() {
     { label: "Creator", pct: 10, color: "#8B5CF6", s: 0,    e: 0.10 },
     { label: "Owner",   pct: 50, color: "#A78BFA", s: 0.10, e: 0.60 },
     { label: "Curator", pct: 20, color: "#22D3EE", s: 0.60, e: 0.80 },
-    { label: "Staker",  pct: 25, color: "#34D399", s: 0.80, e: 1.00 },
+    { label: "Staker",  pct: 20, color: "#34D399", s: 0.80, e: 1.00 },
   ];
 
   return (
