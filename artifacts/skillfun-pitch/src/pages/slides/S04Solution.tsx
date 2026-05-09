@@ -29,7 +29,7 @@ export default function S04Solution() {
             marginBottom: "1vh"
           }}
         >
-          The Solution
+          The Solution — v3.0
         </span>
         <h2
           style={{
@@ -241,7 +241,7 @@ export default function S04Solution() {
           fontWeight: 600
         }}
       >
-        05 / 15
+        04 / 15
       </div>
     </div>
   );

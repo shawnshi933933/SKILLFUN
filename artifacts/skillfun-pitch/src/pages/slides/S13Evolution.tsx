@@ -106,8 +106,8 @@ export default function S13Evolution() {
             marginBottom: "3.5vh",
           }}
         >
-          The Skill Economy<br />
-          <span style={{ color: "#8B5CF6" }}>grew up in three waves.</span>
+          The market took<br />
+          <span style={{ color: "#8B5CF6" }}>three generations to get here.</span>
         </h2>
 
         {/* Timeline arrow */}
@@ -223,7 +223,7 @@ export default function S13Evolution() {
         className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}
       >
-        04 / 15
+        03 / 15
       </div>
     </div>
   );

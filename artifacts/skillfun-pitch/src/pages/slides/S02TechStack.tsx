@@ -69,7 +69,7 @@ export default function S02TechStack() {
             marginBottom: "1.2vh"
           }}
         >
-          Seven protocol layers are crystallizing for the AI agent economy — SkillFun connects and orchestrates the full stack
+          SkillFun is built on the emerging agent protocol stack — every layer crystallizing right now, and we connect them all.
         </p>
 
         <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
@@ -162,7 +162,7 @@ export default function S02TechStack() {
           fontWeight: 600
         }}
       >
-        03 / 15
+        05 / 15
       </div>
     </div>
   );
