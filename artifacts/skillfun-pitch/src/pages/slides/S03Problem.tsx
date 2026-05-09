@@ -90,7 +90,7 @@ export default function S03Problem() {
                 lineHeight: 1.4
               }}
             >
-              revenue captured by most<br />AI skill builders today
+              in royalties when your Skill is<br />wrapped, re-used, or resold by others
             </div>
           </div>
           <div style={{ height: 1, background: "rgba(139,92,246,0.22)", width: "20vw" }} />
@@ -115,7 +115,7 @@ export default function S03Problem() {
                 lineHeight: 1.4
               }}
             >
-              of inference cost flows<br />back to skill creators
+              of AI Skill invocations carry transferable<br />ownership or on-chain resale rights
             </div>
           </div>
           <div style={{ height: 1, background: "rgba(34,211,238,0.18)", width: "20vw" }} />

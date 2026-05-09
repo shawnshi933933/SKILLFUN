@@ -1,9 +1,10 @@
-function Tag({ label, color }: { label: string; color: "purple" | "teal" | "amber" | "muted" }) {
+function Tag({ label, color }: { label: string; color: "purple" | "teal" | "amber" | "muted" | "lavender" }) {
   const styles: Record<string, React.CSSProperties> = {
-    purple: { color: "#C4B5FD", background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.45)" },
-    teal:   { color: "#22D3EE", background: "rgba(34,211,238,0.12)",  border: "1px solid rgba(34,211,238,0.4)" },
-    amber:  { color: "#FCD34D", background: "rgba(252,211,77,0.1)",   border: "1px solid rgba(252,211,77,0.35)" },
-    muted:  { color: "#7B7F9E", background: "rgba(123,127,158,0.1)",  border: "1px solid rgba(123,127,158,0.3)" },
+    purple:  { color: "#C4B5FD", background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.45)" },
+    teal:    { color: "#22D3EE", background: "rgba(34,211,238,0.12)",  border: "1px solid rgba(34,211,238,0.4)" },
+    amber:   { color: "#FCD34D", background: "rgba(252,211,77,0.1)",   border: "1px solid rgba(252,211,77,0.35)" },
+    muted:   { color: "#7B7F9E", background: "rgba(123,127,158,0.1)",  border: "1px solid rgba(123,127,158,0.3)" },
+    lavender:{ color: "#B4A0FF", background: "rgba(180,160,255,0.12)", border: "1px solid rgba(180,160,255,0.4)" },
   };
   return (
     <span style={{
@@ -24,45 +25,45 @@ function Tag({ label, color }: { label: string; color: "purple" | "teal" | "ambe
 const steps = [
   {
     n: 1,
-    from: "A",
+    from: "B",
     to: "S",
-    label: "Authenticate with on-chain agent identity",
-    tags: [{ label: "ERC-8004", color: "purple" as const }],
+    label: "Agent B adds SkillFun unified MCP endpoint — all Bundles and Skills appear as native callable tools",
+    tags: [{ label: "MCP", color: "muted" as const }],
   },
   {
     n: 2,
     from: "A",
     to: "S",
-    label: "Mint SKILL NFT — price, license terms & royalty split embedded on-chain",
+    label: "Agent A has already minted a SKILL NFT — Base Price, license terms, and Creator:Owner split embedded on-chain",
     tags: [{ label: "ERC-8239", color: "purple" as const }],
   },
   {
     n: 3,
-    from: "B",
+    from: "S",
     to: "S",
-    label: "Discover skill via MCP tool query — metadata fetched autonomously",
-    tags: [{ label: "MCP", color: "muted" as const }],
+    label: "A Curator has bundled Agent A's Skill with others — Markup and Staker share already configured in the Bundle",
+    tags: [{ label: "Bundle", color: "lavender" as const }],
   },
   {
     n: 4,
     from: "B",
     to: "S",
-    label: "Submit x402 HTTP payment to acquire invocation rights — no subscription, no off-chain settlement",
+    label: "Agent B submits x402 HTTP payment for the Bundle — final price auto-calculated (Base + Markup), call rights acquired instantly",
     tags: [{ label: "x402", color: "teal" as const }],
   },
   {
     n: 5,
     from: "S",
     to: "chain",
-    label: "Settlement contract executes — royalty split distributed to creator instantly",
+    label: "ERC-8183 settlement — Base split to Creator + Owner; Markup split to Curator + Staker Pool; Platform 10%",
     tags: [{ label: "ERC-8183", color: "teal" as const }],
   },
   {
     n: 6,
     from: "S",
     to: "B",
-    label: "License transferred on-chain — Agent B gains call rights, no approval needed",
-    tags: [{ label: "ERC-8239", color: "purple" as const }],
+    label: "MCP Server executes the Bundle, returns result to Agent B — fully autonomous, zero human approval required",
+    tags: [{ label: "MCP", color: "muted" as const }],
   },
 ];
 
@@ -121,7 +122,7 @@ export default function S06A2A() {
             marginBottom: "2vh",
           }}
         >
-          Agent A has already minted and listed a SKILL NFT — the flow below shows a complete A2A discovery-to-purchase transaction
+          Agent A has minted a SKILL NFT — the flow below shows a complete A2A discovery-to-execution via Bundle and unified MCP
         </p>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1vw", marginBottom: "1.8vh" }}>
@@ -156,7 +157,7 @@ export default function S06A2A() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 1.5vw", marginBottom: "1.8vh" }}>
           {[
             { label: "Agent A", sub: "Skill Creator", accent: "#B4A0FF", border: "rgba(139,92,246,0.3)", bg: "rgba(139,92,246,0.08)" },
-            { label: "SkillFun", sub: "Protocol Layer", accent: "#8B5CF6", border: "rgba(139,92,246,0.6)", bg: "rgba(139,92,246,0.18)" },
+            { label: "SkillFun", sub: "MCP + Bundle Layer", accent: "#8B5CF6", border: "rgba(139,92,246,0.6)", bg: "rgba(139,92,246,0.18)" },
             { label: "Agent B", sub: "Skill Buyer", accent: "#22D3EE", border: "rgba(34,211,238,0.3)", bg: "rgba(34,211,238,0.07)" },
           ].map((p) => (
             <div
@@ -178,73 +179,60 @@ export default function S06A2A() {
         </div>
 
         <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
-          {steps.map((step) => {
-            const arrowLeft = step.from === "A" || (step.from === "S" && step.to === "B");
-            const toRight = step.from === "A" || (step.from === "B" && step.to === "S");
-            const colSpan = step.to === "chain" ? "1 / -1" : undefined;
-
-            const fromCol = step.from === "A" ? 0 : step.from === "S" ? 1 : 2;
-            const toCol   = step.to === "S"   ? 1 : step.to === "B" ? 2 : step.to === "chain" ? 2 : 0;
-            const spanStart = Math.min(fromCol, toCol) + 1;
-            const spanEnd   = Math.max(fromCol, toCol) + 2;
-
-            const isRight = step.from !== "A" && !(step.from === "S" && step.to === "B");
-
-            return (
+          {steps.map((step) => (
+            <div
+              key={step.n}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2vw 1fr",
+                alignItems: "center",
+                gap: "0 1.5vw",
+                background: "rgba(22,25,41,0.8)",
+                border: "1px solid rgba(240,240,248,0.07)",
+                borderRadius: "0.5vw",
+                padding: "0.8vh 2vw",
+              }}
+            >
               <div
-                key={step.n}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "2vw 1fr",
+                  width: "2vw",
+                  height: "2vw",
+                  borderRadius: "50%",
+                  background: "rgba(139,92,246,0.2)",
+                  border: "1px solid rgba(139,92,246,0.5)",
+                  display: "flex",
                   alignItems: "center",
-                  gap: "0 1.5vw",
-                  background: "rgba(22,25,41,0.8)",
-                  border: "1px solid rgba(240,240,248,0.07)",
-                  borderRadius: "0.5vw",
-                  padding: "0.8vh 2vw",
+                  justifyContent: "center",
+                  fontFamily: "var(--font-display-family)",
+                  color: "#B4A0FF",
+                  fontSize: "1.1vw",
+                  fontWeight: 700,
+                  flexShrink: 0,
                 }}
               >
-                <div
-                  style={{
-                    width: "2vw",
-                    height: "2vw",
-                    borderRadius: "50%",
-                    background: "rgba(139,92,246,0.2)",
-                    border: "1px solid rgba(139,92,246,0.5)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "var(--font-display-family)",
-                    color: "#B4A0FF",
-                    fontSize: "1.1vw",
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {step.n}
-                </div>
+                {step.n}
+              </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "1.5vw", justifyContent: "space-between" }}>
-                  <div style={{ fontFamily: "var(--font-body-family)", color: "#C8CADB", fontSize: "1.35vw", lineHeight: 1.35 }}>
-                    {step.label}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.6vw", flexShrink: 0 }}>
-                    <span style={{
-                      fontFamily: "var(--font-body-family)",
-                      color: "#3D4160",
-                      fontSize: "1.05vw",
-                      whiteSpace: "nowrap",
-                    }}>
-                      {step.from === "A" ? "Agent A" : step.from === "B" ? "Agent B" : "SkillFun"}
-                      {" → "}
-                      {step.to === "S" ? "SkillFun" : step.to === "B" ? "Agent B" : step.to === "chain" ? "on-chain" : "Agent A"}
-                    </span>
-                    {step.tags.map((t) => <Tag key={t.label} {...t} />)}
-                  </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "1.5vw", justifyContent: "space-between" }}>
+                <div style={{ fontFamily: "var(--font-body-family)", color: "#C8CADB", fontSize: "1.35vw", lineHeight: 1.35 }}>
+                  {step.label}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6vw", flexShrink: 0 }}>
+                  <span style={{
+                    fontFamily: "var(--font-body-family)",
+                    color: "#3D4160",
+                    fontSize: "1.05vw",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {step.from === "A" ? "Agent A" : step.from === "B" ? "Agent B" : "SkillFun"}
+                    {" → "}
+                    {step.to === "S" ? "SkillFun" : step.to === "B" ? "Agent B" : step.to === "chain" ? "on-chain" : "Agent A"}
+                  </span>
+                  {step.tags.map((t) => <Tag key={t.label} {...t} />)}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         <div
@@ -264,7 +252,7 @@ export default function S06A2A() {
             fontWeight: 700,
             letterSpacing: "0.01em",
           }}>
-            In Agent-to-Agent mode — fully autonomous, zero human involvement required.
+            Fully autonomous — one MCP endpoint, one payment, five-way auto-split, zero human involvement.
           </span>
         </div>
       </div>

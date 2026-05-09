@@ -69,7 +69,7 @@ export default function S02TechStack() {
             marginBottom: "1.2vh"
           }}
         >
-          Seven protocol layers are crystallizing for the AI agent economy — SkillFun builds on the capability layer
+          Seven protocol layers are crystallizing for the AI agent economy — SkillFun connects and orchestrates the full stack
         </p>
 
         <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
@@ -118,37 +118,15 @@ export default function S02TechStack() {
             </div>
           </div>
 
-          <div
-            style={{
-              ...rowStyle,
-              background: "rgba(139,92,246,0.13)",
-              border: "1px solid rgba(139,92,246,0.42)"
-            }}
-          >
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6vw" }}>
-                <span style={{ fontFamily: "var(--font-display-family)", color: "#8B5CF6", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8239</span>
-                <span
-                  style={{
-                    fontFamily: "var(--font-body-family)",
-                    color: "#F0A500",
-                    fontSize: "1.1vw",
-                    fontWeight: 600,
-                    background: "rgba(240,165,0,0.14)",
-                    border: "1px solid rgba(240,165,0,0.32)",
-                    borderRadius: "0.3vw",
-                    padding: "0.1vh 0.5vw"
-                  }}
-                >
-                  Draft
-                </span>
-              </div>
-              <div style={{ fontFamily: "var(--font-body-family)", color: "#9370DB", fontSize: "1.2vw", marginTop: "0.2vh" }}>
-                Capability — SkillFun builds here
-              </div>
+          <div style={rowStyle}>
+            <div style={{ whiteSpace: "nowrap" }}>
+              <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8239</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Capability</span>
             </div>
-            <div style={{ ...dividerStyle, background: "rgba(139,92,246,0.5)" }} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#B0B4D0", fontSize: "1.35vw", lineHeight: 1.4 }}>NFT standard for tokenized AI skills — ownership, licensing, and royalty enforcement. SkillFun build the SKILL token ecosystem on top of it.</div>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
+              NFT standard for tokenized AI skills — ownership, licensing, and royalty enforcement on-chain
+            </div>
           </div>
 
           <div style={rowStyle}>

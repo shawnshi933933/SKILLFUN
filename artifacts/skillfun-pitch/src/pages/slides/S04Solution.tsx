@@ -15,8 +15,8 @@ export default function S04Solution() {
       />
 
       <div
-        className="absolute inset-0 flex flex-col items-center justify-center text-center"
-        style={{ paddingLeft: "8vw", paddingRight: "8vw" }}
+        className="absolute inset-0 flex flex-col"
+        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "5vh", paddingBottom: "5vh" }}
       >
         <span
           style={{
@@ -26,124 +26,204 @@ export default function S04Solution() {
             fontWeight: 400,
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            marginBottom: "2.5vh"
+            marginBottom: "1.2vh"
           }}
         >
           The Solution
         </span>
-
         <h2
           style={{
             fontFamily: "var(--font-display-family)",
-            fontSize: "5.5vw",
+            fontSize: "4.2vw",
             fontWeight: 800,
             color: "#F0F0F8",
             letterSpacing: "-0.025em",
             lineHeight: 1.05,
-            textWrap: "balance"
+            marginBottom: "4.5vh"
           }}
         >
-          A skill is a<br />
-          <span style={{ color: "#8B5CF6" }}>programmable asset.</span><br />
+          A skill is a <span style={{ color: "#8B5CF6" }}>programmable asset.</span><br />
           Treat it like one.
         </h2>
 
-        <p
-          style={{
-            fontFamily: "var(--font-body-family)",
-            fontSize: "2.1vw",
-            color: "#9DA3C8",
-            fontWeight: 300,
-            maxWidth: "58vw",
-            lineHeight: 1.55,
-            marginTop: "3.5vh"
-          }}
-        >
-          SkillFun tokenizes AI agent skills as NFTs on the Sepolia testnet, creating the first open market where skills can be owned, traded, licensed, and monetized autonomously.
-        </p>
+        <div className="flex gap-[2.5vw]" style={{ flex: 1 }}>
+          <div
+            className="flex flex-col"
+            style={{
+              flex: 1,
+              background: "rgba(139,92,246,0.10)",
+              borderRadius: "1vw",
+              padding: "3vh 2.8vw",
+              border: "1px solid rgba(139,92,246,0.30)"
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-body-family)",
+                fontSize: "1.2vw",
+                fontWeight: 600,
+                color: "#8B5CF6",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                marginBottom: "1.8vh"
+              }}
+            >
+              Skill NFT
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-display-family)",
+                fontSize: "2.6vw",
+                fontWeight: 800,
+                color: "#F0F0F8",
+                lineHeight: 1.1,
+                marginBottom: "2vh"
+              }}
+            >
+              Own &amp; Trade<br />AI Capabilities
+            </div>
+            <p
+              style={{
+                fontFamily: "var(--font-body-family)",
+                fontSize: "1.7vw",
+                color: "#7B7F9E",
+                lineHeight: 1.55
+              }}
+            >
+              Any AI capability minted as an ERC-8239 NFT. Transferable on OpenSea, licensed on-chain with enforced royalties on every invocation.
+            </p>
+            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
+              <div style={{ height: 1, background: "rgba(139,92,246,0.24)", marginBottom: "1.5vh" }} />
+              <span
+                style={{
+                  fontFamily: "var(--font-body-family)",
+                  fontSize: "1.35vw",
+                  color: "#8B5CF6",
+                  fontWeight: 600
+                }}
+              >
+                ERC-8239 · Sepolia Testnet
+              </span>
+            </div>
+          </div>
 
-        <div
-          className="flex items-center gap-[5vw]"
-          style={{ marginTop: "5.5vh" }}
-        >
-          <div className="text-center">
+          <div
+            className="flex flex-col"
+            style={{
+              flex: 1,
+              background: "rgba(180,160,255,0.08)",
+              borderRadius: "1vw",
+              padding: "3vh 2.8vw",
+              border: "1px solid rgba(180,160,255,0.24)"
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-body-family)",
+                fontSize: "1.2vw",
+                fontWeight: 600,
+                color: "#B4A0FF",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                marginBottom: "1.8vh"
+              }}
+            >
+              Bundle
+            </div>
             <div
               style={{
                 fontFamily: "var(--font-display-family)",
-                fontSize: "2.8vw",
-                fontWeight: 700,
-                color: "#8B5CF6"
+                fontSize: "2.6vw",
+                fontWeight: 800,
+                color: "#F0F0F8",
+                lineHeight: 1.1,
+                marginBottom: "2vh"
               }}
             >
-              Own
+              Curate &amp; Package<br />Composite Tools
             </div>
-            <div
+            <p
               style={{
                 fontFamily: "var(--font-body-family)",
                 fontSize: "1.7vw",
                 color: "#7B7F9E",
-                marginTop: "0.5vh"
+                lineHeight: 1.55
               }}
             >
-              ERC-8239 NFT
+              Curators package multiple Skills into a single composite tool with orchestration rules — registered as one MCP tool in the unified endpoint.
+            </p>
+            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
+              <div style={{ height: 1, background: "rgba(180,160,255,0.20)", marginBottom: "1.5vh" }} />
+              <span
+                style={{
+                  fontFamily: "var(--font-body-family)",
+                  fontSize: "1.35vw",
+                  color: "#B4A0FF",
+                  fontWeight: 600
+                }}
+              >
+                Curator Markup + Staker Share
+              </span>
             </div>
           </div>
+
           <div
+            className="flex flex-col"
             style={{
-              width: "5vw",
-              height: 1,
-              background: "linear-gradient(90deg, #8B5CF6, #22D3EE)"
+              flex: 1,
+              background: "rgba(34,211,238,0.07)",
+              borderRadius: "1vw",
+              padding: "3vh 2.8vw",
+              border: "1px solid rgba(34,211,238,0.22)"
             }}
-          />
-          <div className="text-center">
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-body-family)",
+                fontSize: "1.2vw",
+                fontWeight: 600,
+                color: "#22D3EE",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                marginBottom: "1.8vh"
+              }}
+            >
+              One Endpoint
+            </div>
             <div
               style={{
                 fontFamily: "var(--font-display-family)",
-                fontSize: "2.8vw",
-                fontWeight: 700,
-                color: "#B4A0FF"
+                fontSize: "2.6vw",
+                fontWeight: 800,
+                color: "#F0F0F8",
+                lineHeight: 1.1,
+                marginBottom: "2vh"
               }}
             >
-              License
+              One MCP URL.<br />Entire Marketplace.
             </div>
-            <div
+            <p
               style={{
                 fontFamily: "var(--font-body-family)",
                 fontSize: "1.7vw",
                 color: "#7B7F9E",
-                marginTop: "0.5vh"
+                lineHeight: 1.55
               }}
             >
-              ERC-8239 on-chain terms
-            </div>
-          </div>
-          <div
-            style={{
-              width: "5vw",
-              height: 1,
-              background: "linear-gradient(90deg, #8B5CF6, #22D3EE)"
-            }}
-          />
-          <div className="text-center">
-            <div
-              style={{
-                fontFamily: "var(--font-display-family)",
-                fontSize: "2.8vw",
-                fontWeight: 700,
-                color: "#22D3EE"
-              }}
-            >
-              Earn
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-body-family)",
-                fontSize: "1.7vw",
-                color: "#7B7F9E",
-                marginTop: "0.5vh"
-              }}
-            >
-              x402 payments
+              Agents add a single SkillFun MCP address. Every Skill and Bundle appears instantly as a native callable tool — no integrations to manage.
+            </p>
+            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
+              <div style={{ height: 1, background: "rgba(34,211,238,0.20)", marginBottom: "1.5vh" }} />
+              <span
+                style={{
+                  fontFamily: "var(--font-body-family)",
+                  fontSize: "1.35vw",
+                  color: "#22D3EE",
+                  fontWeight: 600
+                }}
+              >
+                MCP · x402 · ERC-8183
+              </span>
             </div>
           </div>
         </div>

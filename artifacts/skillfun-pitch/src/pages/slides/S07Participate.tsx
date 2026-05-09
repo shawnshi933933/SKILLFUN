@@ -1,4 +1,72 @@
 export default function S07Participate() {
+  const roles = [
+    {
+      tag: "CREATOR",
+      tagColor: "#8B5CF6",
+      tagBg: "rgba(139,92,246,0.22)",
+      cardBg: "rgba(139,92,246,0.10)",
+      cardBorder: "rgba(139,92,246,0.28)",
+      dividerColor: "rgba(139,92,246,0.24)",
+      earnColor: "#8B5CF6",
+      title: "Skill Builders",
+      body: "Developers who package their expertise into callable Skills and mint them as ERC-8239 NFTs.",
+      earn: "Royalties on every invocation",
+      earnSub: "Configurable Creator:Owner split enforced on-chain via ERC-8239",
+    },
+    {
+      tag: "OWNER",
+      tagColor: "#B4A0FF",
+      tagBg: "rgba(180,160,255,0.18)",
+      cardBg: "rgba(180,160,255,0.07)",
+      cardBorder: "rgba(180,160,255,0.24)",
+      dividerColor: "rgba(180,160,255,0.20)",
+      earnColor: "#B4A0FF",
+      title: "NFT Holders",
+      body: "Anyone holding a Skill NFT. Sets the Base Price and negotiates the Creator:Owner revenue split.",
+      earn: "Passive income + NFT appreciation",
+      earnSub: "Income on every invocation plus secondary-market upside as skill usage grows",
+    },
+    {
+      tag: "CURATOR",
+      tagColor: "#9DA3C8",
+      tagBg: "rgba(157,163,200,0.16)",
+      cardBg: "rgba(157,163,200,0.06)",
+      cardBorder: "rgba(157,163,200,0.20)",
+      dividerColor: "rgba(157,163,200,0.18)",
+      earnColor: "#9DA3C8",
+      title: "Bundle Makers",
+      body: "Package multiple Skills into composite tools, write orchestration rules, and register them in the unified MCP endpoint.",
+      earn: "Share of Markup on every Bundle call",
+      earnSub: "Curator sets Markup rate and what share flows to Stakers — full control over the bundle economy",
+    },
+    {
+      tag: "STAKER",
+      tagColor: "#22D3EE",
+      tagBg: "rgba(34,211,238,0.14)",
+      cardBg: "rgba(34,211,238,0.07)",
+      cardBorder: "rgba(34,211,238,0.22)",
+      dividerColor: "rgba(34,211,238,0.20)",
+      earnColor: "#22D3EE",
+      title: "Quality Guarantors",
+      body: "Stake platform tokens to Bundles they believe in. Their stake signals quality — and backs it with skin in the game.",
+      earn: "Yield from Curator Markup pool",
+      earnSub: "Proportional to stake weight — slashed if Bundle is reported and confirmed as misbehaving",
+    },
+    {
+      tag: "AGENT",
+      tagColor: "#F0F0F8",
+      tagBg: "rgba(240,240,248,0.10)",
+      cardBg: "rgba(240,240,248,0.03)",
+      cardBorder: "rgba(240,240,248,0.12)",
+      dividerColor: "rgba(240,240,248,0.12)",
+      earnColor: "#F0F0F8",
+      title: "AI Consumers",
+      body: "Autonomous agents that discover, license, and invoke Skills and Bundles via the single SkillFun MCP endpoint.",
+      earn: "Access the entire marketplace",
+      earnSub: "One MCP URL — x402 payment grants call rights instantly, no subscriptions or off-chain rails",
+    },
+  ];
+
   return (
     <div
       className="relative w-screen h-screen overflow-hidden"
@@ -16,7 +84,7 @@ export default function S07Participate() {
 
       <div
         className="absolute inset-0 flex flex-col"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "5vh", paddingBottom: "5.5vh" }}
+        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "4vh", paddingBottom: "4.5vh" }}
       >
         <span
           style={{
@@ -26,7 +94,7 @@ export default function S07Participate() {
             fontWeight: 400,
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            marginBottom: "1vh"
+            marginBottom: "0.8vh"
           }}
         >
           Participants
@@ -34,254 +102,100 @@ export default function S07Participate() {
         <h2
           style={{
             fontFamily: "var(--font-display-family)",
-            fontSize: "4vw",
+            fontSize: "3.8vw",
             fontWeight: 800,
             color: "#F0F0F8",
             letterSpacing: "-0.02em",
             lineHeight: 1.05,
-            marginBottom: "3.5vh"
+            marginBottom: "3vh"
           }}
         >
-          Three Ways to Participate
+          Five Ways to Participate
         </h2>
 
-        <div className="flex gap-[2.5vw]" style={{ flex: 1 }}>
-          <div
-            className="flex flex-col"
-            style={{
-              flex: 1,
-              background: "rgba(139,92,246,0.10)",
-              borderRadius: "1vw",
-              padding: "3vh 2.5vw",
-              border: "1px solid rgba(139,92,246,0.28)"
-            }}
-          >
+        <div className="flex gap-[1.8vw]" style={{ flex: 1 }}>
+          {roles.map((role) => (
             <div
+              key={role.tag}
+              className="flex flex-col"
               style={{
-                display: "inline-block",
-                background: "rgba(139,92,246,0.22)",
-                borderRadius: "0.4vw",
-                padding: "0.5vh 1.3vw",
-                marginBottom: "2vh",
-                width: "fit-content"
+                flex: 1,
+                background: role.cardBg,
+                borderRadius: "1vw",
+                padding: "2.2vh 2vw",
+                border: `1px solid ${role.cardBorder}`
               }}
             >
-              <span
-                style={{
-                  fontFamily: "var(--font-display-family)",
-                  fontSize: "1.3vw",
-                  fontWeight: 700,
-                  color: "#8B5CF6",
-                  letterSpacing: "0.06em"
-                }}
-              >
-                CREATOR
-              </span>
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-display-family)",
-                fontSize: "2.6vw",
-                fontWeight: 800,
-                color: "#F0F0F8",
-                lineHeight: 1.1
-              }}
-            >
-              Skill Builders
-            </div>
-            <p
-              style={{
-                fontFamily: "var(--font-body-family)",
-                fontSize: "1.7vw",
-                color: "#7B7F9E",
-                lineHeight: 1.5,
-                marginTop: "1.5vh"
-              }}
-            >
-              Developers who package their expertise into callable skills and mint them as NFTs.
-            </p>
-            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
-              <div style={{ height: 1, background: "rgba(139,92,246,0.24)", marginBottom: "1.8vh" }} />
               <div
                 style={{
-                  fontFamily: "var(--font-display-family)",
-                  fontSize: "1.7vw",
-                  fontWeight: 700,
-                  color: "#8B5CF6"
+                  display: "inline-block",
+                  background: role.tagBg,
+                  borderRadius: "0.4vw",
+                  padding: "0.4vh 1vw",
+                  marginBottom: "1.5vh",
+                  width: "fit-content"
                 }}
               >
-                Earn on every invocation
+                <span
+                  style={{
+                    fontFamily: "var(--font-display-family)",
+                    fontSize: "1.1vw",
+                    fontWeight: 700,
+                    color: role.tagColor,
+                    letterSpacing: "0.06em"
+                  }}
+                >
+                  {role.tag}
+                </span>
               </div>
               <div
+                style={{
+                  fontFamily: "var(--font-display-family)",
+                  fontSize: "2vw",
+                  fontWeight: 800,
+                  color: "#F0F0F8",
+                  lineHeight: 1.1,
+                  marginBottom: "1.2vh"
+                }}
+              >
+                {role.title}
+              </div>
+              <p
                 style={{
                   fontFamily: "var(--font-body-family)",
-                  fontSize: "1.5vw",
+                  fontSize: "1.45vw",
                   color: "#7B7F9E",
-                  marginTop: "0.5vh"
+                  lineHeight: 1.45
                 }}
               >
-                Royalties flow automatically via ERC-8239 on-chain splits
+                {role.body}
+              </p>
+              <div style={{ marginTop: "auto", paddingTop: "2vh" }}>
+                <div style={{ height: 1, background: role.dividerColor, marginBottom: "1.4vh" }} />
+                <div
+                  style={{
+                    fontFamily: "var(--font-display-family)",
+                    fontSize: "1.5vw",
+                    fontWeight: 700,
+                    color: role.earnColor
+                  }}
+                >
+                  {role.earn}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-body-family)",
+                    fontSize: "1.25vw",
+                    color: "#7B7F9E",
+                    marginTop: "0.4vh",
+                    lineHeight: 1.35
+                  }}
+                >
+                  {role.earnSub}
+                </div>
               </div>
             </div>
-          </div>
-
-          <div
-            className="flex flex-col"
-            style={{
-              flex: 1,
-              background: "rgba(34,211,238,0.07)",
-              borderRadius: "1vw",
-              padding: "3vh 2.5vw",
-              border: "1px solid rgba(34,211,238,0.22)"
-            }}
-          >
-            <div
-              style={{
-                display: "inline-block",
-                background: "rgba(34,211,238,0.14)",
-                borderRadius: "0.4vw",
-                padding: "0.5vh 1.3vw",
-                marginBottom: "2vh",
-                width: "fit-content"
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: "var(--font-display-family)",
-                  fontSize: "1.3vw",
-                  fontWeight: 700,
-                  color: "#22D3EE",
-                  letterSpacing: "0.06em"
-                }}
-              >
-                AGENT
-              </span>
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-display-family)",
-                fontSize: "2.6vw",
-                fontWeight: 800,
-                color: "#F0F0F8",
-                lineHeight: 1.1
-              }}
-            >
-              AI Consumers
-            </div>
-            <p
-              style={{
-                fontFamily: "var(--font-body-family)",
-                fontSize: "1.7vw",
-                color: "#7B7F9E",
-                lineHeight: 1.5,
-                marginTop: "1.5vh"
-              }}
-            >
-              Autonomous agents that discover, license, and invoke skills to extend their own capabilities.
-            </p>
-            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
-              <div style={{ height: 1, background: "rgba(34,211,238,0.20)", marginBottom: "1.8vh" }} />
-              <div
-                style={{
-                  fontFamily: "var(--font-display-family)",
-                  fontSize: "1.7vw",
-                  fontWeight: 700,
-                  color: "#22D3EE"
-                }}
-              >
-                Pay to license
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-body-family)",
-                  fontSize: "1.5vw",
-                  color: "#7B7F9E",
-                  marginTop: "0.5vh"
-                }}
-              >
-                x402 HTTP payment grants call rights instantly — no subscriptions, no off-chain rails
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="flex flex-col"
-            style={{
-              flex: 1,
-              background: "rgba(180,160,255,0.07)",
-              borderRadius: "1vw",
-              padding: "3vh 2.5vw",
-              border: "1px solid rgba(180,160,255,0.22)"
-            }}
-          >
-            <div
-              style={{
-                display: "inline-block",
-                background: "rgba(180,160,255,0.14)",
-                borderRadius: "0.4vw",
-                padding: "0.5vh 1.3vw",
-                marginBottom: "2vh",
-                width: "fit-content"
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: "var(--font-display-family)",
-                  fontSize: "1.3vw",
-                  fontWeight: 700,
-                  color: "#B4A0FF",
-                  letterSpacing: "0.06em"
-                }}
-              >
-                STAKER
-              </span>
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-display-family)",
-                fontSize: "2.6vw",
-                fontWeight: 800,
-                color: "#F0F0F8",
-                lineHeight: 1.1
-              }}
-            >
-              Curators
-            </div>
-            <p
-              style={{
-                fontFamily: "var(--font-body-family)",
-                fontSize: "1.7vw",
-                color: "#7B7F9E",
-                lineHeight: 1.5,
-                marginTop: "1.5vh"
-              }}
-            >
-              Token holders who stake on high-quality skills, surfacing the best and earning a share of their revenue.
-            </p>
-            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
-              <div style={{ height: 1, background: "rgba(180,160,255,0.20)", marginBottom: "1.8vh" }} />
-              <div
-                style={{
-                  fontFamily: "var(--font-display-family)",
-                  fontSize: "1.7vw",
-                  fontWeight: 700,
-                  color: "#B4A0FF"
-                }}
-              >
-                Passive yield
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-body-family)",
-                  fontSize: "1.5vw",
-                  color: "#7B7F9E",
-                  marginTop: "0.5vh"
-                }}
-              >
-                Fee share proportional to staked weight on each skill NFT
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
