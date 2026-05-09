@@ -58,52 +58,51 @@ export default function S10TokenEconomy() {
                 border: "1px solid rgba(139,92,246,0.22)"
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "1vw", marginBottom: "1.8vh" }}>
-                <div
-                  style={{
-                    fontFamily: "var(--font-display-family)",
-                    fontSize: "1.2vw",
-                    fontWeight: 700,
-                    color: "#7B7F9E",
-                    letterSpacing: "0.08em"
-                  }}
-                >
+              {/* Header row */}
+              <div style={{ display: "flex", alignItems: "center", gap: "1vw", marginBottom: "1.6vh" }}>
+                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.2vw", fontWeight: 700, color: "#7B7F9E", letterSpacing: "0.08em" }}>
                   TIER 1 — BASE PRICE SPLIT
                 </div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-body-family)",
-                    fontSize: "1.1vw",
-                    color: "#8B5CF6",
-                    background: "rgba(139,92,246,0.12)",
-                    border: "1px solid rgba(139,92,246,0.3)",
-                    borderRadius: "0.3vw",
-                    padding: "0.1vh 0.6vw"
-                  }}
-                >
+                <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.1vw", color: "#8B5CF6", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: "0.3vw", padding: "0.1vh 0.6vw" }}>
                   Owner-configured
+                </div>
+              </div>
+
+              {/* Platform global deduction row */}
+              <div style={{ display: "flex", alignItems: "center", gap: "1.2vw", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.18)", borderRadius: "0.5vw", padding: "0.8vh 1.2vw", marginBottom: "1.4vh" }}>
+                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.6vw", fontWeight: 800, color: "#22D3EE", lineHeight: 1 }}>
+                  10<span style={{ fontSize: "1.8vw" }}>%</span>
+                </div>
+                <div>
+                  <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.3vw", fontWeight: 700, color: "#22D3EE" }}>Platform</div>
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#7B7F9E" }}>deducted globally — off the top, always fixed</div>
+                </div>
+              </div>
+
+              {/* Creator / Owner variable split */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.8vw", marginBottom: "0.8vh" }}>
+                <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#7B7F9E", letterSpacing: "0.06em" }}>
+                  REMAINING 90% — Owner sets the split:
                 </div>
               </div>
               <div className="flex items-end gap-[2.5vw]">
                 <div className="text-center">
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.0vw", color: "#7B7F9E", marginBottom: "0.3vh", letterSpacing: "0.05em" }}>e.g.</div>
                   <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.5vw", fontWeight: 800, color: "#8B5CF6", lineHeight: 1 }}>
-                    60<span style={{ fontSize: "2.4vw" }}>%</span>
+                    10<span style={{ fontSize: "2.4vw" }}>%</span>
                   </div>
                   <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.5vw", color: "#B0B4D0", marginTop: "0.4vh" }}>Creator</div>
                 </div>
                 <div style={{ height: "4vh", width: 1, background: "rgba(240,240,248,0.10)" }} />
                 <div className="text-center">
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.0vw", color: "#7B7F9E", marginBottom: "0.3vh", letterSpacing: "0.05em" }}>e.g.</div>
                   <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.5vw", fontWeight: 800, color: "#B4A0FF", lineHeight: 1 }}>
-                    30<span style={{ fontSize: "2.4vw" }}>%</span>
+                    80<span style={{ fontSize: "2.4vw" }}>%</span>
                   </div>
                   <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.5vw", color: "#B0B4D0", marginTop: "0.4vh" }}>Owner</div>
                 </div>
-                <div style={{ height: "4vh", width: 1, background: "rgba(240,240,248,0.10)" }} />
-                <div className="text-center">
-                  <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.5vw", fontWeight: 800, color: "#22D3EE", lineHeight: 1 }}>
-                    10%
-                  </div>
-                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.5vw", color: "#B0B4D0", marginTop: "0.4vh" }}>Platform</div>
+                <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.15vw", color: "#7B7F9E", lineHeight: 1.45, maxWidth: "14vw", marginLeft: "0.5vw" }}>
+                  Owner configures Creator royalty at mint — any ratio summing to 90%.
                 </div>
               </div>
             </div>
