@@ -68,7 +68,7 @@ export default function S01Cover() {
             marginTop: "3.5vh"
           }}
         >
-          Tokenizing AI Agent Skills as<br />Programmable Digital Assets
+          The App Store for AI Agents<br /><span style={{ fontSize: "1.6vw", color: "#7B7F9E", fontWeight: 300 }}>Skills as NFTs · Bundle Distribution · On-Chain Revenue</span>
         </p>
 
         <div
