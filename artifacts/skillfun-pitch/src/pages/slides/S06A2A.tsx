@@ -82,7 +82,6 @@ export default function S06A2A() {
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
       />
-
       <div
         className="absolute inset-0 flex flex-col"
         style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "3vh", paddingBottom: "3.5vh" }}
@@ -121,9 +120,7 @@ export default function S06A2A() {
             fontWeight: 300,
             marginBottom: "2vh",
           }}
-        >
-          Agent A has minted a SKILL NFT — the flow below shows a complete A2A discovery-to-execution via Bundle and unified MCP
-        </p>
+        >The flow below shows a complete A2A discovery-to-execution via Bundle and unified MCP</p>
 
         <div style={{ display: "flex", alignItems: "center", gap: "1vw", marginBottom: "1.8vh" }}>
           {[
@@ -251,12 +248,9 @@ export default function S06A2A() {
             fontSize: "1.6vw",
             fontWeight: 700,
             letterSpacing: "0.01em",
-          }}>
-            Fully autonomous — one MCP endpoint, one payment, five-way auto-split, zero human involvement.
-          </span>
+          }}>Fully autonomous — one MCP endpoint, one payment, auto-split, zero human involvement.</span>
         </div>
       </div>
-
       <div
         className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{

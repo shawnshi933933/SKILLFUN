@@ -6,12 +6,12 @@ export default function S07Participate() {
       tagBg: "rgba(139,92,246,0.22)",
       cardBg: "rgba(139,92,246,0.10)",
       cardBorder: "rgba(139,92,246,0.28)",
-      dividerColor: "rgba(139,92,246,0.24)",
+      dividerColor: "rgba(139,92,246,0.30)",
       earnColor: "#8B5CF6",
       title: "Skill Builders",
-      body: "Developers who package their expertise into callable Skills and mint them as ERC-8239 NFTs.",
+      body: "Developers who package expertise into callable Skills and mint them as ERC-8239 NFTs.",
       earn: "Royalties on every invocation",
-      earnSub: "Configurable Creator:Owner split enforced on-chain via ERC-8239",
+      earnSub: "Creator:Owner split enforced on-chain",
     },
     {
       tag: "OWNER",
@@ -19,12 +19,12 @@ export default function S07Participate() {
       tagBg: "rgba(180,160,255,0.18)",
       cardBg: "rgba(180,160,255,0.07)",
       cardBorder: "rgba(180,160,255,0.24)",
-      dividerColor: "rgba(180,160,255,0.20)",
+      dividerColor: "rgba(180,160,255,0.25)",
       earnColor: "#B4A0FF",
       title: "NFT Holders",
-      body: "Anyone holding a Skill NFT. Sets the Base Price and negotiates the Creator:Owner revenue split.",
-      earn: "Passive income + NFT appreciation",
-      earnSub: "Income on every invocation plus secondary-market upside as skill usage grows",
+      body: "Anyone holding a Skill NFT. Sets the Base Price and the Creator:Owner revenue split.",
+      earn: "Passive income + appreciation",
+      earnSub: "Income per invocation + secondary-market upside",
     },
     {
       tag: "CURATOR",
@@ -32,12 +32,12 @@ export default function S07Participate() {
       tagBg: "rgba(157,163,200,0.16)",
       cardBg: "rgba(157,163,200,0.06)",
       cardBorder: "rgba(157,163,200,0.20)",
-      dividerColor: "rgba(157,163,200,0.18)",
+      dividerColor: "rgba(157,163,200,0.22)",
       earnColor: "#9DA3C8",
       title: "Bundle Makers",
-      body: "Package multiple Skills into composite tools, write orchestration rules, and register them in the unified MCP endpoint.",
-      earn: "Share of Markup on every Bundle call",
-      earnSub: "Curator sets Markup rate and what share flows to Stakers — full control over the bundle economy",
+      body: "Curate Skills into Bundles — no ownership needed. Act as distributors, earn Markup on each call routed through their Bundle.",
+      earn: "Markup share on every call",
+      earnSub: "Sets Markup rate and Staker share",
     },
     {
       tag: "STAKER",
@@ -45,12 +45,12 @@ export default function S07Participate() {
       tagBg: "rgba(34,211,238,0.14)",
       cardBg: "rgba(34,211,238,0.07)",
       cardBorder: "rgba(34,211,238,0.22)",
-      dividerColor: "rgba(34,211,238,0.20)",
+      dividerColor: "rgba(34,211,238,0.24)",
       earnColor: "#22D3EE",
       title: "Quality Guarantors",
-      body: "Stake platform tokens to Bundles they believe in. Their stake signals quality — and backs it with skin in the game.",
-      earn: "Yield from Curator Markup pool",
-      earnSub: "Proportional to stake weight — slashed if Bundle is reported and confirmed as misbehaving",
+      body: "Stake platform tokens to Bundles they believe in. Stake signals quality and backs it with skin in the game.",
+      earn: "Yield from Markup pool",
+      earnSub: "Proportional to stake weight, slashed on misconduct",
     },
     {
       tag: "AGENT",
@@ -58,12 +58,12 @@ export default function S07Participate() {
       tagBg: "rgba(240,240,248,0.10)",
       cardBg: "rgba(240,240,248,0.03)",
       cardBorder: "rgba(240,240,248,0.12)",
-      dividerColor: "rgba(240,240,248,0.12)",
+      dividerColor: "rgba(240,240,248,0.15)",
       earnColor: "#F0F0F8",
       title: "AI Consumers",
-      body: "Autonomous agents that discover, license, and invoke Skills and Bundles via the single SkillFun MCP endpoint.",
-      earn: "Access the entire marketplace",
-      earnSub: "One MCP URL — x402 payment grants call rights instantly, no subscriptions or off-chain rails",
+      body: "Autonomous agents that discover, license, and invoke Skills and Bundles via one SkillFun MCP endpoint.",
+      earn: "Access entire marketplace",
+      earnSub: "x402 payment grants call rights instantly",
     },
   ];
 
@@ -84,65 +84,79 @@ export default function S07Participate() {
 
       <div
         className="absolute inset-0 flex flex-col"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "3.5vh", paddingBottom: "3.5vh" }}
+        style={{
+          paddingLeft: "5vw",
+          paddingRight: "5vw",
+          paddingTop: "3.5vh",
+          paddingBottom: "4.5vh",
+          overflow: "hidden"
+        }}
       >
-        <span
-          style={{
-            fontFamily: "var(--font-body-family)",
-            color: "#22D3EE",
-            fontSize: "1.4vw",
-            fontWeight: 400,
-            letterSpacing: "0.24em",
-            textTransform: "uppercase",
-            marginBottom: "0.6vh"
-          }}
-        >
-          Participants
-        </span>
-        <h2
-          style={{
-            fontFamily: "var(--font-display-family)",
-            fontSize: "3.4vw",
-            fontWeight: 800,
-            color: "#F0F0F8",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.05,
-            marginBottom: "2vh"
-          }}
-        >
-          Five Ways to Participate
-        </h2>
+        <div style={{ flexShrink: 0 }}>
+          <span
+            style={{
+              fontFamily: "var(--font-body-family)",
+              color: "#22D3EE",
+              fontSize: "1.3vw",
+              fontWeight: 400,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              display: "block",
+              marginBottom: "0.5vh"
+            }}
+          >
+            Participants
+          </span>
+          <h2
+            style={{
+              fontFamily: "var(--font-display-family)",
+              fontSize: "3.4vw",
+              fontWeight: 800,
+              color: "#F0F0F8",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.05,
+              marginBottom: "2vh"
+            }}
+          >
+            Five Ways to Participate
+          </h2>
+        </div>
 
-        <div style={{ flex: 1, minHeight: 0, display: "flex", gap: "1.4vw" }}>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            gap: "1vw",
+            overflow: "hidden"
+          }}
+        >
           {roles.map((role) => (
             <div
               key={role.tag}
               style={{
-                flex: 1,
+                flex: "1 1 0",
                 minWidth: 0,
+                maxWidth: "20%",
                 background: role.cardBg,
                 borderRadius: "0.8vw",
-                padding: "1.8vh 1.6vw",
+                padding: "1.5vh 1.3vw",
                 border: `1px solid ${role.cardBorder}`,
-                display: "grid",
-                gridTemplateRows: "auto auto 1fr auto",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden"
               }}
             >
               {/* Tag */}
-              <div
-                style={{
-                  display: "inline-block",
-                  background: role.tagBg,
-                  borderRadius: "0.35vw",
-                  padding: "0.3vh 0.8vw",
-                  marginBottom: "1vh",
-                  width: "fit-content"
-                }}
-              >
+              <div style={{ flexShrink: 0, marginBottom: "0.8vh" }}>
                 <span
                   style={{
+                    display: "inline-block",
+                    background: role.tagBg,
+                    borderRadius: "0.3vw",
+                    padding: "0.2vh 0.6vw",
                     fontFamily: "var(--font-display-family)",
-                    fontSize: "1vw",
+                    fontSize: "0.9vw",
                     fontWeight: 700,
                     color: role.tagColor,
                     letterSpacing: "0.06em"
@@ -151,41 +165,57 @@ export default function S07Participate() {
                   {role.tag}
                 </span>
               </div>
+
               {/* Title */}
               <div
                 style={{
                   fontFamily: "var(--font-display-family)",
-                  fontSize: "1.8vw",
+                  fontSize: "1.6vw",
                   fontWeight: 800,
                   color: "#F0F0F8",
                   lineHeight: 1.1,
-                  marginBottom: "1vh"
+                  marginBottom: "0.9vh",
+                  flexShrink: 0,
+                  overflowWrap: "normal",
+                  hyphens: "none"
                 }}
               >
                 {role.title}
               </div>
-              {/* Body — grows to fill, overflow hidden */}
-              <p
+
+              {/* Body — fills space, clips overflow */}
+              <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                <p
+                  style={{
+                    fontFamily: "var(--font-body-family)",
+                    fontSize: "1.2vw",
+                    color: "#7B7F9E",
+                    lineHeight: 1.45,
+                    margin: 0
+                  }}
+                >
+                  {role.body}
+                </p>
+              </div>
+
+              {/* Earn — fixed height so dividers line up */}
+              <div
                 style={{
-                  fontFamily: "var(--font-body-family)",
-                  fontSize: "1.3vw",
-                  color: "#7B7F9E",
-                  lineHeight: 1.4,
-                  overflow: "hidden",
-                  alignSelf: "start"
+                  flexShrink: 0,
+                  height: "11vh",
+                  paddingTop: "1.1vh",
+                  overflow: "hidden"
                 }}
               >
-                {role.body}
-              </p>
-              {/* Earn section — always pinned to same row */}
-              <div style={{ paddingTop: "1.4vh" }}>
-                <div style={{ height: 1, background: role.dividerColor, marginBottom: "1vh" }} />
+                <div style={{ height: 1, background: role.dividerColor, marginBottom: "0.9vh" }} />
                 <div
                   style={{
                     fontFamily: "var(--font-display-family)",
-                    fontSize: "1.35vw",
+                    fontSize: "1.2vw",
                     fontWeight: 700,
-                    color: role.earnColor
+                    color: role.earnColor,
+                    lineHeight: 1.2,
+                    wordBreak: "break-word"
                   }}
                 >
                   {role.earn}
@@ -193,7 +223,7 @@ export default function S07Participate() {
                 <div
                   style={{
                     fontFamily: "var(--font-body-family)",
-                    fontSize: "1.1vw",
+                    fontSize: "1.0vw",
                     color: "#7B7F9E",
                     marginTop: "0.4vh",
                     lineHeight: 1.35
