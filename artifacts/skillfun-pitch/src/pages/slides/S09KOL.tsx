@@ -318,7 +318,7 @@ export default function S09KOL() {
           fontWeight: 600
         }}
       >
-        11 / 14
+        12 / 14
       </div>
     </div>
   );

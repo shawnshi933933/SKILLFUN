@@ -151,7 +151,7 @@ export default function S10TokenEconomy() {
 
       <div className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}>
-        12 / 14
+        13 / 14
       </div>
     </div>
   );
