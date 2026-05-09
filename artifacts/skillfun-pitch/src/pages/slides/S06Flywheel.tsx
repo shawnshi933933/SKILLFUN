@@ -65,13 +65,13 @@ export default function S06Flywheel() {
         </div>
 
         {/* ── Right: diagram column ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.2vh" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.6vh" }}>
 
           {/* ── SKILL NFT row (top, standalone) ── */}
           <div style={{ display: "flex", alignItems: "center", gap: "1.2vw" }}>
             {/* SKILL NFT big label */}
             <div style={{
-              fontFamily: "var(--font-display-family)", fontSize: "2.1vw",
+              fontFamily: "var(--font-display-family)", fontSize: "1.65vw",
               fontWeight: 900, color: "#8B5CF6", letterSpacing: "-0.02em", whiteSpace: "nowrap"
             }}>
               SKILL NFT
@@ -92,7 +92,7 @@ export default function S06Flywheel() {
           </div>
 
           {/* ── Bundle flywheel ring ── */}
-          <div className="relative" style={{ width: "27vw", height: "27vw" }}>
+          <div className="relative" style={{ width: "34vw", height: "34vw" }}>
 
             {/* SVG rings & arc arrows */}
             <svg className="absolute inset-0" width="100%" height="100%" viewBox="0 0 280 280" fill="none">
