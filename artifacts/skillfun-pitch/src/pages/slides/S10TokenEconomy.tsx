@@ -1,6 +1,6 @@
 export default function S10TokenEconomy() {
   const pct = (val: string, color: string, sub?: string) => (
-    <div className="text-center">
+    <div style={{ flex: 1, textAlign: "center" }}>
       {sub && <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.95vw", color: "#7B7F9E", marginBottom: "0.25vh", letterSpacing: "0.05em" }}>{sub}</div>}
       <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.2vw", fontWeight: 800, color, lineHeight: 1 }}>
         {val}
@@ -81,9 +81,9 @@ export default function S10TokenEconomy() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: "1.6vw" }}>
-                  {pct("10%", "#8B5CF6", "e.g.")}
+                  {pct("10%", "#8B5CF6")}
                   {divider()}
-                  {pct("80%", "#B4A0FF", "e.g.")}
+                  {pct("90%", "#B4A0FF")}
                 </div>
                 <div style={{ display: "flex", gap: "1.6vw", marginTop: "0.5vh" }}>
                   <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.35vw", color: "#B0B4D0", textAlign: "center", flex: 1 }}>Creator</div>
