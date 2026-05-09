@@ -1,67 +1,30 @@
 export default function S14Architecture() {
-  const proto = (
-    color: string,
-    bg: string,
-    border: string,
-    text: string,
-  ) => (
-    <span
-      style={{
-        fontFamily: "var(--font-body-family)",
-        fontSize: "0.72vw",
-        fontWeight: 700,
-        color,
-        background: bg,
-        border: `1px solid ${border}`,
-        borderRadius: "0.25vw",
-        padding: "0.1vh 0.4vw",
-        letterSpacing: "0.06em",
-        whiteSpace: "nowrap" as const,
-      }}
-    >
-      {text}
-    </span>
-  );
-
-  const roleBadge = (label: string, color: string) => (
-    <span
-      style={{
-        fontFamily: "var(--font-body-family)",
-        fontSize: "0.68vw",
-        fontWeight: 600,
-        color,
-        background: `${color}18`,
-        border: `1px solid ${color}40`,
-        borderRadius: "0.25vw",
-        padding: "0.05vh 0.35vw",
-        letterSpacing: "0.06em",
-      }}
-    >
-      {label}
-    </span>
-  );
-
-  const nfts = [
-    { name: "NLP",       cx: 120 },
-    { name: "Vision",    cx: 240 },
-    { name: "Code",      cx: 355 },
-    { name: "Search",    cx: 520 },
-    { name: "Reason",    cx: 725 },
-    { name: "Plan",      cx: 900 },
-    { name: "Translate", cx: 1020 },
-    { name: "Draw",      cx: 1140 },
+  // ── coordinate constants (SVG viewBox 0 0 1280 720 / preserveAspectRatio none) ──
+  const AGT  = { cx: 500, cy: 129, r: 32 };                   // Agent circle
+  const MCP  = { x1: 40, x2: 960, top: 237, bot: 277 };      // MCP bar
+  const BND  = [                                                // Bundles
+    { cx: 180, top: 325, bot: 431 },
+    { cx: 500, top: 325, bot: 431 },
+    { cx: 820, top: 325, bot: 431 },
   ];
+  const NFT  = [                                                // NFT cards (center-x)
+    { name: "NLP",    cx: 100,  shared: true  },
+    { name: "Vision", cx: 260,  shared: false },
+    { name: "Search", cx: 420,  shared: false },
+    { name: "Reason", cx: 580,  shared: false },
+    { name: "Plan",   cx: 740,  shared: false },
+    { name: "Draw",   cx: 900,  shared: false },
+  ];
+  const NFTY = 482;                    // NFT card top y
+  const NFTH = 54;                     // NFT card height
+  const REV  = { x: 986, top: 218 };  // Revenue panel left-x and top-y
 
-  // pixel y positions (viewBox 1280×720)
-  const agentCY   = 155;
-  const mcpTop    = 240;
-  const mcpBot    = 280;
-  const bndTop    = 330;
-  const bndBot    = 438;
-  const nftY      = 495;
-  const rolesY    = 545;
-  // bundle center-x
-  const bndCX     = [240, 640, 1040];
+  const roles = [
+    { label: "Creator", pct: 40, color: "#8B5CF6" },
+    { label: "Owner",   pct: 25, color: "#A78BFA" },
+    { label: "Curator", pct: 20, color: "#22D3EE" },
+    { label: "Staker",  pct: 15, color: "#34D399" },
+  ];
 
   return (
     <div
@@ -69,469 +32,420 @@ export default function S14Architecture() {
       style={{
         background: "#0D0F14",
         backgroundImage:
-          "radial-gradient(ellipse 80% 55% at 50% 30%, rgba(139,92,246,0.07) 0%, transparent 65%)",
+          "radial-gradient(ellipse 70% 55% at 40% 35%, rgba(139,92,246,0.07) 0%, transparent 65%)",
       }}
     >
       {/* Decorative */}
       <div className="absolute left-0 top-0 bottom-0 w-[0.35vw]" style={{ background: "#8B5CF6" }} />
       <div
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
-        style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
+        style={{ background: "linear-gradient(90deg,#8B5CF6,#22D3EE,transparent)" }}
       />
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div style={{ position: "absolute", top: "3vh", left: "6vw" }}>
-        <span
-          style={{
-            fontFamily: "var(--font-body-family)",
-            color: "#22D3EE",
-            fontSize: "1.2vw",
-            fontWeight: 400,
-            letterSpacing: "0.24em",
-            textTransform: "uppercase",
-          }}
-        >
+        <span style={{
+          fontFamily: "var(--font-body-family)", color: "#22D3EE",
+          fontSize: "1.1vw", fontWeight: 400, letterSpacing: "0.24em", textTransform: "uppercase",
+        }}>
           System Architecture
         </span>
       </div>
-      <div style={{ position: "absolute", top: "7.2vh", left: "6vw" }}>
-        <span
-          style={{
-            fontFamily: "var(--font-display-family)",
-            fontSize: "2.5vw",
-            fontWeight: 800,
-            color: "#F0F0F8",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Five roles. Three protocols.{" "}
+      <div style={{ position: "absolute", top: "7vh", left: "6vw" }}>
+        <span style={{
+          fontFamily: "var(--font-display-family)", fontSize: "2.4vw",
+          fontWeight: 800, color: "#F0F0F8", letterSpacing: "-0.02em",
+        }}>
+          Five roles.{" "}
+          <span style={{ color: "#22D3EE" }}>Three protocols.</span>{" "}
           <span style={{ color: "#8B5CF6" }}>One market.</span>
         </span>
       </div>
 
-      {/* ─── SVG LINES ─── */}
+      {/* ══════════ SVG CONNECTION LINES ══════════ */}
       <svg
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-        }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
         viewBox="0 0 1280 720"
         preserveAspectRatio="none"
       >
         <defs>
-          <marker id="a-teal" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <marker id="at" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
             <polygon points="0,0 6,3 0,6" fill="#22D3EE" />
           </marker>
-          <marker id="a-purple" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <marker id="ap" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
             <polygon points="0,0 6,3 0,6" fill="#A78BFA" />
           </marker>
-          <marker id="a-amber" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <marker id="aa" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
             <polygon points="0,0 6,3 0,6" fill="#FCD34D" />
           </marker>
-          <marker id="a-lav" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <marker id="al" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
             <polygon points="0,0 6,3 0,6" fill="#B4A0FF" />
           </marker>
+          <filter id="glow-teal">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
         </defs>
 
-        {/* Agent → MCP  (MCP invoke, going down) */}
-        <line x1="645" y1={agentCY + 36} x2="645" y2={mcpTop}
-          stroke="#22D3EE" strokeWidth="1.5" strokeDasharray="4 2"
-          markerEnd="url(#a-teal)" />
+        {/* Agent ↓ MCP  (MCP invoke) */}
+        <line x1={AGT.cx} y1={AGT.cy + AGT.r + 2} x2={AGT.cx} y2={MCP.top}
+          stroke="#22D3EE" strokeWidth="1.6" strokeDasharray="4 2"
+          markerEnd="url(#at)" />
 
-        {/* MCP → Agent  (ERC-8183 distribute, going up) */}
-        <line x1="633" y1={mcpTop} x2="633" y2={agentCY + 36}
-          stroke="rgba(167,139,250,0.65)" strokeWidth="1.2" strokeDasharray="3 3"
-          markerEnd="url(#a-purple)" />
+        {/* MCP ↑ Agent  (ERC-8183 distribute back) */}
+        <line x1={AGT.cx - 10} y1={MCP.top} x2={AGT.cx - 10} y2={AGT.cy + AGT.r + 2}
+          stroke="rgba(167,139,250,0.6)" strokeWidth="1.1" strokeDasharray="3 3"
+          markerEnd="url(#ap)" />
 
-        {/* MCP → each Bundle */}
-        {bndCX.map((cx) => (
-          <line key={cx}
-            x1={cx} y1={mcpBot} x2={cx} y2={bndTop}
-            stroke="rgba(180,160,255,0.55)" strokeWidth="1.5"
-            markerEnd="url(#a-lav)" />
+        {/* MCP ↓ each Bundle */}
+        {BND.map((b) => (
+          <line key={b.cx}
+            x1={b.cx} y1={MCP.bot} x2={b.cx} y2={b.top}
+            stroke="rgba(180,160,255,0.55)" strokeWidth="1.5" markerEnd="url(#al)" />
         ))}
 
-        {/* Bundle 1 → NFTs 1-3 */}
-        {[120, 240, 355].map((nx) => (
-          <line key={nx}
-            x1={bndCX[0]} y1={bndBot} x2={nx} y2={nftY - 13}
-            stroke="rgba(139,92,246,0.35)" strokeWidth="1" />
-        ))}
+        {/* Bundle A ↓ NLP & Vision */}
+        <line x1={BND[0].cx} y1={BND[0].bot} x2={NFT[0].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
+        <line x1={BND[0].cx} y1={BND[0].bot} x2={NFT[1].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
 
-        {/* Bundle 2 → NFTs 4-5 */}
-        {[520, 725].map((nx) => (
-          <line key={nx}
-            x1={bndCX[1]} y1={bndBot} x2={nx} y2={nftY - 13}
-            stroke="rgba(139,92,246,0.35)" strokeWidth="1" />
-        ))}
+        {/* Bundle B ↓ Search & Reason */}
+        <line x1={BND[1].cx} y1={BND[1].bot} x2={NFT[2].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
+        <line x1={BND[1].cx} y1={BND[1].bot} x2={NFT[3].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
 
-        {/* Bundle 3 → NFTs 6-8 */}
-        {[900, 1020, 1140].map((nx) => (
-          <line key={nx}
-            x1={bndCX[2]} y1={bndBot} x2={nx} y2={nftY - 13}
-            stroke="rgba(139,92,246,0.35)" strokeWidth="1" />
-        ))}
+        {/* Bundle C ↓ Plan & Draw */}
+        <line x1={BND[2].cx} y1={BND[2].bot} x2={NFT[4].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
+        <line x1={BND[2].cx} y1={BND[2].bot} x2={NFT[5].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
 
-        {/* Staker stakes into Bundle 3 from right */}
-        <line
-          x1="1235" y1="384" x2="1172" y2="384"
-          stroke="rgba(34,211,238,0.45)" strokeWidth="1.3"
-          strokeDasharray="4 2"
-          markerEnd="url(#a-teal)"
-        />
-
-        {/* Staker stakes into Bundle 1 from left */}
-        <line
-          x1="45" y1="384" x2="108" y2="384"
-          stroke="rgba(34,211,238,0.45)" strokeWidth="1.3"
-          strokeDasharray="4 2"
-          markerEnd="url(#a-teal)"
-        />
-
-        {/* Closed loop: Agent memory → right curve → Mint new NFT */}
+        {/* ── SHARED: Bundle B also references NLP (teal bezier curve) ── */}
         <path
-          d="M 686 148 C 1260 148, 1260 504, 1185 504"
-          fill="none"
-          stroke="rgba(167,139,250,0.55)"
-          strokeWidth="1.5"
-          strokeDasharray="6 3"
-          markerEnd="url(#a-purple)"
+          d={`M ${BND[1].cx} ${BND[1].bot} Q 280 470 ${NFT[0].cx + 10} ${NFTY + 10}`}
+          fill="none" stroke="#22D3EE" strokeWidth="1.6" strokeDasharray="5 3"
+          markerEnd="url(#at)"
+          filter="url(#glow-teal)"
         />
+        {/* "shared" label near mid-curve */}
+        <text x="285" y="452" fill="#22D3EE" fontSize="10.5" fontFamily="DM Sans, sans-serif"
+          fontWeight="700" textAnchor="middle" opacity="0.85">
+          1 NFT · 2 Bundles
+        </text>
+        <rect x="215" y="438" width="140" height="16" rx="3"
+          fill="rgba(34,211,238,0.08)" stroke="rgba(34,211,238,0.3)" strokeWidth="0.7" />
 
-        {/* x402 label line (short tick on right of Agent-MCP arrow) */}
-        <line x1="660" y1="196" x2="710" y2="196"
-          stroke="rgba(252,211,77,0.5)" strokeWidth="1"
-          markerEnd="url(#a-amber)" />
+        {/* ── x402 pay: Agent → Revenue Panel (amber curve) ── */}
+        <path
+          d={`M ${AGT.cx + AGT.r} ${AGT.cy} C ${REV.x} ${AGT.cy}, ${REV.x} 260, ${REV.x} 265`}
+          fill="none" stroke="#FCD34D" strokeWidth="1.4" strokeDasharray="5 2"
+          markerEnd="url(#aa)" />
 
-        {/* ERC-8183 label line (short tick left of distribute arrow) */}
-        <line x1="618" y1="263" x2="568" y2="263"
-          stroke="rgba(167,139,250,0.5)" strokeWidth="1" />
+        {/* ── ERC-8183: MCP → Revenue Panel (purple arrow) ── */}
+        <line x1={MCP.x2} y1={MCP.top + (MCP.bot - MCP.top) / 2}
+              x2={REV.x - 2} y2={MCP.top + (MCP.bot - MCP.top) / 2}
+          stroke="#A78BFA" strokeWidth="1.5" markerEnd="url(#ap)" />
+
+        {/* Revenue panel separator lines inside */}
+        {roles.map((r, i) => {
+          const rowTop = REV.top + 72 + i * 60;
+          const barW   = (r.pct / 100) * 170;
+          return (
+            <g key={r.label}>
+              <rect x={REV.x + 16} y={rowTop + 22} width={barW} height="6" rx="3" fill={r.color} opacity="0.55" />
+            </g>
+          );
+        })}
+
+        {/* ── Closed loop: Agent left → arc left → NLP ── */}
+        <path
+          d={`M ${AGT.cx - AGT.r} ${AGT.cy} C 10 ${AGT.cy}, 10 ${NFTY + NFTH / 2}, ${NFT[0].cx - 60} ${NFTY + NFTH / 2}`}
+          fill="none" stroke="rgba(167,139,250,0.38)" strokeWidth="1.3"
+          strokeDasharray="6 3" markerEnd="url(#ap)" />
       </svg>
 
-      {/* ─── AGENT ─── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "13.8vh",
-          left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "0.35vh",
-        }}
-      >
-        <div
-          style={{
-            width: "5vw",
-            height: "5vw",
-            borderRadius: "50%",
-            background: "rgba(34,211,238,0.10)",
-            border: "1.5px solid rgba(34,211,238,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "2.1vw",
-            boxShadow: "0 0 2vw rgba(34,211,238,0.22)",
-          }}
-        >
-          🤖
-        </div>
-        <div
-          style={{
-            fontFamily: "var(--font-display-family)",
-            fontSize: "0.9vw",
-            fontWeight: 700,
-            color: "#22D3EE",
-            letterSpacing: "0.1em",
-          }}
-        >
-          AI AGENT
-        </div>
-        <div style={{ display: "flex", gap: "0.35vw" }}>
-          {proto("#22D3EE", "rgba(34,211,238,0.10)", "rgba(34,211,238,0.35)", "MCP")}
-          {proto("#FCD34D", "rgba(252,211,77,0.10)", "rgba(252,211,77,0.35)", "x402")}
+      {/* ════════════ AGENT ════════════ */}
+      <div style={{
+        position: "absolute", top: "13.5vh", left: "36.5vw",
+        width: "5vw", height: "5vw",
+        borderRadius: "50%",
+        background: "rgba(34,211,238,0.10)",
+        border: "1.5px solid rgba(34,211,238,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "2vw",
+        boxShadow: "0 0 2vw rgba(34,211,238,0.24)",
+      }}>🤖</div>
+      <div style={{
+        position: "absolute", top: "22.6vh", left: "33vw", width: "12vw",
+        display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3vh",
+      }}>
+        <span style={{
+          fontFamily: "var(--font-display-family)", fontSize: "0.88vw",
+          fontWeight: 700, color: "#22D3EE", letterSpacing: "0.1em",
+        }}>AI AGENT</span>
+        <div style={{ display: "flex", gap: "0.3vw" }}>
+          {[["MCP","#22D3EE","rgba(34,211,238,0.15)"],
+            ["x402","#FCD34D","rgba(252,211,77,0.15)"]].map(([t,c,bg]) => (
+            <span key={t} style={{
+              fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700,
+              color: c, background: bg, border: `1px solid ${c}55`,
+              borderRadius: "0.22vw", padding: "0.05vh 0.35vw", letterSpacing: "0.06em",
+            }}>{t}</span>
+          ))}
         </div>
       </div>
 
-      {/* x402 pay label beside Agent-MCP line */}
-      <div
-        style={{
-          position: "absolute",
-          top: "26vh",
-          left: "56vw",
-          fontFamily: "var(--font-body-family)",
-          fontSize: "0.72vw",
-          color: "#FCD34D",
-          fontWeight: 600,
-        }}
-      >
-        pay
+      {/* Closed-loop label (left side) */}
+      <div style={{
+        position: "absolute", top: "40vh", left: "0.5vw",
+        writingMode: "vertical-rl", transform: "rotate(180deg)",
+        fontFamily: "var(--font-body-family)", fontSize: "0.65vw",
+        color: "rgba(167,139,250,0.55)", letterSpacing: "0.08em", fontWeight: 600,
+      }}>
+        ↺ Agent learns → Mints new Skill NFT
       </div>
 
-      {/* ERC-8183 distribute label — sits just above the MCP bar on the left of center */}
-      <div
-        style={{
-          position: "absolute",
-          top: "30.5vh",
-          left: "42vw",
-          fontFamily: "var(--font-body-family)",
-          fontSize: "0.7vw",
-          color: "rgba(167,139,250,0.75)",
-          fontWeight: 600,
-        }}
-      >
-        ↑ distribute
-      </div>
-
-      {/* ─── MCP SERVER BAR ─── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "33.3vh",
-          left: "6.25vw",
-          right: "6.25vw",
-          height: "5.5vh",
-          background: "rgba(34,211,238,0.07)",
-          border: "1px solid rgba(34,211,238,0.28)",
-          borderRadius: "0.7vw",
-          display: "flex",
-          alignItems: "center",
-          paddingLeft: "1.8vw",
-          paddingRight: "1.8vw",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8vw" }}>
-          {proto("#22D3EE", "rgba(34,211,238,0.15)", "rgba(34,211,238,0.4)", "MCP")}
-          <span
-            style={{
-              fontFamily: "var(--font-display-family)",
-              fontSize: "1.1vw",
-              fontWeight: 700,
-              color: "#22D3EE",
-            }}
-          >
-            SkillFun MCP Server
-          </span>
+      {/* ════════════ MCP SERVER BAR ════════════ */}
+      <div style={{
+        position: "absolute", top: "32.9vh", left: "3.1vw", right: "25vw", height: "5.5vh",
+        background: "rgba(34,211,238,0.07)",
+        border: "1px solid rgba(34,211,238,0.28)",
+        borderRadius: "0.7vw",
+        display: "flex", alignItems: "center",
+        paddingLeft: "1.5vw", paddingRight: "1.5vw",
+        justifyContent: "space-between",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.7vw" }}>
+          <span style={{
+            fontFamily: "var(--font-body-family)", fontSize: "0.7vw", fontWeight: 700,
+            color: "#22D3EE", background: "rgba(34,211,238,0.15)", border: "1px solid rgba(34,211,238,0.4)",
+            borderRadius: "0.22vw", padding: "0.1vh 0.4vw", letterSpacing: "0.06em",
+          }}>MCP</span>
+          <span style={{
+            fontFamily: "var(--font-display-family)", fontSize: "1.05vw",
+            fontWeight: 700, color: "#22D3EE",
+          }}>SkillFun MCP Server</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5vw" }}>
-          {proto("#A78BFA", "rgba(167,139,250,0.10)", "rgba(167,139,250,0.30)", "ERC-8183")}
-          <span
-            style={{
-              fontFamily: "var(--font-body-family)",
-              fontSize: "0.8vw",
-              color: "rgba(167,139,250,0.65)",
-            }}
-          >
-            revenue split
+          <span style={{
+            fontFamily: "var(--font-body-family)", fontSize: "0.7vw", fontWeight: 700,
+            color: "#A78BFA", background: "rgba(167,139,250,0.10)",
+            border: "1px solid rgba(167,139,250,0.3)",
+            borderRadius: "0.22vw", padding: "0.1vh 0.4vw", letterSpacing: "0.06em",
+          }}>ERC-8183</span>
+          <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.78vw", color: "rgba(167,139,250,0.7)" }}>
+            auto-settle →
           </span>
         </div>
       </div>
 
-      {/* ─── BUNDLES ─── */}
+      {/* ════════════ BUNDLES ════════════ */}
       {[
-        { name: "Bundle A", left: "6.25vw",  nftRange: "NLP · Vision · Code" },
-        { name: "Bundle B", left: "37.5vw",  nftRange: "Search · Reason"     },
-        { name: "Bundle C", left: "68.75vw", nftRange: "Plan · Translate · Draw" },
+        { name: "Bundle A", left: "3.1vw",  skills: "NLP · Vision" },
+        { name: "Bundle B", left: "28.1vw", skills: "NLP · Search · Reason" },
+        { name: "Bundle C", left: "53.1vw", skills: "Plan · Draw" },
       ].map((b) => (
-        <div
-          key={b.name}
-          style={{
-            position: "absolute",
-            top: "45.8vh",
-            left: b.left,
-            width: "24.2vw",
-            height: "15.3vh",
-            background: "rgba(180,160,255,0.07)",
-            border: "1px solid rgba(180,160,255,0.22)",
-            borderRadius: "0.7vw",
-            padding: "1.1vh 1.2vw",
-            display: "grid",
-            gridTemplateRows: "auto 1fr auto",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5vw", marginBottom: "0.4vh" }}>
-            {proto("#B4A0FF", "rgba(180,160,255,0.12)", "rgba(180,160,255,0.35)", "BUNDLE")}
-            <span
-              style={{
-                fontFamily: "var(--font-display-family)",
-                fontSize: "1vw",
-                fontWeight: 700,
-                color: "#E2D9FF",
-              }}
-            >
-              {b.name}
-            </span>
+        <div key={b.name} style={{
+          position: "absolute", top: "45.1vh", left: b.left, width: "21.9vw", height: "14.7vh",
+          background: "rgba(180,160,255,0.07)",
+          border: "1px solid rgba(180,160,255,0.22)",
+          borderRadius: "0.65vw",
+          padding: "1vh 1.1vw",
+          display: "grid", gridTemplateRows: "auto 1fr auto",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5vw" }}>
+            <span style={{
+              fontFamily: "var(--font-body-family)", fontSize: "0.65vw", fontWeight: 700,
+              color: "#B4A0FF", background: "rgba(180,160,255,0.12)",
+              border: "1px solid rgba(180,160,255,0.3)",
+              borderRadius: "0.22vw", padding: "0.05vh 0.35vw", letterSpacing: "0.07em",
+            }}>BUNDLE</span>
+            <span style={{
+              fontFamily: "var(--font-display-family)", fontSize: "0.95vw",
+              fontWeight: 700, color: "#E2D9FF",
+            }}>{b.name}</span>
           </div>
-          <div
-            style={{
-              fontFamily: "var(--font-body-family)",
-              fontSize: "0.75vw",
-              color: "rgba(180,160,255,0.5)",
-              alignSelf: "center",
-            }}
-          >
-            {b.nftRange}
-          </div>
+          <div style={{
+            fontFamily: "var(--font-body-family)", fontSize: "0.72vw",
+            color: "rgba(180,160,255,0.5)", alignSelf: "center",
+          }}>{b.skills}</div>
           <div style={{ display: "flex", gap: "0.4vw" }}>
-            {roleBadge("Curator", "#B4A0FF")}
-            {roleBadge("Staker", "#22D3EE")}
+            {[["Curator","#B4A0FF"],["Staker","#34D399"]].map(([r,c]) => (
+              <span key={r} style={{
+                fontFamily: "var(--font-body-family)", fontSize: "0.65vw", fontWeight: 600,
+                color: c, background: `${c}18`, border: `1px solid ${c}40`,
+                borderRadius: "0.22vw", padding: "0.05vh 0.35vw", letterSpacing: "0.05em",
+              }}>{r}</span>
+            ))}
           </div>
         </div>
       ))}
 
-      {/* Staker arrows labels (left + right) */}
-      <div
-        style={{
-          position: "absolute",
-          top: "52vh",
-          left: "1.2vw",
-          fontFamily: "var(--font-body-family)",
-          fontSize: "0.7vw",
-          color: "rgba(34,211,238,0.7)",
-          fontWeight: 600,
-          writingMode: "vertical-rl" as const,
-          transform: "rotate(180deg)",
-        }}
-      >
-        STAKER
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: "52vh",
-          right: "1.2vw",
-          fontFamily: "var(--font-body-family)",
-          fontSize: "0.7vw",
-          color: "rgba(34,211,238,0.7)",
-          fontWeight: 600,
-          writingMode: "vertical-rl" as const,
-        }}
-      >
-        STAKER
+      {/* ════════════ NFT SECTION HEADER ════════════ */}
+      <div style={{
+        position: "absolute", top: "61.5vh", left: "3.1vw",
+        display: "flex", alignItems: "center", gap: "0.6vw",
+      }}>
+        <span style={{
+          fontFamily: "var(--font-body-family)", fontSize: "0.72vw", fontWeight: 700,
+          color: "#8B5CF6", letterSpacing: "0.1em",
+        }}>◆ SKILL NFTs</span>
+        <span style={{
+          fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700,
+          color: "#8B5CF6", background: "rgba(139,92,246,0.12)",
+          border: "1px solid rgba(139,92,246,0.3)",
+          borderRadius: "0.22vw", padding: "0.05vh 0.38vw", letterSpacing: "0.06em",
+        }}>ERC-8239</span>
       </div>
 
-      {/* ─── NFT CHIPS ─── */}
-      {nfts.map((nft) => {
-        const leftPct = ((nft.cx - 40) / 1280) * 100;
+      {/* ════════════ NFT CARDS ════════════ */}
+      {NFT.map((nft, i) => {
+        const leftVw = 3.1 + i * (9.4 + 3.125);   // each card 9.4vw wide, gap ~3.1vw
+        const isShared = nft.shared;
         return (
-          <div
-            key={nft.name}
-            style={{
-              position: "absolute",
-              top: "68.3vh",
-              left: `${leftPct}%`,
-              width: "6.25vw",
-              background: "rgba(139,92,246,0.14)",
-              border: "1px solid rgba(139,92,246,0.38)",
-              borderRadius: "0.35vw",
-              padding: "0.3vh 0.45vw",
-              fontFamily: "var(--font-display-family)",
-              fontSize: "0.8vw",
-              fontWeight: 700,
-              color: "#C4B5FD",
-              textAlign: "center" as const,
-              whiteSpace: "nowrap" as const,
-            }}
-          >
-            {nft.name}
+          <div key={nft.name} style={{
+            position: "absolute",
+            top: "66.9vh",
+            left: `${leftVw}vw`,
+            width: "9.4vw",
+            height: "7.5vh",
+            background: isShared
+              ? "linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(139,92,246,0.14) 100%)"
+              : "rgba(139,92,246,0.12)",
+            border: `1.5px solid ${isShared ? "rgba(34,211,238,0.5)" : "rgba(139,92,246,0.38)"}`,
+            borderRadius: "0.5vw",
+            padding: "0.6vh 0.7vw",
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+            boxShadow: isShared
+              ? "0 0 1.2vw rgba(34,211,238,0.18)"
+              : "0 0 0.8vw rgba(139,92,246,0.15)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{
+                fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700,
+                color: isShared ? "#22D3EE" : "#8B5CF6",
+                opacity: 0.85, letterSpacing: "0.06em",
+              }}>NFT</span>
+              {isShared && (
+                <span style={{
+                  fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 700,
+                  color: "#22D3EE", background: "rgba(34,211,238,0.12)",
+                  border: "1px solid rgba(34,211,238,0.35)",
+                  borderRadius: "0.2vw", padding: "0.02vh 0.25vw",
+                }}>SHARED</span>
+              )}
+            </div>
+            <div style={{
+              fontFamily: "var(--font-display-family)", fontSize: "0.95vw",
+              fontWeight: 800,
+              color: isShared ? "#7EECEA" : "#C4B5FD",
+            }}>{nft.name}</div>
+            <div style={{ display: "flex", gap: "0.3vw" }}>
+              {[["Creator","#9CA3AF"],["Owner","#6B7280"]].map(([r,c]) => (
+                <span key={r} style={{
+                  fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 600,
+                  color: c, background: `${c}15`, border: `1px solid ${c}30`,
+                  borderRadius: "0.18vw", padding: "0.02vh 0.28vw", letterSpacing: "0.04em",
+                }}>{r}</span>
+              ))}
+            </div>
           </div>
         );
       })}
 
-      {/* ─── ROLE ROW BELOW NFTs ─── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "75.5vh",
-          left: "6.25vw",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5vw",
-        }}
-      >
-        {roleBadge("Creator", "#9CA3AF")}
-        {roleBadge("Owner", "#9CA3AF")}
-        <span
-          style={{
-            marginLeft: "0.2vw",
-            fontFamily: "var(--font-body-family)",
-            fontSize: "0.68vw",
-            fontWeight: 700,
-            color: "#8B5CF6",
-            background: "rgba(139,92,246,0.10)",
-            border: "1px solid rgba(139,92,246,0.28)",
-            borderRadius: "0.25vw",
-            padding: "0.05vh 0.4vw",
-            letterSpacing: "0.06em",
-          }}
-        >
-          ERC-8239
-        </span>
-      </div>
-
-      {/* ─── CLOSED LOOP label top-right ─── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "17.5vh",
-          right: "3.5vw",
-          textAlign: "right",
-        }}
-      >
-        <div
-          style={{
-            fontFamily: "var(--font-body-family)",
-            fontSize: "0.75vw",
-            color: "rgba(167,139,250,0.55)",
-            lineHeight: 1.7,
-          }}
-        >
-          Memory → extract Skill
+      {/* ════════════ REVENUE PANEL (right) ════════════ */}
+      <div style={{
+        position: "absolute", top: "30.3vh", left: "77vw", right: "2vw",
+        bottom: "10.5vh",
+        background: "rgba(15,12,28,0.9)",
+        border: "1px solid rgba(139,92,246,0.28)",
+        borderRadius: "0.8vw",
+        padding: "1.2vh 1.2vw",
+        display: "flex", flexDirection: "column", gap: "0.6vh",
+      }}>
+        {/* Panel title */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5vw", marginBottom: "0.3vh" }}>
+          <span style={{
+            fontFamily: "var(--font-display-family)", fontSize: "0.9vw",
+            fontWeight: 800, color: "#F0F0F8",
+          }}>Revenue Split</span>
         </div>
-        <div
-          style={{
-            fontFamily: "var(--font-body-family)",
-            fontSize: "0.78vw",
-            fontWeight: 700,
-            color: "#A78BFA",
-          }}
-        >
-          ↺ Mint new Skill NFT
-        </div>
-      </div>
 
-      {/* ─── CLOSED LOOP end-tag ─── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "74.5vh",
-          right: "3.2vw",
-          background: "rgba(139,92,246,0.12)",
-          border: "1px solid rgba(139,92,246,0.32)",
-          borderRadius: "0.35vw",
-          padding: "0.25vh 0.55vw",
-          fontFamily: "var(--font-body-family)",
-          fontSize: "0.75vw",
-          color: "#A78BFA",
-          fontWeight: 600,
-        }}
-      >
-        Agent becomes Creator
+        {/* x402 input indicator */}
+        <div style={{
+          background: "rgba(252,211,77,0.07)",
+          border: "1px solid rgba(252,211,77,0.25)",
+          borderRadius: "0.45vw",
+          padding: "0.5vh 0.7vw",
+          marginBottom: "0.4vh",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4vw" }}>
+            <span style={{
+              fontFamily: "var(--font-body-family)", fontSize: "0.65vw", fontWeight: 700,
+              color: "#FCD34D", background: "rgba(252,211,77,0.15)",
+              border: "1px solid rgba(252,211,77,0.35)",
+              borderRadius: "0.2vw", padding: "0.02vh 0.3vw",
+            }}>x402</span>
+            <span style={{
+              fontFamily: "var(--font-body-family)", fontSize: "0.68vw",
+              color: "rgba(252,211,77,0.8)",
+            }}>Agent pays per call</span>
+          </div>
+        </div>
+
+        {/* ERC-8183 auto-settle badge */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: "0.4vw",
+          paddingBottom: "0.6vh",
+          borderBottom: "1px solid rgba(139,92,246,0.15)",
+          marginBottom: "0.3vh",
+        }}>
+          <span style={{
+            fontFamily: "var(--font-body-family)", fontSize: "0.62vw", fontWeight: 700,
+            color: "#A78BFA", background: "rgba(167,139,250,0.10)",
+            border: "1px solid rgba(167,139,250,0.3)",
+            borderRadius: "0.2vw", padding: "0.02vh 0.3vw",
+          }}>ERC-8183</span>
+          <span style={{
+            fontFamily: "var(--font-body-family)", fontSize: "0.65vw",
+            color: "rgba(167,139,250,0.7)",
+          }}>auto-settle on-chain</span>
+        </div>
+
+        {/* Role rows */}
+        {roles.map((r) => (
+          <div key={r.label} style={{ display: "flex", flexDirection: "column", gap: "0.2vh" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{
+                fontFamily: "var(--font-display-family)", fontSize: "0.78vw",
+                fontWeight: 700, color: r.color,
+              }}>{r.label}</span>
+              <span style={{
+                fontFamily: "var(--font-body-family)", fontSize: "0.75vw",
+                fontWeight: 700, color: r.color,
+              }}>{r.pct}%</span>
+            </div>
+            <div style={{
+              height: "0.55vh", background: "rgba(255,255,255,0.05)",
+              borderRadius: "0.3vw", overflow: "hidden",
+            }}>
+              <div style={{
+                height: "100%", width: `${r.pct / 40 * 100}%`,
+                background: r.color, opacity: 0.65, borderRadius: "0.3vw",
+              }} />
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Page number */}
       <div
-        className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{
+          position: "absolute", bottom: "3.5vh", right: "3.5vw",
           fontFamily: "var(--font-display-family)",
-          color: "#3D4160",
-          fontSize: "1.5vw",
-          fontWeight: 600,
+          color: "#3D4160", fontSize: "1.5vw", fontWeight: 600,
         }}
       >
         16 / 16
