@@ -1,29 +1,48 @@
-export default function S14Architecture() {
-  // ── coordinate constants (SVG viewBox 0 0 1280 720 / preserveAspectRatio none) ──
-  const AGT  = { cx: 500, cy: 129, r: 32 };                   // Agent circle
-  const MCP  = { x1: 40, x2: 960, top: 237, bot: 277 };      // MCP bar
-  const BND  = [                                                // Bundles
-    { cx: 180, top: 325, bot: 431 },
-    { cx: 500, top: 325, bot: 431 },
-    { cx: 820, top: 325, bot: 431 },
-  ];
-  const NFT  = [                                                // NFT cards (center-x)
-    { name: "NLP",    cx: 100,  shared: true  },
-    { name: "Vision", cx: 260,  shared: false },
-    { name: "Search", cx: 420,  shared: false },
-    { name: "Reason", cx: 580,  shared: false },
-    { name: "Plan",   cx: 740,  shared: false },
-    { name: "Draw",   cx: 900,  shared: false },
-  ];
-  const NFTY = 482;                    // NFT card top y
-  const NFTH = 54;                     // NFT card height
-  const REV  = { x: 986, top: 218 };  // Revenue panel left-x and top-y
+// Helper — donut segment path (fractions 0-1, clockwise from 12 o'clock)
+function donutPath(
+  cx: number, cy: number, R: number, r: number,
+  s: number, e: number,
+): string {
+  const a1 = s * 2 * Math.PI, a2 = e * 2 * Math.PI;
+  const pt = (a: number, rad: number) =>
+    `${(cx + rad * Math.sin(a)).toFixed(1)} ${(cy - rad * Math.cos(a)).toFixed(1)}`;
+  const lg = e - s >= 0.5 ? 1 : 0;
+  return [
+    `M ${pt(a1, R)}`,
+    `A ${R} ${R} 0 ${lg} 1 ${pt(a2, R)}`,
+    `L ${pt(a2, r)}`,
+    `A ${r} ${r} 0 ${lg} 0 ${pt(a1, r)}`,
+    "Z",
+  ].join(" ");
+}
 
+export default function S14Architecture() {
+  // ── SVG coordinate constants (viewBox 0 0 1280 720, preserveAspectRatio none) ──
+  const AGT = { cx: 640, cy: 129, r: 32 };         // Agent circle (centered over MCP bar)
+  const MEM = { cx: 390, cy: 129 };                 // Memory node (left of Agent)
+  const MCP = { top: 237, bot: 277 };               // MCP bar y range
+  const BND = [                                      // Bundle center-x, top, bot
+    { cx: 227,  top: 325, bot: 431 },
+    { cx: 640,  top: 325, bot: 431 },
+    { cx: 1053, top: 325, bot: 431 },
+  ];
+  const NFT = [                                      // NFT card center-x (full-width 6 cards)
+    { name: "NLP",    cx: 129  },
+    { name: "Vision", cx: 334  },
+    { name: "Search", cx: 539  },
+    { name: "Reason", cx: 744  },
+    { name: "Plan",   cx: 949  },
+    { name: "Draw",   cx: 1153 },
+  ];
+  const NFTY = 482;   // NFT card top-y in SVG
+
+  // ── Revenue split (donut) ──
+  const DONUT = { cx: 870, cy: 170, R: 40, r: 24 };
   const roles = [
-    { label: "Creator", pct: 40, color: "#8B5CF6" },
-    { label: "Owner",   pct: 25, color: "#A78BFA" },
-    { label: "Curator", pct: 20, color: "#22D3EE" },
-    { label: "Staker",  pct: 15, color: "#34D399" },
+    { label: "Creator", pct: 10, color: "#8B5CF6", s: 0,    e: 0.10 },
+    { label: "Owner",   pct: 50, color: "#A78BFA", s: 0.10, e: 0.60 },
+    { label: "Curator", pct: 20, color: "#22D3EE", s: 0.60, e: 0.80 },
+    { label: "Staker",  pct: 25, color: "#34D399", s: 0.80, e: 1.00 },
   ];
 
   return (
@@ -32,24 +51,20 @@ export default function S14Architecture() {
       style={{
         background: "#0D0F14",
         backgroundImage:
-          "radial-gradient(ellipse 70% 55% at 40% 35%, rgba(139,92,246,0.07) 0%, transparent 65%)",
+          "radial-gradient(ellipse 80% 55% at 50% 35%, rgba(139,92,246,0.07) 0%, transparent 65%)",
       }}
     >
-      {/* Decorative */}
+      {/* Decorative bars */}
       <div className="absolute left-0 top-0 bottom-0 w-[0.35vw]" style={{ background: "#8B5CF6" }} />
-      <div
-        className="absolute top-0 left-0 right-0 h-[0.15vh]"
-        style={{ background: "linear-gradient(90deg,#8B5CF6,#22D3EE,transparent)" }}
-      />
+      <div className="absolute top-0 left-0 right-0 h-[0.15vh]"
+        style={{ background: "linear-gradient(90deg,#8B5CF6,#22D3EE,transparent)" }} />
 
       {/* ── Header ── */}
       <div style={{ position: "absolute", top: "3vh", left: "6vw" }}>
         <span style={{
           fontFamily: "var(--font-body-family)", color: "#22D3EE",
           fontSize: "1.1vw", fontWeight: 400, letterSpacing: "0.24em", textTransform: "uppercase",
-        }}>
-          System Architecture
-        </span>
+        }}>System Architecture</span>
       </div>
       <div style={{ position: "absolute", top: "7vh", left: "6vw" }}>
         <span style={{
@@ -62,18 +77,18 @@ export default function S14Architecture() {
         </span>
       </div>
 
-      {/* ══════════ SVG CONNECTION LINES ══════════ */}
+      {/* ══════════ SVG ══════════ */}
       <svg
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
         viewBox="0 0 1280 720"
         preserveAspectRatio="none"
       >
         <defs>
-          <marker id="at" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-            <polygon points="0,0 6,3 0,6" fill="#22D3EE" />
-          </marker>
           <marker id="ap" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
             <polygon points="0,0 6,3 0,6" fill="#A78BFA" />
+          </marker>
+          <marker id="at" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <polygon points="0,0 6,3 0,6" fill="#22D3EE" />
           </marker>
           <marker id="aa" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
             <polygon points="0,0 6,3 0,6" fill="#FCD34D" />
@@ -81,94 +96,145 @@ export default function S14Architecture() {
           <marker id="al" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
             <polygon points="0,0 6,3 0,6" fill="#B4A0FF" />
           </marker>
-          <filter id="glow-teal">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
+          <marker id="amem" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <polygon points="0,0 6,3 0,6" fill="#34D399" />
+          </marker>
         </defs>
 
-        {/* Agent ↓ MCP  (MCP invoke) */}
-        <line x1={AGT.cx} y1={AGT.cy + AGT.r + 2} x2={AGT.cx} y2={MCP.top}
+        {/* ── Memory ← Agent (short horizontal line, right-to-left) ── */}
+        <line
+          x1={AGT.cx - AGT.r} y1={AGT.cy}
+          x2={MEM.cx + 22} y2={MEM.cy}
+          stroke="rgba(52,211,153,0.7)" strokeWidth="1.3" strokeDasharray="4 2"
+          markerEnd="url(#amem)"
+        />
+
+        {/* ── Memory → NFT layer (left outer edge, avoids all boxes) ── */}
+        <path
+          d={`M ${MEM.cx} ${MEM.cy + 22} C 10 ${MEM.cy + 22}, 10 509, 80 509`}
+          fill="none" stroke="rgba(52,211,153,0.55)" strokeWidth="1.3"
+          strokeDasharray="5 3" markerEnd="url(#amem)"
+        />
+
+        {/* ── Agent ↓ MCP (MCP invoke, teal dashed) ── */}
+        <line
+          x1={AGT.cx} y1={AGT.cy + AGT.r + 2} x2={AGT.cx} y2={MCP.top}
           stroke="#22D3EE" strokeWidth="1.6" strokeDasharray="4 2"
-          markerEnd="url(#at)" />
+          markerEnd="url(#at)"
+        />
 
-        {/* MCP ↑ Agent  (ERC-8183 distribute back) */}
-        <line x1={AGT.cx - 10} y1={MCP.top} x2={AGT.cx - 10} y2={AGT.cy + AGT.r + 2}
-          stroke="rgba(167,139,250,0.6)" strokeWidth="1.1" strokeDasharray="3 3"
-          markerEnd="url(#ap)" />
+        {/* ── MCP ↑ Agent (ERC-8183 distribute, purple dashed) ── */}
+        <line
+          x1={AGT.cx - 10} y1={MCP.top} x2={AGT.cx - 10} y2={AGT.cy + AGT.r + 2}
+          stroke="rgba(167,139,250,0.55)" strokeWidth="1.1" strokeDasharray="3 3"
+          markerEnd="url(#ap)"
+        />
 
-        {/* MCP ↓ each Bundle */}
+        {/* ── x402 pay: Agent right → Donut ── */}
+        <line
+          x1={AGT.cx + AGT.r + 2} y1={AGT.cy}
+          x2={DONUT.cx - DONUT.R - 4} y2={DONUT.cy}
+          stroke="#FCD34D" strokeWidth="1.3" strokeDasharray="4 2"
+          markerEnd="url(#aa)"
+        />
+        <text x={AGT.cx + AGT.r + 14} y={AGT.cy - 5}
+          fill="#FCD34D" fontSize="9.5" fontFamily="DM Sans, sans-serif"
+          fontWeight="700" opacity="0.85">
+          x402 pay
+        </text>
+
+        {/* ── MCP ↓ each Bundle ── */}
         {BND.map((b) => (
           <line key={b.cx}
             x1={b.cx} y1={MCP.bot} x2={b.cx} y2={b.top}
-            stroke="rgba(180,160,255,0.55)" strokeWidth="1.5" markerEnd="url(#al)" />
+            stroke="rgba(180,160,255,0.55)" strokeWidth="1.5" markerEnd="url(#al)"
+          />
         ))}
 
-        {/* Bundle A ↓ NLP & Vision */}
+        {/* ── Primary Bundle → NFT connections ── */}
+        {/* Bundle A → NLP, Vision */}
         <line x1={BND[0].cx} y1={BND[0].bot} x2={NFT[0].cx} y2={NFTY}
           stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
         <line x1={BND[0].cx} y1={BND[0].bot} x2={NFT[1].cx} y2={NFTY}
           stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
 
-        {/* Bundle B ↓ Search & Reason */}
+        {/* Bundle B → Search, Reason */}
         <line x1={BND[1].cx} y1={BND[1].bot} x2={NFT[2].cx} y2={NFTY}
           stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
         <line x1={BND[1].cx} y1={BND[1].bot} x2={NFT[3].cx} y2={NFTY}
           stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
 
-        {/* Bundle C ↓ Plan & Draw */}
+        {/* Bundle C → Plan, Draw */}
         <line x1={BND[2].cx} y1={BND[2].bot} x2={NFT[4].cx} y2={NFTY}
           stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
         <line x1={BND[2].cx} y1={BND[2].bot} x2={NFT[5].cx} y2={NFTY}
           stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
 
-        {/* ── SHARED: Bundle B also references NLP (teal bezier curve) ── */}
-        <path
-          d={`M ${BND[1].cx} ${BND[1].bot} Q 280 470 ${NFT[0].cx + 10} ${NFTY + 10}`}
-          fill="none" stroke="#22D3EE" strokeWidth="1.6" strokeDasharray="5 3"
-          markerEnd="url(#at)"
-          filter="url(#glow-teal)"
-        />
-        {/* "shared" label near mid-curve */}
-        <text x="285" y="452" fill="#22D3EE" fontSize="10.5" fontFamily="DM Sans, sans-serif"
-          fontWeight="700" textAnchor="middle" opacity="0.85">
-          1 NFT · 2 Bundles
-        </text>
-        <rect x="215" y="438" width="140" height="16" rx="3"
-          fill="rgba(34,211,238,0.08)" stroke="rgba(34,211,238,0.3)" strokeWidth="0.7" />
+        {/* ── Cross-bundle connections (same style as primary) ── */}
+        {/* Bundle A → Search */}
+        <line x1={BND[0].cx} y1={BND[0].bot} x2={NFT[2].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
+        {/* Bundle C → Reason */}
+        <line x1={BND[2].cx} y1={BND[2].bot} x2={NFT[3].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
+        {/* Bundle B → Plan */}
+        <line x1={BND[1].cx} y1={BND[1].bot} x2={NFT[4].cx} y2={NFTY}
+          stroke="rgba(139,92,246,0.45)" strokeWidth="1.2" markerEnd="url(#ap)" />
 
-        {/* ── x402 pay: Agent → Revenue Panel (amber curve) ── */}
-        <path
-          d={`M ${AGT.cx + AGT.r} ${AGT.cy} C ${REV.x} ${AGT.cy}, ${REV.x} 260, ${REV.x} 265`}
-          fill="none" stroke="#FCD34D" strokeWidth="1.4" strokeDasharray="5 2"
-          markerEnd="url(#aa)" />
-
-        {/* ── ERC-8183: MCP → Revenue Panel (purple arrow) ── */}
-        <line x1={MCP.x2} y1={MCP.top + (MCP.bot - MCP.top) / 2}
-              x2={REV.x - 2} y2={MCP.top + (MCP.bot - MCP.top) / 2}
-          stroke="#A78BFA" strokeWidth="1.5" markerEnd="url(#ap)" />
-
-        {/* Revenue panel separator lines inside */}
-        {roles.map((r, i) => {
-          const rowTop = REV.top + 72 + i * 60;
-          const barW   = (r.pct / 100) * 170;
-          return (
-            <g key={r.label}>
-              <rect x={REV.x + 16} y={rowTop + 22} width={barW} height="6" rx="3" fill={r.color} opacity="0.55" />
-            </g>
-          );
-        })}
-
-        {/* ── Closed loop: Agent left → arc left → NLP ── */}
-        <path
-          d={`M ${AGT.cx - AGT.r} ${AGT.cy} C 10 ${AGT.cy}, 10 ${NFTY + NFTH / 2}, ${NFT[0].cx - 60} ${NFTY + NFTH / 2}`}
-          fill="none" stroke="rgba(167,139,250,0.38)" strokeWidth="1.3"
-          strokeDasharray="6 3" markerEnd="url(#ap)" />
+        {/* ── Donut chart (Revenue Split) ── */}
+        {roles.map((r) => (
+          <path key={r.label}
+            d={donutPath(DONUT.cx, DONUT.cy, DONUT.R, DONUT.r, r.s, r.e)}
+            fill={r.color} opacity="0.75"
+          />
+        ))}
+        {/* Donut center label */}
+        <text x={DONUT.cx} y={DONUT.cy - 4}
+          fill="#F0F0F8" fontSize="8.5" fontFamily="DM Sans, sans-serif"
+          fontWeight="700" textAnchor="middle">ERC</text>
+        <text x={DONUT.cx} y={DONUT.cy + 7}
+          fill="#F0F0F8" fontSize="8.5" fontFamily="DM Sans, sans-serif"
+          fontWeight="700" textAnchor="middle">8183</text>
+        {/* Donut legend */}
+        {roles.map((r, i) => (
+          <g key={r.label}>
+            <rect x={DONUT.cx + DONUT.R + 10} y={DONUT.cy - DONUT.R + i * 22}
+              width="8" height="8" rx="2" fill={r.color} opacity="0.8" />
+            <text
+              x={DONUT.cx + DONUT.R + 22}
+              y={DONUT.cy - DONUT.R + i * 22 + 7}
+              fill={r.color} fontSize="10" fontFamily="DM Sans, sans-serif" fontWeight="600"
+            >
+              {r.label} {r.pct}%
+            </text>
+          </g>
+        ))}
       </svg>
 
-      {/* ════════════ AGENT ════════════ */}
+      {/* ════════ MEMORY NODE ════════ */}
       <div style={{
-        position: "absolute", top: "13.5vh", left: "36.5vw",
+        position: "absolute",
+        top: "14.8vh",        /* aligns cy with Agent cy=129 */
+        left: "28.6vw",      /* cx=390 → left=(390-22)/1280*100 */
+        width: "3.4vw",
+        height: "3.4vw",
+        borderRadius: "50%",
+        background: "rgba(52,211,153,0.10)",
+        border: "1.5px solid rgba(52,211,153,0.45)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "1.4vw",
+        boxShadow: "0 0 1.2vw rgba(52,211,153,0.18)",
+      }}>🧠</div>
+      <div style={{
+        position: "absolute", top: "21.8vh", left: "27vw", width: "6vw",
+        textAlign: "center",
+        fontFamily: "var(--font-display-family)", fontSize: "0.72vw",
+        fontWeight: 700, color: "#34D399", letterSpacing: "0.08em",
+      }}>MEMORY</div>
+
+      {/* ════════ AGENT ════════ */}
+      <div style={{
+        position: "absolute", top: "13.5vh", left: "47.5vw",
         width: "5vw", height: "5vw",
         borderRadius: "50%",
         background: "rgba(34,211,238,0.10)",
@@ -178,7 +244,7 @@ export default function S14Architecture() {
         boxShadow: "0 0 2vw rgba(34,211,238,0.24)",
       }}>🤖</div>
       <div style={{
-        position: "absolute", top: "22.6vh", left: "33vw", width: "12vw",
+        position: "absolute", top: "22.6vh", left: "44vw", width: "12vw",
         display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3vh",
       }}>
         <span style={{
@@ -197,19 +263,9 @@ export default function S14Architecture() {
         </div>
       </div>
 
-      {/* Closed-loop label (left side) */}
+      {/* ════════ MCP SERVER BAR (full width) ════════ */}
       <div style={{
-        position: "absolute", top: "40vh", left: "0.5vw",
-        writingMode: "vertical-rl", transform: "rotate(180deg)",
-        fontFamily: "var(--font-body-family)", fontSize: "0.65vw",
-        color: "rgba(167,139,250,0.55)", letterSpacing: "0.08em", fontWeight: 600,
-      }}>
-        ↺ Agent learns → Mints new Skill NFT
-      </div>
-
-      {/* ════════════ MCP SERVER BAR ════════════ */}
-      <div style={{
-        position: "absolute", top: "32.9vh", left: "3.1vw", right: "25vw", height: "5.5vh",
+        position: "absolute", top: "32.9vh", left: "3.1vw", right: "3.1vw", height: "5.5vh",
         background: "rgba(34,211,238,0.07)",
         border: "1px solid rgba(34,211,238,0.28)",
         borderRadius: "0.7vw",
@@ -241,14 +297,14 @@ export default function S14Architecture() {
         </div>
       </div>
 
-      {/* ════════════ BUNDLES ════════════ */}
+      {/* ════════ BUNDLES (full width, 3 equal) ════════ */}
       {[
-        { name: "Bundle A", left: "3.1vw",  skills: "NLP · Vision" },
-        { name: "Bundle B", left: "28.1vw", skills: "NLP · Search · Reason" },
-        { name: "Bundle C", left: "53.1vw", skills: "Plan · Draw" },
+        { name: "Bundle A", left: "3.1vw",  skills: "NLP · Vision · Search" },
+        { name: "Bundle B", left: "35.4vw", skills: "Search · Reason · Plan" },
+        { name: "Bundle C", left: "67.7vw", skills: "Reason · Plan · Draw"   },
       ].map((b) => (
         <div key={b.name} style={{
-          position: "absolute", top: "45.1vh", left: b.left, width: "21.9vw", height: "14.7vh",
+          position: "absolute", top: "45.1vh", left: b.left, width: "29.2vw", height: "14.7vh",
           background: "rgba(180,160,255,0.07)",
           border: "1px solid rgba(180,160,255,0.22)",
           borderRadius: "0.65vw",
@@ -268,8 +324,8 @@ export default function S14Architecture() {
             }}>{b.name}</span>
           </div>
           <div style={{
-            fontFamily: "var(--font-body-family)", fontSize: "0.72vw",
-            color: "rgba(180,160,255,0.5)", alignSelf: "center",
+            fontFamily: "var(--font-body-family)", fontSize: "0.7vw",
+            color: "rgba(180,160,255,0.45)", alignSelf: "center",
           }}>{b.skills}</div>
           <div style={{ display: "flex", gap: "0.4vw" }}>
             {[["Curator","#B4A0FF"],["Staker","#34D399"]].map(([r,c]) => (
@@ -283,7 +339,7 @@ export default function S14Architecture() {
         </div>
       ))}
 
-      {/* ════════════ NFT SECTION HEADER ════════════ */}
+      {/* ════════ NFT SECTION HEADER ════════ */}
       <div style={{
         position: "absolute", top: "61.5vh", left: "3.1vw",
         display: "flex", alignItems: "center", gap: "0.6vw",
@@ -300,47 +356,30 @@ export default function S14Architecture() {
         }}>ERC-8239</span>
       </div>
 
-      {/* ════════════ NFT CARDS ════════════ */}
+      {/* ════════ NFT CARDS (full width, 6 equal) ════════ */}
       {NFT.map((nft, i) => {
-        const leftVw = 3.1 + i * (9.4 + 3.125);   // each card 9.4vw wide, gap ~3.1vw
-        const isShared = nft.shared;
+        const leftVw = 3.1 + i * (14 + 2); // 14vw card + 2vw gap
         return (
           <div key={nft.name} style={{
             position: "absolute",
             top: "66.9vh",
             left: `${leftVw}vw`,
-            width: "9.4vw",
+            width: "14vw",
             height: "7.5vh",
-            background: isShared
-              ? "linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(139,92,246,0.14) 100%)"
-              : "rgba(139,92,246,0.12)",
-            border: `1.5px solid ${isShared ? "rgba(34,211,238,0.5)" : "rgba(139,92,246,0.38)"}`,
+            background: "rgba(139,92,246,0.12)",
+            border: "1.5px solid rgba(139,92,246,0.38)",
             borderRadius: "0.5vw",
-            padding: "0.6vh 0.7vw",
+            padding: "0.6vh 0.8vw",
             display: "flex", flexDirection: "column", justifyContent: "space-between",
-            boxShadow: isShared
-              ? "0 0 1.2vw rgba(34,211,238,0.18)"
-              : "0 0 0.8vw rgba(139,92,246,0.15)",
+            boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{
-                fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700,
-                color: isShared ? "#22D3EE" : "#8B5CF6",
-                opacity: 0.85, letterSpacing: "0.06em",
-              }}>NFT</span>
-              {isShared && (
-                <span style={{
-                  fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 700,
-                  color: "#22D3EE", background: "rgba(34,211,238,0.12)",
-                  border: "1px solid rgba(34,211,238,0.35)",
-                  borderRadius: "0.2vw", padding: "0.02vh 0.25vw",
-                }}>SHARED</span>
-              )}
-            </div>
+            <span style={{
+              fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700,
+              color: "#8B5CF6", opacity: 0.85, letterSpacing: "0.06em",
+            }}>NFT</span>
             <div style={{
-              fontFamily: "var(--font-display-family)", fontSize: "0.95vw",
-              fontWeight: 800,
-              color: isShared ? "#7EECEA" : "#C4B5FD",
+              fontFamily: "var(--font-display-family)", fontSize: "1vw",
+              fontWeight: 800, color: "#C4B5FD",
             }}>{nft.name}</div>
             <div style={{ display: "flex", gap: "0.3vw" }}>
               {[["Creator","#9CA3AF"],["Owner","#6B7280"]].map(([r,c]) => (
@@ -355,99 +394,12 @@ export default function S14Architecture() {
         );
       })}
 
-      {/* ════════════ REVENUE PANEL (right) ════════════ */}
-      <div style={{
-        position: "absolute", top: "30.3vh", left: "77vw", right: "2vw",
-        bottom: "10.5vh",
-        background: "rgba(15,12,28,0.9)",
-        border: "1px solid rgba(139,92,246,0.28)",
-        borderRadius: "0.8vw",
-        padding: "1.2vh 1.2vw",
-        display: "flex", flexDirection: "column", gap: "0.6vh",
-      }}>
-        {/* Panel title */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5vw", marginBottom: "0.3vh" }}>
-          <span style={{
-            fontFamily: "var(--font-display-family)", fontSize: "0.9vw",
-            fontWeight: 800, color: "#F0F0F8",
-          }}>Revenue Split</span>
-        </div>
-
-        {/* x402 input indicator */}
-        <div style={{
-          background: "rgba(252,211,77,0.07)",
-          border: "1px solid rgba(252,211,77,0.25)",
-          borderRadius: "0.45vw",
-          padding: "0.5vh 0.7vw",
-          marginBottom: "0.4vh",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4vw" }}>
-            <span style={{
-              fontFamily: "var(--font-body-family)", fontSize: "0.65vw", fontWeight: 700,
-              color: "#FCD34D", background: "rgba(252,211,77,0.15)",
-              border: "1px solid rgba(252,211,77,0.35)",
-              borderRadius: "0.2vw", padding: "0.02vh 0.3vw",
-            }}>x402</span>
-            <span style={{
-              fontFamily: "var(--font-body-family)", fontSize: "0.68vw",
-              color: "rgba(252,211,77,0.8)",
-            }}>Agent pays per call</span>
-          </div>
-        </div>
-
-        {/* ERC-8183 auto-settle badge */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: "0.4vw",
-          paddingBottom: "0.6vh",
-          borderBottom: "1px solid rgba(139,92,246,0.15)",
-          marginBottom: "0.3vh",
-        }}>
-          <span style={{
-            fontFamily: "var(--font-body-family)", fontSize: "0.62vw", fontWeight: 700,
-            color: "#A78BFA", background: "rgba(167,139,250,0.10)",
-            border: "1px solid rgba(167,139,250,0.3)",
-            borderRadius: "0.2vw", padding: "0.02vh 0.3vw",
-          }}>ERC-8183</span>
-          <span style={{
-            fontFamily: "var(--font-body-family)", fontSize: "0.65vw",
-            color: "rgba(167,139,250,0.7)",
-          }}>auto-settle on-chain</span>
-        </div>
-
-        {/* Role rows */}
-        {roles.map((r) => (
-          <div key={r.label} style={{ display: "flex", flexDirection: "column", gap: "0.2vh" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{
-                fontFamily: "var(--font-display-family)", fontSize: "0.78vw",
-                fontWeight: 700, color: r.color,
-              }}>{r.label}</span>
-              <span style={{
-                fontFamily: "var(--font-body-family)", fontSize: "0.75vw",
-                fontWeight: 700, color: r.color,
-              }}>{r.pct}%</span>
-            </div>
-            <div style={{
-              height: "0.55vh", background: "rgba(255,255,255,0.05)",
-              borderRadius: "0.3vw", overflow: "hidden",
-            }}>
-              <div style={{
-                height: "100%", width: `${r.pct / 40 * 100}%`,
-                background: r.color, opacity: 0.65, borderRadius: "0.3vw",
-              }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Page number */}
-      <div
-        style={{
-          position: "absolute", bottom: "3.5vh", right: "3.5vw",
-          fontFamily: "var(--font-display-family)",
-          color: "#3D4160", fontSize: "1.5vw", fontWeight: 600,
-        }}
-      >
+      <div style={{
+        position: "absolute", bottom: "3.5vh", right: "3.5vw",
+        fontFamily: "var(--font-display-family)",
+        color: "#3D4160", fontSize: "1.5vw", fontWeight: 600,
+      }}>
         16 / 16
       </div>
     </div>
