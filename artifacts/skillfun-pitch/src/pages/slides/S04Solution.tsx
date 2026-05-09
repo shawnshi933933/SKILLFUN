@@ -16,7 +16,7 @@ export default function S04Solution() {
 
       <div
         className="absolute inset-0 flex flex-col"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "5vh", paddingBottom: "5vh" }}
+        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "4.5vh", paddingBottom: "4.5vh" }}
       >
         <span
           style={{
@@ -26,7 +26,7 @@ export default function S04Solution() {
             fontWeight: 400,
             letterSpacing: "0.24em",
             textTransform: "uppercase",
-            marginBottom: "1.2vh"
+            marginBottom: "1vh"
           }}
         >
           The Solution
@@ -39,22 +39,23 @@ export default function S04Solution() {
             color: "#F0F0F8",
             letterSpacing: "-0.025em",
             lineHeight: 1.05,
-            marginBottom: "4.5vh"
+            marginBottom: "3vh"
           }}
         >
           A skill is a <span style={{ color: "#8B5CF6" }}>programmable asset.</span><br />
           Treat it like one.
         </h2>
 
-        <div className="flex gap-[2.5vw]" style={{ flex: 1 }}>
+        <div className="flex gap-[2.5vw]" style={{ flex: 1, minHeight: 0 }}>
           <div
             className="flex flex-col"
             style={{
               flex: 1,
               background: "rgba(139,92,246,0.10)",
               borderRadius: "1vw",
-              padding: "3vh 2.8vw",
-              border: "1px solid rgba(139,92,246,0.30)"
+              padding: "2.2vh 2.4vw",
+              border: "1px solid rgba(139,92,246,0.30)",
+              minHeight: 0
             }}
           >
             <div
@@ -65,7 +66,7 @@ export default function S04Solution() {
                 color: "#8B5CF6",
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
-                marginBottom: "1.8vh"
+                marginBottom: "1.4vh"
               }}
             >
               Skill NFT
@@ -73,11 +74,11 @@ export default function S04Solution() {
             <div
               style={{
                 fontFamily: "var(--font-display-family)",
-                fontSize: "2.6vw",
+                fontSize: "2.4vw",
                 fontWeight: 800,
                 color: "#F0F0F8",
                 lineHeight: 1.1,
-                marginBottom: "2vh"
+                marginBottom: "1.6vh"
               }}
             >
               Own &amp; Trade<br />AI Capabilities
@@ -85,24 +86,24 @@ export default function S04Solution() {
             <p
               style={{
                 fontFamily: "var(--font-body-family)",
-                fontSize: "1.7vw",
+                fontSize: "1.5vw",
                 color: "#7B7F9E",
-                lineHeight: 1.55
+                lineHeight: 1.5
               }}
             >
               Any AI capability minted as an ERC-8239 NFT. Transferable on OpenSea, licensed on-chain with enforced royalties on every invocation.
             </p>
-            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
-              <div style={{ height: 1, background: "rgba(139,92,246,0.24)", marginBottom: "1.5vh" }} />
+            <div style={{ marginTop: "auto", paddingTop: "1.8vh" }}>
+              <div style={{ height: 1, background: "rgba(139,92,246,0.24)", marginBottom: "1.2vh" }} />
               <span
                 style={{
                   fontFamily: "var(--font-body-family)",
-                  fontSize: "1.35vw",
+                  fontSize: "1.3vw",
                   color: "#8B5CF6",
                   fontWeight: 600
                 }}
               >
-                ERC-8239 · Sepolia Testnet
+                ERC-8239
               </span>
             </div>
           </div>
@@ -113,8 +114,9 @@ export default function S04Solution() {
               flex: 1,
               background: "rgba(180,160,255,0.08)",
               borderRadius: "1vw",
-              padding: "3vh 2.8vw",
-              border: "1px solid rgba(180,160,255,0.24)"
+              padding: "2.2vh 2.4vw",
+              border: "1px solid rgba(180,160,255,0.24)",
+              minHeight: 0
             }}
           >
             <div
@@ -125,7 +127,7 @@ export default function S04Solution() {
                 color: "#B4A0FF",
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
-                marginBottom: "1.8vh"
+                marginBottom: "1.4vh"
               }}
             >
               Bundle
@@ -133,11 +135,11 @@ export default function S04Solution() {
             <div
               style={{
                 fontFamily: "var(--font-display-family)",
-                fontSize: "2.6vw",
+                fontSize: "2.4vw",
                 fontWeight: 800,
                 color: "#F0F0F8",
                 lineHeight: 1.1,
-                marginBottom: "2vh"
+                marginBottom: "1.6vh"
               }}
             >
               Curate &amp; Package<br />Composite Tools
@@ -145,19 +147,19 @@ export default function S04Solution() {
             <p
               style={{
                 fontFamily: "var(--font-body-family)",
-                fontSize: "1.7vw",
+                fontSize: "1.5vw",
                 color: "#7B7F9E",
-                lineHeight: 1.55
+                lineHeight: 1.5
               }}
             >
               Curators package multiple Skills into a single composite tool with orchestration rules — registered as one MCP tool in the unified endpoint.
             </p>
-            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
-              <div style={{ height: 1, background: "rgba(180,160,255,0.20)", marginBottom: "1.5vh" }} />
+            <div style={{ marginTop: "auto", paddingTop: "1.8vh" }}>
+              <div style={{ height: 1, background: "rgba(180,160,255,0.20)", marginBottom: "1.2vh" }} />
               <span
                 style={{
                   fontFamily: "var(--font-body-family)",
-                  fontSize: "1.35vw",
+                  fontSize: "1.3vw",
                   color: "#B4A0FF",
                   fontWeight: 600
                 }}
@@ -173,8 +175,9 @@ export default function S04Solution() {
               flex: 1,
               background: "rgba(34,211,238,0.07)",
               borderRadius: "1vw",
-              padding: "3vh 2.8vw",
-              border: "1px solid rgba(34,211,238,0.22)"
+              padding: "2.2vh 2.4vw",
+              border: "1px solid rgba(34,211,238,0.22)",
+              minHeight: 0
             }}
           >
             <div
@@ -185,7 +188,7 @@ export default function S04Solution() {
                 color: "#22D3EE",
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
-                marginBottom: "1.8vh"
+                marginBottom: "1.4vh"
               }}
             >
               One Endpoint
@@ -193,11 +196,11 @@ export default function S04Solution() {
             <div
               style={{
                 fontFamily: "var(--font-display-family)",
-                fontSize: "2.6vw",
+                fontSize: "2.4vw",
                 fontWeight: 800,
                 color: "#F0F0F8",
                 lineHeight: 1.1,
-                marginBottom: "2vh"
+                marginBottom: "1.6vh"
               }}
             >
               One MCP URL.<br />Entire Marketplace.
@@ -205,19 +208,19 @@ export default function S04Solution() {
             <p
               style={{
                 fontFamily: "var(--font-body-family)",
-                fontSize: "1.7vw",
+                fontSize: "1.5vw",
                 color: "#7B7F9E",
-                lineHeight: 1.55
+                lineHeight: 1.5
               }}
             >
               Agents add a single SkillFun MCP address. Every Skill and Bundle appears instantly as a native callable tool — no integrations to manage.
             </p>
-            <div style={{ marginTop: "auto", paddingTop: "2.5vh" }}>
-              <div style={{ height: 1, background: "rgba(34,211,238,0.20)", marginBottom: "1.5vh" }} />
+            <div style={{ marginTop: "auto", paddingTop: "1.8vh" }}>
+              <div style={{ height: 1, background: "rgba(34,211,238,0.20)", marginBottom: "1.2vh" }} />
               <span
                 style={{
                   fontFamily: "var(--font-body-family)",
-                  fontSize: "1.35vw",
+                  fontSize: "1.3vw",
                   color: "#22D3EE",
                   fontWeight: 600
                 }}
