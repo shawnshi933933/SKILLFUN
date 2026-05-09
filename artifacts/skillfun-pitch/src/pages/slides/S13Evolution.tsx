@@ -79,39 +79,49 @@ export default function S13Evolution() {
       />
 
       <div
-        className="absolute inset-0 flex flex-col"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "4.5vh", paddingBottom: "5vh" }}
+        className="absolute inset-0"
+        style={{
+          display: "grid",
+          gridTemplateRows: "auto 1fr",
+          paddingLeft: "7vw", paddingRight: "7vw",
+          paddingTop: "4.5vh", paddingBottom: "5vh",
+          gap: 0,
+        }}
       >
-        <span
-          style={{
-            fontFamily: "var(--font-body-family)",
-            color: "#22D3EE",
-            fontSize: "1.4vw",
-            fontWeight: 400,
-            letterSpacing: "0.24em",
-            textTransform: "uppercase",
-            marginBottom: "1vh",
-          }}
-        >
-          Market Evolution
-        </span>
-        <h2
-          style={{
-            fontFamily: "var(--font-display-family)",
-            fontSize: "4vw",
-            fontWeight: 800,
-            color: "#F0F0F8",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.05,
-            marginBottom: "3.5vh",
-          }}
-        >
-          The market took<br />
-          <span style={{ color: "#8B5CF6" }}>three generations to get here.</span>
-        </h2>
+        {/* Header block — auto height */}
+        <div>
+          <span
+            style={{
+              display: "block",
+              fontFamily: "var(--font-body-family)",
+              color: "#22D3EE",
+              fontSize: "1.4vw",
+              fontWeight: 400,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              marginBottom: "1vh",
+            }}
+          >
+            Market Evolution
+          </span>
+          <h2
+            style={{
+              fontFamily: "var(--font-display-family)",
+              fontSize: "4vw",
+              fontWeight: 800,
+              color: "#F0F0F8",
+              letterSpacing: "-0.025em",
+              lineHeight: 1.05,
+              marginBottom: "3.5vh",
+            }}
+          >
+            The market took<br />
+            <span style={{ color: "#8B5CF6" }}>three generations to get here.</span>
+          </h2>
+        </div>
 
-        {/* Timeline arrow */}
-        <div style={{ position: "relative", display: "flex", alignItems: "stretch", gap: "1.2vw", flex: 1, minHeight: 0 }}>
+        {/* Cards row — fills exactly the remaining grid row (1fr = measured height) */}
+        <div style={{ display: "flex", alignItems: "stretch", gap: "1.2vw", minHeight: 0 }}>
           {versions.map((v, i) => (
             <div key={v.ver} style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
               {/* Arrow connector */}
@@ -132,79 +142,84 @@ export default function S13Evolution() {
 
               <div
                 style={{
-                  flex: 1,
+                  height: "100%",
+                  boxSizing: "border-box",
                   background: v.bg,
                   borderRadius: "1vw",
                   padding: "2.2vh 2vw",
                   border: `1px solid ${v.border}`,
-                  display: "flex",
-                  flexDirection: "column",
+                  display: "grid",
+                  gridTemplateRows: "1fr auto",
                   boxShadow: v.highlight ? `0 0 2.5vw rgba(139,92,246,0.18)` : "none",
                 }}
               >
-                {/* Ver badge + tag */}
-                <div style={{ display: "flex", alignItems: "center", gap: "0.8vw", marginBottom: "1.6vh" }}>
+                {/* Top content — stretches to fill remaining card height */}
+                <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+                  {/* Ver badge + tag */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.8vw", marginBottom: "1.6vh" }}>
+                    <div style={{
+                      fontFamily: "var(--font-display-family)",
+                      fontSize: "1.1vw", fontWeight: 800,
+                      color: v.color,
+                      background: `rgba(0,0,0,0.3)`,
+                      border: `1px solid ${v.border}`,
+                      borderRadius: "0.4vw",
+                      padding: "0.15vh 0.55vw",
+                      letterSpacing: "0.04em",
+                    }}>
+                      v{v.ver}
+                    </div>
+                    <div style={{
+                      fontFamily: "var(--font-body-family)",
+                      fontSize: "0.9vw", color: v.tagColor,
+                      background: v.tagBg,
+                      borderRadius: "0.3vw",
+                      padding: "0.1vh 0.5vw",
+                      border: `1px solid ${v.border}`,
+                    }}>
+                      {v.tag}
+                    </div>
+                  </div>
+
+                  {/* Name */}
                   <div style={{
                     fontFamily: "var(--font-display-family)",
-                    fontSize: "1.1vw", fontWeight: 800,
-                    color: v.color,
-                    background: `rgba(0,0,0,0.3)`,
-                    border: `1px solid ${v.border}`,
-                    borderRadius: "0.4vw",
-                    padding: "0.15vh 0.55vw",
-                    letterSpacing: "0.04em",
+                    fontSize: "1.9vw", fontWeight: 800,
+                    color: "#F0F0F8", lineHeight: 1.1,
+                    marginBottom: "0.4vh",
+                    whiteSpace: "nowrap",
                   }}>
-                    v{v.ver}
+                    {v.icon} {v.name}
                   </div>
                   <div style={{
                     fontFamily: "var(--font-body-family)",
-                    fontSize: "0.9vw", color: v.tagColor,
-                    background: v.tagBg,
-                    borderRadius: "0.3vw",
-                    padding: "0.1vh 0.5vw",
-                    border: `1px solid ${v.border}`,
+                    fontSize: "0.95vw", color: "#5A6080",
+                    marginBottom: "1.8vh",
                   }}>
-                    {v.tag}
+                    e.g. {v.example}
+                  </div>
+
+                  {/* Features */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.9vh" }}>
+                    {v.features.map((f) => (
+                      <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: "0.6vw" }}>
+                        <div style={{
+                          width: "0.35vw", height: "0.35vw", borderRadius: "50%",
+                          background: v.color, marginTop: "0.8vh", flexShrink: 0,
+                        }} />
+                        <div style={{
+                          fontFamily: "var(--font-body-family)",
+                          fontSize: "1.25vw", color: "#9DA3C8", lineHeight: 1.45,
+                        }}>
+                          {f}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Name */}
-                <div style={{
-                  fontFamily: "var(--font-display-family)",
-                  fontSize: "2.2vw", fontWeight: 800,
-                  color: "#F0F0F8", lineHeight: 1.1,
-                  marginBottom: "0.4vh",
-                }}>
-                  {v.icon} {v.name}
-                </div>
-                <div style={{
-                  fontFamily: "var(--font-body-family)",
-                  fontSize: "0.95vw", color: "#5A6080",
-                  marginBottom: "1.8vh",
-                }}>
-                  e.g. {v.example}
-                </div>
-
-                {/* Features */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.9vh" }}>
-                  {v.features.map((f) => (
-                    <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: "0.6vw" }}>
-                      <div style={{
-                        width: "0.35vw", height: "0.35vw", borderRadius: "50%",
-                        background: v.color, marginTop: "0.8vh", flexShrink: 0,
-                      }} />
-                      <div style={{
-                        fontFamily: "var(--font-body-family)",
-                        fontSize: "1.25vw", color: "#9DA3C8", lineHeight: 1.45,
-                      }}>
-                        {f}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Verdict */}
-                <div style={{ marginTop: "1.8vh", paddingTop: "1.4vh", borderTop: `1px solid ${v.border}` }}>
+                {/* Verdict — always anchored to bottom of card */}
+                <div style={{ paddingTop: "1.4vh", marginTop: "1.8vh", borderTop: `1px solid ${v.border}` }}>
                   <div style={{
                     fontFamily: "var(--font-body-family)",
                     fontSize: "1.1vw", color: v.verdictColor,
