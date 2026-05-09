@@ -56,7 +56,7 @@ export default function S13Evolution() {
         "On-chain royalties enforced",
         "Agent ↔ Agent autonomous trade",
       ],
-      verdict: "Programmable assets — value flows to creators",
+      verdict: "NFT assets — value flows to creators",
       verdictColor: "#A78BFA",
       icon: "⚡",
       highlight: true,
@@ -196,7 +196,7 @@ export default function S13Evolution() {
                     fontSize: "0.95vw", color: "#5A6080",
                     marginBottom: "1.8vh",
                   }}>
-                    e.g. {v.example}
+                    {v.example}
                   </div>
 
                   {/* Features */}
