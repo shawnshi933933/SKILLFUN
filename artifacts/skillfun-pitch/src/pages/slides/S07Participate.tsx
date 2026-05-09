@@ -113,20 +113,22 @@ export default function S07Participate() {
           Five Ways to Participate
         </h2>
 
-        <div className="flex gap-[1.4vw]" style={{ flex: 1, minHeight: 0 }}>
+        <div style={{ flex: 1, minHeight: 0, display: "flex", gap: "1.4vw" }}>
           {roles.map((role) => (
             <div
               key={role.tag}
-              className="flex flex-col"
               style={{
                 flex: 1,
-                minHeight: 0,
+                minWidth: 0,
                 background: role.cardBg,
                 borderRadius: "0.8vw",
                 padding: "1.8vh 1.6vw",
-                border: `1px solid ${role.cardBorder}`
+                border: `1px solid ${role.cardBorder}`,
+                display: "grid",
+                gridTemplateRows: "auto auto 1fr auto",
               }}
             >
+              {/* Tag */}
               <div
                 style={{
                   display: "inline-block",
@@ -149,6 +151,7 @@ export default function S07Participate() {
                   {role.tag}
                 </span>
               </div>
+              {/* Title */}
               <div
                 style={{
                   fontFamily: "var(--font-display-family)",
@@ -161,17 +164,21 @@ export default function S07Participate() {
               >
                 {role.title}
               </div>
+              {/* Body — grows to fill, overflow hidden */}
               <p
                 style={{
                   fontFamily: "var(--font-body-family)",
                   fontSize: "1.3vw",
                   color: "#7B7F9E",
-                  lineHeight: 1.4
+                  lineHeight: 1.4,
+                  overflow: "hidden",
+                  alignSelf: "start"
                 }}
               >
                 {role.body}
               </p>
-              <div style={{ marginTop: "auto", paddingTop: "1.4vh" }}>
+              {/* Earn section — always pinned to same row */}
+              <div style={{ paddingTop: "1.4vh" }}>
                 <div style={{ height: 1, background: role.dividerColor, marginBottom: "1vh" }} />
                 <div
                   style={{
