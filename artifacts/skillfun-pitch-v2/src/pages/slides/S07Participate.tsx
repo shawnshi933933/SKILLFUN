@@ -30,7 +30,7 @@ export default function S07Participate() {
       </div>
       <div style={{ width: "100%", marginTop: "2vh" }}>
         <div style={{ height: 1, background: dividerColor, marginBottom: "0.8vh" }} />
-        <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.1vw", fontWeight: 700, color: earnColor, lineHeight: 1.2 }}>{earnText}</div>
+        <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.0vw", fontWeight: 700, color: earnColor, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{earnText}</div>
       </div>
     </div>
   );
@@ -114,7 +114,7 @@ export default function S07Participate() {
               <line x1="12" y1="2" x2="12" y2="5"/>
               <line x1="12" y1="19" x2="12" y2="22"/>
             </svg>,
-            "AI Consumers", "rgba(240,240,248,0.15)", "#F0F0F8", "Access entire marketplace"
+            "AI Consumers", "rgba(240,240,248,0.15)", "#F0F0F8", "Full marketplace access"
           )}
 
         </div>
