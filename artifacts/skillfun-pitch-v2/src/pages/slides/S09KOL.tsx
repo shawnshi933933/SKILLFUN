@@ -1,3 +1,5 @@
+const base = import.meta.env.BASE_URL;
+
 export default function S09KOL() {
   return (
     <div
@@ -8,7 +10,7 @@ export default function S09KOL() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: "url(/skillfun-pitch-v2/bg-kol.png)",
+          backgroundImage: `url(${base}bg-kol.png)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           opacity: 0.13

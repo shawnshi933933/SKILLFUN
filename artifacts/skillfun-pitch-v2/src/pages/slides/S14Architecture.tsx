@@ -242,7 +242,7 @@ export default function S14Architecture() {
           stroke="rgba(52,211,153,0.3)" strokeWidth="1" strokeDasharray="3 2" />
       </svg>
 
-      {/* MEMORY NODE — SVG icon, no emoji */}
+      {/* MEMORY NODE */}
       <div style={{
         position: "absolute",
         top: "14.8vh",
@@ -253,14 +253,9 @@ export default function S14Architecture() {
         background: "rgba(52,211,153,0.10)",
         border: "1.5px solid rgba(52,211,153,0.45)",
         display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "1.4vw",
         boxShadow: "0 0 1.2vw rgba(52,211,153,0.18)",
-      }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="1.5" width="65%" height="65%" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 9V4M12 20v-5M9 12H4M20 12h-5"/>
-          <path d="M9.17 9.17L5.64 5.64M18.36 18.36l-3.53-3.53M14.83 9.17l3.53-3.53M5.64 18.36l3.53-3.53"/>
-        </svg>
-      </div>
+      }}>🧠</div>
       <div style={{
         position: "absolute", top: "21.8vh", left: "27vw", width: "6vw",
         textAlign: "center",
@@ -276,16 +271,9 @@ export default function S14Architecture() {
         background: "rgba(34,211,238,0.10)",
         border: "1.5px solid rgba(34,211,238,0.5)",
         display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "2vw",
         boxShadow: "0 0 2vw rgba(34,211,238,0.24)",
-      }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="#22D3EE" strokeWidth="1.5" width="65%" height="65%" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="4" width="20" height="16" rx="2"/>
-          <circle cx="8.5" cy="10.5" r="1.5"/>
-          <circle cx="15.5" cy="10.5" r="1.5"/>
-          <path d="M8 15.5h8"/>
-          <path d="M12 4V2"/>
-        </svg>
-      </div>
+      }}>🤖</div>
       <div style={{
         position: "absolute", top: "22.6vh", left: "44vw", width: "12vw",
         display: "flex", flexDirection: "column", alignItems: "center", gap: "0.3vh",
@@ -479,7 +467,7 @@ export default function S14Architecture() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.7vw" }}>
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700, color: "#34D399", background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.38)", borderRadius: "0.22vw", padding: "0.08vh 0.4vw", letterSpacing: "0.07em" }}>
-            STORAGE
+            ⛓ STORAGE
           </span>
           <span style={{ fontFamily: "var(--font-display-family)", fontSize: "0.88vw", fontWeight: 700, color: "#34D399" }}>
             Ethereum Mainnet · EIP-4844 Blob
