@@ -194,7 +194,7 @@ export default function S04Solution() {
           <span style={{
             fontFamily: "var(--font-body-family)", fontSize: "1.15vw",
             color: "rgba(52,211,153,0.65)", lineHeight: 1.4,
-          }}>Skill NFT metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. </span>
+          }}> </span>
         </div>
       </div>
       <div
