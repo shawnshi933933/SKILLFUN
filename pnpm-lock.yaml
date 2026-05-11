@@ -594,7 +594,7 @@ importers:
         specifier: 'catalog:'
         version: 3.25.76
 
-  artifacts/skillfun-market-deck:
+  artifacts/skillfun-pitch:
     devDependencies:
       '@replit/vite-plugin-cartographer':
         specifier: 'catalog:'
@@ -642,7 +642,7 @@ importers:
         specifier: 'catalog:'
         version: 3.25.76
 
-  artifacts/skillfun-pitch:
+  artifacts/skillfun-pitch-v2:
     devDependencies:
       '@replit/vite-plugin-cartographer':
         specifier: 'catalog:'
