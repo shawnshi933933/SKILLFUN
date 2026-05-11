@@ -67,7 +67,7 @@ export default function S02TechStack() {
             marginBottom: "1.2vh"
           }}
         >
-          SkillFun is built on the emerging agent protocol stack — every layer crystallizing right now, and we connect them all.
+          Every layer of the agent stack is crystallizing now — SkillFun connects them all.
         </p>
 
         <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
@@ -79,7 +79,7 @@ export default function S02TechStack() {
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              Tool invocation (MCP) and agent-to-agent messaging (A2A) — Anthropic &amp; Google open specs
+              Open specs for agent tool invocation &amp; messaging
             </div>
           </div>
 
@@ -90,7 +90,7 @@ export default function S02TechStack() {
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              On-chain agent identity, trust scores, and verifiable credentials for autonomous agents
+              On-chain agent identity and verifiable credentials
             </div>
           </div>
 
@@ -101,7 +101,7 @@ export default function S02TechStack() {
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              HTTP-native payment protocol — pay once to acquire call rights, settled on-chain, no subscriptions
+              HTTP-native pay-per-call, settled on-chain
             </div>
           </div>
 
@@ -112,7 +112,7 @@ export default function S02TechStack() {
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              Standardized settlement and revenue-sharing contracts for agent service transactions
+              Auto-settlement and revenue-sharing for agent transactions
             </div>
           </div>
 
@@ -123,7 +123,7 @@ export default function S02TechStack() {
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              NFT standard for tokenized AI skills — ownership, licensing, and royalty enforcement on-chain
+              NFT standard for tokenized AI skills and royalties
             </div>
           </div>
 
@@ -134,7 +134,7 @@ export default function S02TechStack() {
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              Security and governance rails for the agent stack — ZK and TEE execution proofs
+              Security rails — ZK and TEE execution proofs
             </div>
           </div>
 
@@ -144,7 +144,9 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Storage</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>Skill metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. </div>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
+              Skill metadata stored via Ethereum blob transactions
+            </div>
           </div>
 
         </div>

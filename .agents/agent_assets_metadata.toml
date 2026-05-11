@@ -24,6 +24,18 @@ uri = "file://artifacts/skillfun-market-deck/public/market-bg.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "bIGW_4RJZXJ7DhGem8hXE"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-a2a.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "tW63IRjz_BjiNL_HpLJFl"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-kol.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "1bI6qw_nP-kzDKfdNayK6"
 uri = "file://.local/outputs/SKILL-MARKET.pdf"

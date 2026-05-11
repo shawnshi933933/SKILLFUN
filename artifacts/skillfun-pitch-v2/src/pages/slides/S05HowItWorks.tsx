@@ -1,69 +1,4 @@
-import React from "react";
-
 export default function S05HowItWorks() {
-  const steps = [
-    {
-      n: "01",
-      title: "Mint",
-      color: "#8B5CF6",
-      dimColor: "rgba(139,92,246,0.22)",
-      bg: "rgba(139,92,246,0.13)",
-      border: "1px solid rgba(139,92,246,0.32)",
-      borderLeft: undefined as string | undefined,
-      borderRight: "none",
-      radius: "0.8vw 0 0 0.8vw",
-      body: "Creator packages any AI capability as an ERC-8239 NFT. Sets Base Price and the Creator:Owner royalty split on-chain.",
-    },
-    {
-      n: "02",
-      title: "Bundle",
-      color: "#B4A0FF",
-      dimColor: "rgba(180,160,255,0.20)",
-      bg: "rgba(22,25,41,0.8)",
-      border: "1px solid rgba(240,240,248,0.08)",
-      borderLeft: "none",
-      borderRight: "none",
-      radius: "0",
-      body: "Curator selects Skills and creates a composite tool with orchestration rules. Sets Markup percentage and the Staker share.",
-    },
-    {
-      n: "03",
-      title: "Discover",
-      color: "#9DA3C8",
-      dimColor: "rgba(157,163,200,0.18)",
-      bg: "rgba(22,25,41,0.8)",
-      border: "1px solid rgba(240,240,248,0.08)",
-      borderLeft: "none",
-      borderRight: "none",
-      radius: "0",
-      body: "Agent adds a single SkillFun MCP endpoint. Every Bundle and Skill appears instantly as a native callable tool — no extra integrations.",
-    },
-    {
-      n: "04",
-      title: "Pay",
-      color: "#22D3EE",
-      dimColor: "rgba(34,211,238,0.20)",
-      bg: "rgba(22,25,41,0.8)",
-      border: "1px solid rgba(240,240,248,0.08)",
-      borderLeft: "none",
-      borderRight: "none",
-      radius: "0",
-      body: "x402 HTTP payment — Base Price plus Curator Markup, calculated on-chain. Acquires call rights instantly. No subscriptions.",
-    },
-    {
-      n: "05",
-      title: "Earn",
-      color: "#22D3EE",
-      dimColor: "rgba(34,211,238,0.22)",
-      bg: "rgba(34,211,238,0.08)",
-      border: "1px solid rgba(34,211,238,0.24)",
-      borderLeft: "none",
-      borderRight: undefined as string | undefined,
-      radius: "0 0.8vw 0.8vw 0",
-      body: "ERC-8183 auto-splits: Creator + Owner share the base; Curator + Stakers share the markup; Platform takes 10%. Zero manual settlement.",
-    },
-  ];
-
   return (
     <div
       className="relative w-screen h-screen overflow-hidden"
@@ -111,85 +46,124 @@ export default function S05HowItWorks() {
         </h2>
 
         <div className="flex items-stretch" style={{ flex: 1 }}>
-          {steps.map((step, i) => (
-            <React.Fragment key={step.n}>
-              <div
-                className="flex flex-col justify-between"
-                style={{
-                  flex: 1,
-                  padding: "3vh 2vw",
-                  background: step.bg,
-                  borderRadius: step.radius,
-                  border: step.border,
-                  borderLeft: step.borderLeft,
-                  borderRight: step.borderRight,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-display-family)",
-                      fontSize: "3.8vw",
-                      fontWeight: 800,
-                      color: step.dimColor,
-                      lineHeight: 1
-                    }}
-                  >
-                    {step.n}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-display-family)",
-                      fontSize: "2.1vw",
-                      fontWeight: 700,
-                      color: step.color,
-                      marginTop: "1.2vh"
-                    }}
-                  >
-                    {step.title}
-                  </div>
-                </div>
-                <p
-                  style={{
-                    fontFamily: "var(--font-body-family)",
-                    fontSize: "1.55vw",
-                    color: "#B0B4D0",
-                    lineHeight: 1.5,
-                    marginTop: "2vh"
-                  }}
-                >
-                  {step.body}
-                </p>
-              </div>
-              {i < steps.length - 1 && (
-                <div
-                  style={{
-                    width: "2.8vw",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#8B5CF6",
-                    fontSize: "2vw",
-                    fontFamily: "var(--font-display-family)",
-                    flexShrink: 0,
-                  }}
-                >
-                  ›
-                </div>
-              )}
-            </React.Fragment>
-          ))}
+          {/* Step 01 — Mint */}
+          <div
+            className="flex flex-col justify-between"
+            style={{
+              flex: 1,
+              padding: "3vh 2vw",
+              background: "rgba(139,92,246,0.13)",
+              borderRadius: "0.8vw 0 0 0.8vw",
+              border: "1px solid rgba(139,92,246,0.32)",
+              borderRight: "none",
+            }}
+          >
+            <div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(139,92,246,0.22)", lineHeight: 1 }}>01</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#8B5CF6", marginTop: "1.2vh" }}>Mint</div>
+            </div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+              Mint any AI capability as an ERC-8239 NFT with price &amp; royalties set.
+            </p>
+          </div>
+
+          <div style={{ width: "2.8vw", display: "flex", alignItems: "center", justifyContent: "center", color: "#8B5CF6", fontSize: "2vw", fontFamily: "var(--font-display-family)", flexShrink: 0 }}>›</div>
+
+          {/* Step 02 — Bundle */}
+          <div
+            className="flex flex-col justify-between"
+            style={{
+              flex: 1,
+              padding: "3vh 2vw",
+              background: "rgba(22,25,41,0.8)",
+              border: "1px solid rgba(240,240,248,0.08)",
+              borderLeft: "none",
+              borderRight: "none",
+            }}
+          >
+            <div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(180,160,255,0.20)", lineHeight: 1 }}>02</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#B4A0FF", marginTop: "1.2vh" }}>Bundle</div>
+            </div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+              Curators compose Skills into a Bundle, add Markup, set Staker share.
+            </p>
+          </div>
+
+          <div style={{ width: "2.8vw", display: "flex", alignItems: "center", justifyContent: "center", color: "#8B5CF6", fontSize: "2vw", fontFamily: "var(--font-display-family)", flexShrink: 0 }}>›</div>
+
+          {/* Step 03 — Discover */}
+          <div
+            className="flex flex-col justify-between"
+            style={{
+              flex: 1,
+              padding: "3vh 2vw",
+              background: "rgba(22,25,41,0.8)",
+              border: "1px solid rgba(240,240,248,0.08)",
+              borderLeft: "none",
+              borderRight: "none",
+            }}
+          >
+            <div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(157,163,200,0.18)", lineHeight: 1 }}>03</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#9DA3C8", marginTop: "1.2vh" }}>Discover</div>
+            </div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+              One MCP URL — every Skill and Bundle appears as a native callable tool.
+            </p>
+          </div>
+
+          <div style={{ width: "2.8vw", display: "flex", alignItems: "center", justifyContent: "center", color: "#8B5CF6", fontSize: "2vw", fontFamily: "var(--font-display-family)", flexShrink: 0 }}>›</div>
+
+          {/* Step 04 — Pay */}
+          <div
+            className="flex flex-col justify-between"
+            style={{
+              flex: 1,
+              padding: "3vh 2vw",
+              background: "rgba(22,25,41,0.8)",
+              border: "1px solid rgba(240,240,248,0.08)",
+              borderLeft: "none",
+              borderRight: "none",
+            }}
+          >
+            <div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(34,211,238,0.20)", lineHeight: 1 }}>04</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#22D3EE", marginTop: "1.2vh" }}>Pay</div>
+            </div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+              x402 per-call HTTP payment acquires call rights instantly.
+            </p>
+          </div>
+
+          <div style={{ width: "2.8vw", display: "flex", alignItems: "center", justifyContent: "center", color: "#8B5CF6", fontSize: "2vw", fontFamily: "var(--font-display-family)", flexShrink: 0 }}>›</div>
+
+          {/* Step 05 — Earn */}
+          <div
+            className="flex flex-col justify-between"
+            style={{
+              flex: 1,
+              padding: "3vh 2vw",
+              background: "rgba(34,211,238,0.08)",
+              borderRadius: "0 0.8vw 0.8vw 0",
+              border: "1px solid rgba(34,211,238,0.24)",
+              borderLeft: "none",
+            }}
+          >
+            <div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(34,211,238,0.22)", lineHeight: 1 }}>05</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#22D3EE", marginTop: "1.2vh" }}>Earn</div>
+            </div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+              ERC-8183 splits revenue to Creator, Owner, Curator, Stakers &amp; Platform.
+            </p>
+          </div>
         </div>
       </div>
 
       <div
         className="absolute bottom-[3.5vh] right-[3.5vw]"
-        style={{
-          fontFamily: "var(--font-display-family)",
-          color: "#3D4160",
-          fontSize: "1.5vw",
-          fontWeight: 600
-        }}
+        style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}
       >
         08 / 15
       </div>

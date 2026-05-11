@@ -1,265 +1,122 @@
-function Tag({ label, color }: { label: string; color: "purple" | "teal" | "amber" | "muted" | "lavender" }) {
-  const styles: Record<string, React.CSSProperties> = {
-    purple:  { color: "#C4B5FD", background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.45)" },
-    teal:    { color: "#22D3EE", background: "rgba(34,211,238,0.12)",  border: "1px solid rgba(34,211,238,0.4)" },
-    amber:   { color: "#FCD34D", background: "rgba(252,211,77,0.1)",   border: "1px solid rgba(252,211,77,0.35)" },
-    muted:   { color: "#7B7F9E", background: "rgba(123,127,158,0.1)",  border: "1px solid rgba(123,127,158,0.3)" },
-    lavender:{ color: "#B4A0FF", background: "rgba(180,160,255,0.12)", border: "1px solid rgba(180,160,255,0.4)" },
-  };
-  return (
-    <span style={{
-      fontFamily: "var(--font-body-family)",
-      fontSize: "1.05vw",
-      fontWeight: 600,
-      borderRadius: "0.3vw",
-      padding: "0.15vh 0.55vw",
-      letterSpacing: "0.04em",
-      whiteSpace: "nowrap",
-      ...styles[color],
-    }}>
-      {label}
-    </span>
-  );
-}
-
-const steps = [
-  {
-    n: 1,
-    from: "B",
-    to: "S",
-    label: "Agent B adds SkillFun unified MCP endpoint — all Bundles and Skills appear as native callable tools",
-    tags: [{ label: "MCP", color: "muted" as const }],
-  },
-  {
-    n: 2,
-    from: "A",
-    to: "S",
-    label: "Agent A has already minted a SKILL NFT — Base Price, license terms, and Creator:Owner split embedded on-chain",
-    tags: [{ label: "ERC-8239", color: "purple" as const }],
-  },
-  {
-    n: 3,
-    from: "S",
-    to: "S",
-    label: "A Curator has bundled Agent A's Skill with others — Markup and Staker share already configured in the Bundle",
-    tags: [{ label: "Bundle", color: "lavender" as const }],
-  },
-  {
-    n: 4,
-    from: "B",
-    to: "S",
-    label: "Agent B submits x402 HTTP payment per SKILL invocation — routed via Bundle, price = SKILL Base Price + Curator Markup, call rights acquired instantly",
-    tags: [{ label: "x402", color: "teal" as const }],
-  },
-  {
-    n: 5,
-    from: "S",
-    to: "chain",
-    label: "ERC-8183 settlement — Base split to Creator + Owner; Markup split to Curator + Staker Pool; Platform 10%",
-    tags: [{ label: "ERC-8183", color: "teal" as const }],
-  },
-  {
-    n: 6,
-    from: "S",
-    to: "B",
-    label: "MCP Server routes to the target SKILL(s) within the Bundle, executes, and returns result to Agent B — fully autonomous, zero human approval required",
-    tags: [{ label: "MCP", color: "muted" as const }],
-  },
-];
-
 export default function S06A2A() {
   return (
     <div
       className="relative w-screen h-screen overflow-hidden"
-      style={{
-        background: "#0D0F14",
-        backgroundImage:
-          "radial-gradient(ellipse 70% 60% at 50% 40%, rgba(139,92,246,0.07) 0%, transparent 70%)",
-      }}
+      style={{ background: "#0D0F14" }}
     >
+      {/* AI background image — low opacity */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: "url(/skillfun-pitch-v2/bg-a2a.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.12
+        }}
+      />
+      {/* Dark overlay gradient */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse 70% 60% at 50% 40%, rgba(139,92,246,0.10) 0%, transparent 70%)"
+        }}
+      />
+
       <div className="absolute left-0 top-0 bottom-0 w-[0.35vw]" style={{ background: "#8B5CF6" }} />
       <div
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
       />
+
       <div
         className="absolute inset-0 flex flex-col"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "3vh", paddingBottom: "3.5vh" }}
+        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "3.5vh", paddingBottom: "3.5vh" }}
       >
-        <span
-          style={{
-            fontFamily: "var(--font-body-family)",
-            color: "#22D3EE",
-            fontSize: "1.4vw",
-            fontWeight: 400,
-            letterSpacing: "0.24em",
-            textTransform: "uppercase",
-            marginBottom: "0.5vh",
-          }}
-        >
+        {/* Header */}
+        <span style={{ fontFamily: "var(--font-body-family)", color: "#22D3EE", fontSize: "1.4vw", fontWeight: 400, letterSpacing: "0.24em", textTransform: "uppercase", marginBottom: "0.5vh" }}>
           Live Scenario
         </span>
-        <h2
-          style={{
-            fontFamily: "var(--font-display-family)",
-            fontSize: "3.5vw",
-            fontWeight: 800,
-            color: "#F0F0F8",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.05,
-            marginBottom: "0.4vh",
-          }}
-        >
+        <h2 style={{ fontFamily: "var(--font-display-family)", fontSize: "3.5vw", fontWeight: 800, color: "#F0F0F8", letterSpacing: "-0.02em", lineHeight: 1.05, marginBottom: "0.4vh" }}>
           Zero-Human Transaction
         </h2>
-        <p
-          style={{
-            fontFamily: "var(--font-body-family)",
-            fontSize: "1.55vw",
-            color: "#7B7F9E",
-            fontWeight: 300,
-            marginBottom: "2vh",
-          }}
-        >The flow below shows a complete A2A discovery-to-execution via Bundle and unified MCP</p>
+        <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.5vw", color: "#7B7F9E", fontWeight: 300, marginBottom: "3vh" }}>
+          Agent B buys a skill from Agent A — no human involved at any step.
+        </p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "1vw", marginBottom: "1.8vh" }}>
-          {[
-            { label: "Human → Skill", active: false },
-            { label: "Developer API", active: false },
-            { label: "Agent → Agent", active: true },
-          ].map(({ label, active }) => (
-            <div
-              key={label}
-              style={{
-                fontFamily: "var(--font-body-family)",
-                fontSize: "1.2vw",
-                fontWeight: active ? 600 : 400,
-                color: active ? "#22D3EE" : "#3D4160",
-                background: active ? "rgba(34,211,238,0.10)" : "rgba(255,255,255,0.03)",
-                border: active ? "1px solid rgba(34,211,238,0.4)" : "1px solid rgba(255,255,255,0.07)",
-                borderRadius: "0.4vw",
-                padding: "0.4vh 1.2vw",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {active && <span style={{ marginRight: "0.4vw", color: "#22D3EE" }}>▶</span>}
-              {label}
+        {/* Participant boxes */}
+        <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: "3vh" }}>
+          {/* Agent B */}
+          <div style={{ flex: 1, background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.30)", borderRadius: "0.8vw", padding: "1.8vh 2vw", textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.2vw", fontWeight: 800, color: "#22D3EE" }}>Agent B</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.15vw", color: "#7B7F9E", marginTop: "0.3vh" }}>Skill Buyer</div>
+          </div>
+
+          {/* Arrow B→S */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "8vw", flexShrink: 0 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.9vw", color: "#22D3EE", fontWeight: 600, marginBottom: "0.3vh", letterSpacing: "0.06em" }}>x402</div>
+            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(34,211,238,0.4)" }} />
+              <div style={{ color: "#22D3EE", fontSize: "1.2vw", lineHeight: 1 }}>›</div>
             </div>
-          ))}
-          <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.1vw", color: "#3D4160", marginLeft: "0.5vw" }}>
-            — scenario shown below
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.85vw", color: "#3D4160", marginTop: "0.3vh" }}>pays</div>
+          </div>
+
+          {/* SkillFun center */}
+          <div style={{ flex: 1.4, background: "rgba(139,92,246,0.14)", border: "1.5px solid rgba(139,92,246,0.50)", borderRadius: "0.8vw", padding: "2vh 2vw", textAlign: "center", boxShadow: "0 0 2.5vw rgba(139,92,246,0.18)" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.5vw", fontWeight: 800, color: "#8B5CF6" }}>SkillFun</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.15vw", color: "#B4A0FF", marginTop: "0.3vh" }}>MCP Server · Bundle Layer</div>
+          </div>
+
+          {/* Arrow S→A */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "8vw", flexShrink: 0 }}>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.9vw", color: "#B4A0FF", fontWeight: 600, marginBottom: "0.3vh", letterSpacing: "0.06em" }}>ERC-8183</div>
+            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(180,160,255,0.4)" }} />
+              <div style={{ color: "#B4A0FF", fontSize: "1.2vw", lineHeight: 1 }}>›</div>
+            </div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "0.85vw", color: "#3D4160", marginTop: "0.3vh" }}>royalties</div>
+          </div>
+
+          {/* Agent A */}
+          <div style={{ flex: 1, background: "rgba(180,160,255,0.07)", border: "1px solid rgba(180,160,255,0.26)", borderRadius: "0.8vw", padding: "1.8vh 2vw", textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.2vw", fontWeight: 800, color: "#B4A0FF" }}>Agent A</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.15vw", color: "#7B7F9E", marginTop: "0.3vh" }}>Skill Creator</div>
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 1.5vw", marginBottom: "1.8vh" }}>
-          {[
-            { label: "Agent A", sub: "Skill Creator", accent: "#B4A0FF", border: "rgba(139,92,246,0.3)", bg: "rgba(139,92,246,0.08)" },
-            { label: "SkillFun", sub: "MCP + Bundle Layer", accent: "#8B5CF6", border: "rgba(139,92,246,0.6)", bg: "rgba(139,92,246,0.18)" },
-            { label: "Agent B", sub: "Skill Buyer", accent: "#22D3EE", border: "rgba(34,211,238,0.3)", bg: "rgba(34,211,238,0.07)" },
-          ].map((p) => (
-            <div
-              key={p.label}
-              style={{
-                background: p.bg,
-                border: `1px solid ${p.border}`,
-                borderRadius: "0.6vw",
-                padding: "1vh 1.5vw",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontFamily: "var(--font-display-family)", color: p.accent, fontSize: "1.6vw", fontWeight: 700 }}>
-                {p.label}
-              </div>
-              <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.1vw" }}>{p.sub}</div>
-            </div>
-          ))}
-        </div>
-
+        {/* Protocol flow — 4 steps */}
         <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
-          {steps.map((step) => (
-            <div
-              key={step.n}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "2vw 1fr",
-                alignItems: "center",
-                gap: "0 1.5vw",
-                background: "rgba(22,25,41,0.8)",
-                border: "1px solid rgba(240,240,248,0.07)",
-                borderRadius: "0.5vw",
-                padding: "0.8vh 2vw",
-              }}
-            >
-              <div
-                style={{
-                  width: "2vw",
-                  height: "2vw",
-                  borderRadius: "50%",
-                  background: "rgba(139,92,246,0.2)",
-                  border: "1px solid rgba(139,92,246,0.5)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: "var(--font-display-family)",
-                  color: "#B4A0FF",
-                  fontSize: "1.1vw",
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}
-              >
-                {step.n}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "1.5vw", justifyContent: "space-between" }}>
-                <div style={{ fontFamily: "var(--font-body-family)", color: "#C8CADB", fontSize: "1.35vw", lineHeight: 1.35 }}>
-                  {step.label}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6vw", flexShrink: 0 }}>
-                  <span style={{
-                    fontFamily: "var(--font-body-family)",
-                    color: "#3D4160",
-                    fontSize: "1.05vw",
-                    whiteSpace: "nowrap",
-                  }}>
-                    {step.from === "A" ? "Agent A" : step.from === "B" ? "Agent B" : "SkillFun"}
-                    {" → "}
-                    {step.to === "S" ? "SkillFun" : step.to === "B" ? "Agent B" : step.to === "chain" ? "on-chain" : "Agent A"}
-                  </span>
-                  {step.tags.map((t) => <Tag key={t.label} {...t} />)}
-                </div>
-              </div>
-            </div>
-          ))}
+          {/* Step 1 */}
+          <div style={{ display: "grid", gridTemplateColumns: "7vw 1fr", alignItems: "center", gap: "0 2vw", background: "rgba(22,25,41,0.75)", border: "1px solid rgba(34,211,238,0.18)", borderRadius: "0.5vw", padding: "1vh 2vw" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.6vw", fontWeight: 800, color: "#22D3EE" }}>MCP</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.35vw", color: "#C8CADB" }}>Agent B adds one SkillFun endpoint — all Bundles &amp; Skills appear as native tools</div>
+          </div>
+          {/* Step 2 */}
+          <div style={{ display: "grid", gridTemplateColumns: "7vw 1fr", alignItems: "center", gap: "0 2vw", background: "rgba(22,25,41,0.75)", border: "1px solid rgba(139,92,246,0.18)", borderRadius: "0.5vw", padding: "1vh 2vw" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.4vw", fontWeight: 800, color: "#8B5CF6" }}>ERC-8239</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.35vw", color: "#C8CADB" }}>Skill NFT encodes price, license terms, and Creator:Owner royalty split on-chain</div>
+          </div>
+          {/* Step 3 */}
+          <div style={{ display: "grid", gridTemplateColumns: "7vw 1fr", alignItems: "center", gap: "0 2vw", background: "rgba(22,25,41,0.75)", border: "1px solid rgba(34,211,238,0.18)", borderRadius: "0.5vw", padding: "1vh 2vw" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.6vw", fontWeight: 800, color: "#22D3EE" }}>x402</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.35vw", color: "#C8CADB" }}>HTTP payment per invocation — call rights acquired instantly, no subscriptions</div>
+          </div>
+          {/* Step 4 */}
+          <div style={{ display: "grid", gridTemplateColumns: "7vw 1fr", alignItems: "center", gap: "0 2vw", background: "rgba(22,25,41,0.75)", border: "1px solid rgba(180,160,255,0.18)", borderRadius: "0.5vw", padding: "1vh 2vw" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.4vw", fontWeight: 800, color: "#B4A0FF" }}>ERC-8183</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.35vw", color: "#C8CADB" }}>Auto-splits revenue: Creator · Owner · Curator · Staker · Platform — zero manual settlement</div>
+          </div>
         </div>
 
-        <div
-          style={{
-            marginTop: "1.8vh",
-            padding: "1.2vh 2.5vw",
-            background: "rgba(34,211,238,0.06)",
-            border: "1px solid rgba(34,211,238,0.25)",
-            borderRadius: "0.6vw",
-            textAlign: "center",
-          }}
-        >
-          <span style={{
-            fontFamily: "var(--font-display-family)",
-            color: "#22D3EE",
-            fontSize: "1.6vw",
-            fontWeight: 700,
-            letterSpacing: "0.01em",
-          }}>Fully autonomous — one MCP endpoint, one payment, auto-split, zero human involvement.</span>
+        {/* Bottom summary */}
+        <div style={{ marginTop: "2.5vh", padding: "1.2vh 2.5vw", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.25)", borderRadius: "0.6vw", textAlign: "center" }}>
+          <span style={{ fontFamily: "var(--font-display-family)", color: "#22D3EE", fontSize: "1.6vw", fontWeight: 700 }}>
+            Fully autonomous — one endpoint, one payment, auto-split, zero human involvement.
+          </span>
         </div>
       </div>
-      <div
-        className="absolute bottom-[3.5vh] right-[3.5vw]"
-        style={{
-          fontFamily: "var(--font-display-family)",
-          color: "#3D4160",
-          fontSize: "1.5vw",
-          fontWeight: 600,
-        }}
-      >
+
+      <div className="absolute bottom-[3.5vh] right-[3.5vw]" style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}>
         09 / 15
       </div>
     </div>

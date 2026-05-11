@@ -37,10 +37,9 @@ export default function S10TokenEconomy() {
 
         <div className="flex gap-[3vw]" style={{ flex: 1 }}>
 
-          {/* ── Left: fee structure ── */}
+          {/* Left: fee structure */}
           <div className="flex flex-col gap-[1.6vh]" style={{ width: "47vw", flexShrink: 0 }}>
 
-            {/* Formula row */}
             <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.2vw", color: "#7B7F9E", letterSpacing: "0.04em" }}>
               Total Payment&nbsp;
               <span style={{ color: "#F0F0F8", fontWeight: 600 }}>=</span>
@@ -49,7 +48,7 @@ export default function S10TokenEconomy() {
               &nbsp;<span style={{ color: "#22D3EE", fontWeight: 600 }}>Curator Markup</span>
             </div>
 
-            {/* Platform global deduction — full-width banner */}
+            {/* Platform global deduction */}
             <div style={{ display: "flex", alignItems: "center", gap: "1.4vw", background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.22)", borderRadius: "0.7vw", padding: "1.1vh 1.8vw" }}>
               <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.8vw", fontWeight: 900, color: "#22D3EE", lineHeight: 1, flexShrink: 0 }}>
                 10<span style={{ fontSize: "1.9vw" }}>%</span>
@@ -62,12 +61,10 @@ export default function S10TokenEconomy() {
               </div>
             </div>
 
-            {/* Remaining 90% label */}
             <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#7B7F9E", letterSpacing: "0.06em", paddingLeft: "0.2vw" }}>
               REMAINING 90% — distributed by source:
             </div>
 
-            {/* Two split boxes — stacked */}
             <div style={{ display: "flex", flexDirection: "column", gap: "1.4vh", flex: 1 }}>
 
               {/* Base Price × 90% */}
@@ -91,7 +88,7 @@ export default function S10TokenEconomy() {
                   <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.35vw", color: "#B0B4D0", textAlign: "center", flex: 1 }}>Owner</div>
                 </div>
                 <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.0vw", color: "#7B7F9E", marginTop: "1vh", lineHeight: 1.4 }}>
-                  Owner sets Creator royalty at mint. Any ratio — CreatorRatio + OwnerRatio = 100%.
+                  Owner-configurable ratio set at mint.
                 </div>
               </div>
 
@@ -116,32 +113,40 @@ export default function S10TokenEconomy() {
                   <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.35vw", color: "#B0B4D0", textAlign: "center", flex: 1 }}>Staker Pool</div>
                 </div>
                 <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.0vw", color: "#7B7F9E", marginTop: "1vh", lineHeight: 1.4 }}>
-                  Stakers earn yield proportional to stake weight. Stake slashed on confirmed misconduct.
+                  Slashed on confirmed misconduct.
                 </div>
               </div>
 
             </div>
           </div>
 
-          {/* ── Right: Token Utility ── */}
+          {/* Right: Token Utility */}
           <div style={{ flex: 1 }}>
             <div style={{ background: "rgba(22,25,41,0.8)", borderRadius: "0.8vw", padding: "2.8vh 2.5vw", border: "1px solid rgba(240,240,248,0.08)", height: "100%" }}>
               <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.2vw", fontWeight: 700, color: "#7B7F9E", letterSpacing: "0.08em", marginBottom: "2vh" }}>
                 SKILL TOKEN UTILITY
               </div>
               <div className="flex flex-col gap-[1.8vh]">
-                {[
-                  { dot: "#8B5CF6", text: "Stake to Bundles — earn yield from Curator Markup pool" },
-                  { dot: "#22D3EE", text: "Slash-enforced quality: stake lost on confirmed misconduct" },
-                  { dot: "#B4A0FF", text: "Governance over protocol fee parameters" },
-                  { dot: "#9DA3C8", text: "Discounted minting fees for token holders" },
-                  { dot: "#7B7F9E", text: "Required collateral for Curator Bundle registration" },
-                ].map((item) => (
-                  <div key={item.text} style={{ display: "flex", alignItems: "flex-start", gap: "1.2vw" }}>
-                    <div style={{ width: "0.45vw", height: "0.45vw", background: item.dot, borderRadius: "50%", marginTop: "0.9vh", flexShrink: 0 }} />
-                    <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.7vw", color: "#B0B4D0", lineHeight: 1.4 }}>{item.text}</div>
-                  </div>
-                ))}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1.2vw" }}>
+                  <div style={{ width: "0.45vw", height: "0.45vw", background: "#8B5CF6", borderRadius: "50%", marginTop: "0.9vh", flexShrink: 0 }} />
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.7vw", color: "#B0B4D0", lineHeight: 1.4 }}>Stake to Bundles — earn yield from Curator Markup pool</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1.2vw" }}>
+                  <div style={{ width: "0.45vw", height: "0.45vw", background: "#22D3EE", borderRadius: "50%", marginTop: "0.9vh", flexShrink: 0 }} />
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.7vw", color: "#B0B4D0", lineHeight: 1.4 }}>Slash-enforced quality: stake lost on confirmed misconduct</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1.2vw" }}>
+                  <div style={{ width: "0.45vw", height: "0.45vw", background: "#B4A0FF", borderRadius: "50%", marginTop: "0.9vh", flexShrink: 0 }} />
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.7vw", color: "#B0B4D0", lineHeight: 1.4 }}>Governance over protocol fee parameters</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1.2vw" }}>
+                  <div style={{ width: "0.45vw", height: "0.45vw", background: "#9DA3C8", borderRadius: "50%", marginTop: "0.9vh", flexShrink: 0 }} />
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.7vw", color: "#B0B4D0", lineHeight: 1.4 }}>Discounted minting fees for token holders</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1.2vw" }}>
+                  <div style={{ width: "0.45vw", height: "0.45vw", background: "#7B7F9E", borderRadius: "50%", marginTop: "0.9vh", flexShrink: 0 }} />
+                  <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.7vw", color: "#B0B4D0", lineHeight: 1.4 }}>Required collateral for Curator Bundle registration</div>
+                </div>
               </div>
             </div>
           </div>
