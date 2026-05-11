@@ -185,13 +185,6 @@ export default function S04Solution() {
           gap: "1.2vw",
         }}>
           <span style={{
-            fontFamily: "var(--font-body-family)", fontSize: "0.78vw", fontWeight: 700,
-            color: "#34D399", background: "rgba(52,211,153,0.10)",
-            border: "1px solid rgba(52,211,153,0.32)",
-            borderRadius: "0.3vw", padding: "0.15vh 0.55vw", letterSpacing: "0.07em",
-            whiteSpace: "nowrap",
-          }}>⛓ EIP-4844</span>
-          <span style={{
             fontFamily: "var(--font-body-family)", fontSize: "1.15vw",
             color: "rgba(52,211,153,0.65)", lineHeight: 1.4,
           }}> </span>
