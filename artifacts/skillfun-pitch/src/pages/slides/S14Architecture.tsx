@@ -58,7 +58,6 @@ export default function S14Architecture() {
       <div className="absolute left-0 top-0 bottom-0 w-[0.35vw]" style={{ background: "#8B5CF6" }} />
       <div className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg,#8B5CF6,#22D3EE,transparent)" }} />
-
       {/* ── Header ── */}
       <div style={{ position: "absolute", top: "3vh", left: "6vw" }}>
         <span style={{
@@ -76,7 +75,6 @@ export default function S14Architecture() {
           <span style={{ color: "#8B5CF6" }}>One market.</span>
         </span>
       </div>
-
       {/* ══════════ SVG ══════════ */}
       <svg
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
@@ -210,7 +208,6 @@ export default function S14Architecture() {
           </g>
         ))}
       </svg>
-
       {/* ════════ MEMORY NODE ════════ */}
       <div style={{
         position: "absolute",
@@ -231,7 +228,6 @@ export default function S14Architecture() {
         fontFamily: "var(--font-display-family)", fontSize: "0.72vw",
         fontWeight: 700, color: "#34D399", letterSpacing: "0.08em",
       }}>MEMORY</div>
-
       {/* ════════ AGENT ════════ */}
       <div style={{
         position: "absolute", top: "13.5vh", left: "47.5vw",
@@ -262,7 +258,6 @@ export default function S14Architecture() {
           ))}
         </div>
       </div>
-
       {/* ════════ MCP SERVER BAR (full width) ════════ */}
       <div style={{
         position: "absolute", top: "32.9vh", left: "3.1vw", right: "3.1vw", height: "5.5vh",
@@ -296,7 +291,6 @@ export default function S14Architecture() {
           </span>
         </div>
       </div>
-
       {/* ════════ BUNDLES (full width, 3 equal) ════════ */}
       {[
         { name: "Bundle A", left: "3.1vw",  skills: "NLP · Vision · Search" },
@@ -338,7 +332,6 @@ export default function S14Architecture() {
           </div>
         </div>
       ))}
-
       {/* ════════ NFT SECTION HEADER ════════ */}
       <div style={{
         position: "absolute", top: "61.5vh", left: "3.1vw",
@@ -355,7 +348,6 @@ export default function S14Architecture() {
           borderRadius: "0.22vw", padding: "0.05vh 0.38vw", letterSpacing: "0.06em",
         }}>ERC-8239</span>
       </div>
-
       {/* ════════ NFT CARDS (full width, 6 equal) ════════ */}
       {NFT.map((nft, i) => {
         const leftVw = 3.1 + i * (14 + 2); // 14vw card + 2vw gap
@@ -393,7 +385,6 @@ export default function S14Architecture() {
           </div>
         );
       })}
-
       {/* ════════ STORAGE LAYER ════════ */}
       {/* SVG connector lines: NFT cards → storage bar */}
       <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
@@ -403,7 +394,6 @@ export default function S14Architecture() {
             stroke="rgba(52,211,153,0.3)" strokeWidth="1" strokeDasharray="3 2" />
         ))}
       </svg>
-
       <div style={{
         position: "absolute", top: "77vh", left: "3.1vw", right: "3.1vw", height: "4.5vh",
         background: "rgba(52,211,153,0.06)",
@@ -429,9 +419,7 @@ export default function S14Architecture() {
         <span style={{
           fontFamily: "var(--font-body-family)", fontSize: "0.75vw",
           color: "rgba(52,211,153,0.55)", lineHeight: 1.4,
-        }}>
-          Metadata stored on-chain via blob transactions — content hash anchored to each NFT token. No IPFS. No Arweave.
-        </span>
+        }}>Metadata stored on-chain via blob transactions — content hash anchored to each NFT token. </span>
         <span style={{
           fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700,
           color: "#34D399", background: "rgba(52,211,153,0.10)",
@@ -440,7 +428,6 @@ export default function S14Architecture() {
           whiteSpace: "nowrap",
         }}>ERC-8239 hash → blob tx</span>
       </div>
-
       {/* Page number */}
       <div style={{
         position: "absolute", bottom: "3.5vh", right: "3.5vw",
