@@ -184,10 +184,6 @@ export default function S04Solution() {
           alignItems: "center",
           gap: "1.2vw",
         }}>
-          <span style={{
-            fontFamily: "var(--font-body-family)", fontSize: "1.15vw",
-            color: "rgba(52,211,153,0.65)", lineHeight: 1.4,
-          }}> </span>
         </div>
       </div>
       <div
