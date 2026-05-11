@@ -62,7 +62,7 @@ export default function S14Architecture() {
           fontWeight: 800, color: "#F0F0F8", letterSpacing: "-0.02em",
         }}>
           Five roles.{" "}
-          <span style={{ color: "#22D3EE" }}>Four layers.</span>{" "}
+          <span style={{ color: "#22D3EE" }}>Three protocols.</span>{" "}
           <span style={{ color: "#8B5CF6" }}>One market.</span>
         </span>
       </div>
