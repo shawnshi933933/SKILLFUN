@@ -31,10 +31,10 @@ export default function S09KOL() {
 
       <div
         className="absolute inset-0 flex"
-        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "6vh", paddingBottom: "6vh" }}
+        style={{ paddingLeft: "7vw", paddingRight: "7vw", paddingTop: "4vh", paddingBottom: "4vh" }}
       >
         {/* Left column */}
-        <div className="flex flex-col justify-between" style={{ width: "44vw" }}>
+        <div className="flex flex-col justify-start" style={{ width: "44vw", gap: "3vh" }}>
           <div>
             <span style={{ fontFamily: "var(--font-body-family)", color: "#22D3EE", fontSize: "1.4vw", fontWeight: 400, letterSpacing: "0.24em", textTransform: "uppercase" }}>
               Go-to-Market
@@ -127,7 +127,7 @@ export default function S09KOL() {
       </div>
 
       <div className="absolute bottom-[3.5vh] right-[3.5vw]" style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}>
-        13 / 15
+        12 / 14
       </div>
     </div>
   );

@@ -97,7 +97,7 @@ export default function S04Solution() {
         <div style={{ marginTop: "1.8vh", borderTop: "1px solid rgba(52,211,153,0.18)", paddingTop: "1.2vh", display: "flex", alignItems: "center", gap: "1.2vw" }} />
       </div>
       <div className="absolute bottom-[3.5vh] right-[3.5vw]" style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}>
-        04 / 15
+        05 / 14
       </div>
     </div>
   );

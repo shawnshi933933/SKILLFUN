@@ -70,7 +70,7 @@ export default function S02TechStack() {
           Every layer of the agent stack is crystallizing now — SkillFun connects them all.
         </p>
 
-        <div className="flex flex-col" style={{ flex: 1, justifyContent: "space-between" }}>
+        <div className="flex flex-col" style={{ flex: 1, justifyContent: "flex-start", gap: "1.2vh" }}>
 
           <div style={rowStyle}>
             <div style={{ whiteSpace: "nowrap" }}>
@@ -160,7 +160,7 @@ export default function S02TechStack() {
           fontWeight: 600
         }}
       >
-        05 / 15
+        06 / 14
       </div>
     </div>
   );

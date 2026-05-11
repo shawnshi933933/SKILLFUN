@@ -155,7 +155,7 @@ export default function S03Problem() {
           fontWeight: 600
         }}
       >
-        02 / 15
+        02 / 14
       </div>
     </div>
   );

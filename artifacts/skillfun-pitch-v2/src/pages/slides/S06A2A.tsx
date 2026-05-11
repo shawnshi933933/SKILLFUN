@@ -142,7 +142,7 @@ export default function S06A2A() {
       </div>
 
       <div className="absolute bottom-[3.5vh] right-[3.5vw]" style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}>
-        09 / 15
+        08 / 14
       </div>
     </div>
   );

@@ -48,7 +48,7 @@ export default function S05HowItWorks() {
         <div className="flex items-stretch" style={{ flex: 1 }}>
           {/* Step 01 — Mint */}
           <div
-            className="flex flex-col justify-between"
+            className="flex flex-col justify-start"
             style={{
               flex: 1,
               padding: "3vh 2vw",
@@ -58,11 +58,9 @@ export default function S05HowItWorks() {
               borderRight: "none",
             }}
           >
-            <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(139,92,246,0.22)", lineHeight: 1 }}>01</div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#8B5CF6", marginTop: "1.2vh" }}>Mint</div>
-            </div>
-            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(139,92,246,0.22)", lineHeight: 1 }}>01</div>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#8B5CF6", marginTop: "1.2vh" }}>Mint</div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "1.8vh" }}>
               Mint any AI capability as an ERC-8239 NFT with price &amp; royalties set.
             </p>
           </div>
@@ -71,7 +69,7 @@ export default function S05HowItWorks() {
 
           {/* Step 02 — Bundle */}
           <div
-            className="flex flex-col justify-between"
+            className="flex flex-col justify-start"
             style={{
               flex: 1,
               padding: "3vh 2vw",
@@ -81,11 +79,9 @@ export default function S05HowItWorks() {
               borderRight: "none",
             }}
           >
-            <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(180,160,255,0.20)", lineHeight: 1 }}>02</div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#B4A0FF", marginTop: "1.2vh" }}>Bundle</div>
-            </div>
-            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(180,160,255,0.20)", lineHeight: 1 }}>02</div>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#B4A0FF", marginTop: "1.2vh" }}>Bundle</div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "1.8vh" }}>
               Curators compose Skills into a Bundle, add Markup, set Staker share.
             </p>
           </div>
@@ -94,7 +90,7 @@ export default function S05HowItWorks() {
 
           {/* Step 03 — Discover */}
           <div
-            className="flex flex-col justify-between"
+            className="flex flex-col justify-start"
             style={{
               flex: 1,
               padding: "3vh 2vw",
@@ -104,11 +100,9 @@ export default function S05HowItWorks() {
               borderRight: "none",
             }}
           >
-            <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(157,163,200,0.18)", lineHeight: 1 }}>03</div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#9DA3C8", marginTop: "1.2vh" }}>Discover</div>
-            </div>
-            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(157,163,200,0.18)", lineHeight: 1 }}>03</div>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#9DA3C8", marginTop: "1.2vh" }}>Discover</div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "1.8vh" }}>
               One MCP URL — every Skill and Bundle appears as a native callable tool.
             </p>
           </div>
@@ -117,7 +111,7 @@ export default function S05HowItWorks() {
 
           {/* Step 04 — Pay */}
           <div
-            className="flex flex-col justify-between"
+            className="flex flex-col justify-start"
             style={{
               flex: 1,
               padding: "3vh 2vw",
@@ -127,11 +121,9 @@ export default function S05HowItWorks() {
               borderRight: "none",
             }}
           >
-            <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(34,211,238,0.20)", lineHeight: 1 }}>04</div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#22D3EE", marginTop: "1.2vh" }}>Pay</div>
-            </div>
-            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(34,211,238,0.20)", lineHeight: 1 }}>04</div>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#22D3EE", marginTop: "1.2vh" }}>Pay</div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "1.8vh" }}>
               x402 per-call HTTP payment acquires call rights instantly.
             </p>
           </div>
@@ -140,7 +132,7 @@ export default function S05HowItWorks() {
 
           {/* Step 05 — Earn */}
           <div
-            className="flex flex-col justify-between"
+            className="flex flex-col justify-start"
             style={{
               flex: 1,
               padding: "3vh 2vw",
@@ -150,11 +142,9 @@ export default function S05HowItWorks() {
               borderLeft: "none",
             }}
           >
-            <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(34,211,238,0.22)", lineHeight: 1 }}>05</div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#22D3EE", marginTop: "1.2vh" }}>Earn</div>
-            </div>
-            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "2vh" }}>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "3.8vw", fontWeight: 800, color: "rgba(34,211,238,0.22)", lineHeight: 1 }}>05</div>
+            <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.1vw", fontWeight: 700, color: "#22D3EE", marginTop: "1.2vh" }}>Earn</div>
+            <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.55vw", color: "#B0B4D0", lineHeight: 1.5, marginTop: "1.8vh" }}>
               ERC-8183 splits revenue to Creator, Owner, Curator, Stakers &amp; Platform.
             </p>
           </div>
@@ -165,7 +155,7 @@ export default function S05HowItWorks() {
         className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}
       >
-        08 / 15
+        07 / 14
       </div>
     </div>
   );

@@ -156,7 +156,7 @@ export default function S13Evolution() {
         className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}
       >
-        03 / 15
+        04 / 14
       </div>
     </div>
   );
