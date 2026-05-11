@@ -144,9 +144,7 @@ export default function S02TechStack() {
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Storage</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              Skill metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. No IPFS. No Arweave.
-            </div>
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>Skill metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. </div>
           </div>
 
         </div>
