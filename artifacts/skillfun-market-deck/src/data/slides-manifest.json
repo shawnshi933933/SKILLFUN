@@ -1,0 +1,122 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567801",
+    "position": 1,
+    "filepath": "src/pages/slides/S01Cover.tsx",
+    "title": "Cover",
+    "description": "SkillFun — The On-Chain App Store for AI Agents",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567802",
+    "position": 2,
+    "filepath": "src/pages/slides/S02Problem.tsx",
+    "title": "The Problem",
+    "description": "Three core gaps: $0 earned, 0% discovery, no composable standard",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567803",
+    "position": 3,
+    "filepath": "src/pages/slides/S03Evolution.tsx",
+    "title": "Market Evolution",
+    "description": "Three eras: Web2 AI Tools → Early Web3 AI → SkillFun Era",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567804",
+    "position": 4,
+    "filepath": "src/pages/slides/S04Solution.tsx",
+    "title": "The Solution",
+    "description": "Skill NFTs, Bundle Packs, and One Protocol",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567805",
+    "position": 5,
+    "filepath": "src/pages/slides/S05TechStack.tsx",
+    "title": "Protocol Landscape",
+    "description": "Multi-chain infrastructure: Solana, Ethereum, Arweave, Lit, Chainlink, OpenAI",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567806",
+    "position": 6,
+    "filepath": "src/pages/slides/S06Market.tsx",
+    "title": "Market Opportunity",
+    "description": "$1.8T AI Services · $210B NFT · $12B Agentic AI Economy",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567807",
+    "position": 7,
+    "filepath": "src/pages/slides/S07Audience.tsx",
+    "title": "Built for Every Intelligence",
+    "description": "Humans (KOLs, Developers, Curators) and AI Agents",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567808",
+    "position": 8,
+    "filepath": "src/pages/slides/S08HowItWorks.tsx",
+    "title": "How It Works",
+    "description": "Five steps: Mint, Bundle, Discover, Pay, Earn",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567809",
+    "position": 9,
+    "filepath": "src/pages/slides/S09A2A.tsx",
+    "title": "Zero-Human Transaction",
+    "description": "Agent-to-Agent execution flow with 6 steps",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567810",
+    "position": 10,
+    "filepath": "src/pages/slides/S10Participate.tsx",
+    "title": "Five Ways to Participate",
+    "description": "Creator, Curator, Developer, Investor, Staker — every role earns",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567811",
+    "position": 11,
+    "filepath": "src/pages/slides/S11Flywheel.tsx",
+    "title": "Economic Flywheel",
+    "description": "Self-reinforcing growth loop: Creators → Skills → Agents → Revenue",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567812",
+    "position": 12,
+    "filepath": "src/pages/slides/S12Encryption.tsx",
+    "title": "Encrypted Skill Protection",
+    "description": "Upload, Invoke, Transfer — IP stays yours via Lit Protocol",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567813",
+    "position": 13,
+    "filepath": "src/pages/slides/S13KOL.tsx",
+    "title": "KOL Growth Engine",
+    "description": "Distill, Claim, Activate — turn influence into on-chain income",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567814",
+    "position": 14,
+    "filepath": "src/pages/slides/S14TokenEconomy.tsx",
+    "title": "Token Economy",
+    "description": "$SKILL token distribution: Ecosystem, Treasury, Team, Investors",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567815",
+    "position": 15,
+    "filepath": "src/pages/slides/S15Architecture.tsx",
+    "title": "System Architecture",
+    "description": "Full-stack protocol: Client → Protocol → Execution → Storage & Chain layers",
+    "speakerNotes": ""
+  }
+]

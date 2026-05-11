@@ -6,6 +6,24 @@ uri = "file://artifacts/skillfun-pitch/public/cover-hero.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "FQSiqz5hPCVVIOJo-rJo2"
+uri = "file://artifacts/skillfun-market-deck/public/cover-market.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "lUhDaQrgqhoKUmCxDRjRN"
+uri = "file://artifacts/skillfun-market-deck/public/problem-bg.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "L4OfWnZ9EkfCryorK1ip5"
+uri = "file://artifacts/skillfun-market-deck/public/market-bg.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "1bI6qw_nP-kzDKfdNayK6"
 uri = "file://.local/outputs/SKILL-MARKET.pdf"
