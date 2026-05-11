@@ -49,7 +49,6 @@ export default function S04Solution() {
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
       />
-
       <div
         className="absolute inset-0"
         style={{
@@ -195,12 +194,9 @@ export default function S04Solution() {
           <span style={{
             fontFamily: "var(--font-body-family)", fontSize: "1.15vw",
             color: "rgba(52,211,153,0.65)", lineHeight: 1.4,
-          }}>
-            Skill metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. No IPFS. No Arweave.
-          </span>
+          }}>Skill metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. </span>
         </div>
       </div>
-
       <div
         className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{
