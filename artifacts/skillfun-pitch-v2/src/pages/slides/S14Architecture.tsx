@@ -105,9 +105,9 @@ export default function S14Architecture() {
           strokeDasharray="5 3" markerEnd="url(#amem)"
         />
         {/* ERC-8004 tag on Memory → NFT line */}
-        <rect x={2} y={195} width={58} height={14} rx={2.5}
+        <rect x={155} y={115} width={58} height={14} rx={2.5}
           fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.42)" strokeWidth={0.8} />
-        <text x={31} y={205} fill="#34D399" fontSize="8.5"
+        <text x={184} y={125} fill="#34D399" fontSize="8.5"
           fontFamily="DM Sans, sans-serif" fontWeight="700"
           textAnchor="middle" opacity="0.88">ERC-8004</text>
 
