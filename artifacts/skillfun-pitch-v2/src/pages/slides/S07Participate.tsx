@@ -27,7 +27,7 @@ export default function S07Participate() {
           </h2>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, display: "flex", gap: "1vw", overflow: "hidden" }}>
+        <div style={{ height: "60vh", display: "flex", gap: "1vw" }}>
 
           {/* CREATOR */}
           <div style={{ flex: "1 1 0", minWidth: 0, maxWidth: "20%", background: "rgba(139,92,246,0.10)", borderRadius: "0.8vw", padding: "1.4vh 1.5vw", border: "1px solid rgba(139,92,246,0.28)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "1.1vh" }}>

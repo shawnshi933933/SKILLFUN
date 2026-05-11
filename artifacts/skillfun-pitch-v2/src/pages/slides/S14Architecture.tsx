@@ -62,7 +62,7 @@ export default function S14Architecture() {
           fontWeight: 800, color: "#F0F0F8", letterSpacing: "-0.02em",
         }}>
           Five roles.{" "}
-          <span style={{ color: "#22D3EE" }}>Three protocols.</span>{" "}
+          <span style={{ color: "#22D3EE" }}>Four layers.</span>{" "}
           <span style={{ color: "#8B5CF6" }}>One market.</span>
         </span>
       </div>
@@ -247,7 +247,6 @@ export default function S14Architecture() {
         <line x1={1153} y1={536} x2={1153} y2={554}
           stroke="rgba(52,211,153,0.3)" strokeWidth="1" strokeDasharray="3 2" />
       </svg>
-
       {/* MEMORY NODE */}
       <div style={{
         position: "absolute",
@@ -268,7 +267,6 @@ export default function S14Architecture() {
         fontFamily: "var(--font-display-family)", fontSize: "0.72vw",
         fontWeight: 700, color: "#34D399", letterSpacing: "0.08em",
       }}>MEMORY</div>
-
       {/* AGENT NODE */}
       <div style={{
         position: "absolute", top: "13.5vh", left: "47.5vw",
@@ -301,7 +299,6 @@ export default function S14Architecture() {
           }}>x402</span>
         </div>
       </div>
-
       {/* MCP SERVER BAR */}
       <div style={{
         position: "absolute", top: "32.9vh", left: "3.1vw", right: "3.1vw", height: "5.5vh",
@@ -335,7 +332,6 @@ export default function S14Architecture() {
           </span>
         </div>
       </div>
-
       {/* BUNDLES — inlined, no .map() */}
       <div style={{
         position: "absolute", top: "45.1vh", left: "3.1vw", width: "29.2vw", height: "14.7vh",
@@ -355,7 +351,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.65vw", fontWeight: 600, color: "#34D399", background: "#34D39918", border: "1px solid #34D39940", borderRadius: "0.22vw", padding: "0.05vh 0.35vw", letterSpacing: "0.05em" }}>Staker</span>
         </div>
       </div>
-
       <div style={{
         position: "absolute", top: "45.1vh", left: "35.4vw", width: "29.2vw", height: "14.7vh",
         background: "rgba(180,160,255,0.07)",
@@ -374,7 +369,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.65vw", fontWeight: 600, color: "#34D399", background: "#34D39918", border: "1px solid #34D39940", borderRadius: "0.22vw", padding: "0.05vh 0.35vw", letterSpacing: "0.05em" }}>Staker</span>
         </div>
       </div>
-
       <div style={{
         position: "absolute", top: "45.1vh", left: "67.7vw", width: "29.2vw", height: "14.7vh",
         background: "rgba(180,160,255,0.07)",
@@ -393,7 +387,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.65vw", fontWeight: 600, color: "#34D399", background: "#34D39918", border: "1px solid #34D39940", borderRadius: "0.22vw", padding: "0.05vh 0.35vw", letterSpacing: "0.05em" }}>Staker</span>
         </div>
       </div>
-
       {/* NFT SECTION HEADER */}
       <div style={{
         position: "absolute", top: "61.5vh", left: "3.1vw",
@@ -404,7 +397,6 @@ export default function S14Architecture() {
         </span>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700, color: "#8B5CF6", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: "0.22vw", padding: "0.05vh 0.38vw", letterSpacing: "0.06em" }}>ERC-8239</span>
       </div>
-
       {/* NFT CARDS — inlined, no .map() */}
       <div style={{ position: "absolute", top: "66.9vh", left: "3.1vw", width: "14vw", height: "7.5vh", background: "rgba(139,92,246,0.12)", border: "1.5px solid rgba(139,92,246,0.38)", borderRadius: "0.5vw", padding: "0.6vh 0.8vw", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)" }}>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700, color: "#8B5CF6", opacity: 0.85, letterSpacing: "0.06em" }}>NFT</span>
@@ -414,7 +406,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 600, color: "#6B7280", background: "#6B728015", border: "1px solid #6B728030", borderRadius: "0.18vw", padding: "0.02vh 0.28vw", letterSpacing: "0.04em" }}>Owner</span>
         </div>
       </div>
-
       <div style={{ position: "absolute", top: "66.9vh", left: "19.1vw", width: "14vw", height: "7.5vh", background: "rgba(139,92,246,0.12)", border: "1.5px solid rgba(139,92,246,0.38)", borderRadius: "0.5vw", padding: "0.6vh 0.8vw", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)" }}>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700, color: "#8B5CF6", opacity: 0.85, letterSpacing: "0.06em" }}>NFT</span>
         <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1vw", fontWeight: 800, color: "#C4B5FD" }}>Vision</div>
@@ -423,7 +414,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 600, color: "#6B7280", background: "#6B728015", border: "1px solid #6B728030", borderRadius: "0.18vw", padding: "0.02vh 0.28vw", letterSpacing: "0.04em" }}>Owner</span>
         </div>
       </div>
-
       <div style={{ position: "absolute", top: "66.9vh", left: "35.1vw", width: "14vw", height: "7.5vh", background: "rgba(139,92,246,0.12)", border: "1.5px solid rgba(139,92,246,0.38)", borderRadius: "0.5vw", padding: "0.6vh 0.8vw", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)" }}>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700, color: "#8B5CF6", opacity: 0.85, letterSpacing: "0.06em" }}>NFT</span>
         <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1vw", fontWeight: 800, color: "#C4B5FD" }}>Search</div>
@@ -432,7 +422,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 600, color: "#6B7280", background: "#6B728015", border: "1px solid #6B728030", borderRadius: "0.18vw", padding: "0.02vh 0.28vw", letterSpacing: "0.04em" }}>Owner</span>
         </div>
       </div>
-
       <div style={{ position: "absolute", top: "66.9vh", left: "51.1vw", width: "14vw", height: "7.5vh", background: "rgba(139,92,246,0.12)", border: "1.5px solid rgba(139,92,246,0.38)", borderRadius: "0.5vw", padding: "0.6vh 0.8vw", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)" }}>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700, color: "#8B5CF6", opacity: 0.85, letterSpacing: "0.06em" }}>NFT</span>
         <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1vw", fontWeight: 800, color: "#C4B5FD" }}>Reason</div>
@@ -441,7 +430,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 600, color: "#6B7280", background: "#6B728015", border: "1px solid #6B728030", borderRadius: "0.18vw", padding: "0.02vh 0.28vw", letterSpacing: "0.04em" }}>Owner</span>
         </div>
       </div>
-
       <div style={{ position: "absolute", top: "66.9vh", left: "67.1vw", width: "14vw", height: "7.5vh", background: "rgba(139,92,246,0.12)", border: "1.5px solid rgba(139,92,246,0.38)", borderRadius: "0.5vw", padding: "0.6vh 0.8vw", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)" }}>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700, color: "#8B5CF6", opacity: 0.85, letterSpacing: "0.06em" }}>NFT</span>
         <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1vw", fontWeight: 800, color: "#C4B5FD" }}>Plan</div>
@@ -450,7 +438,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 600, color: "#6B7280", background: "#6B728015", border: "1px solid #6B728030", borderRadius: "0.18vw", padding: "0.02vh 0.28vw", letterSpacing: "0.04em" }}>Owner</span>
         </div>
       </div>
-
       <div style={{ position: "absolute", top: "66.9vh", left: "83.1vw", width: "14vw", height: "7.5vh", background: "rgba(139,92,246,0.12)", border: "1.5px solid rgba(139,92,246,0.38)", borderRadius: "0.5vw", padding: "0.6vh 0.8vw", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)" }}>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.6vw", fontWeight: 700, color: "#8B5CF6", opacity: 0.85, letterSpacing: "0.06em" }}>NFT</span>
         <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1vw", fontWeight: 800, color: "#C4B5FD" }}>Draw</div>
@@ -459,7 +446,6 @@ export default function S14Architecture() {
           <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.55vw", fontWeight: 600, color: "#6B7280", background: "#6B728015", border: "1px solid #6B728030", borderRadius: "0.18vw", padding: "0.02vh 0.28vw", letterSpacing: "0.04em" }}>Owner</span>
         </div>
       </div>
-
       {/* STORAGE LAYER */}
       <div style={{
         position: "absolute", top: "77vh", left: "3.1vw", right: "3.1vw", height: "4.5vh",
@@ -486,7 +472,6 @@ export default function S14Architecture() {
           ERC-8239 hash → blob tx
         </span>
       </div>
-
       {/* Page number */}
       <div style={{
         position: "absolute", bottom: "3.5vh", right: "3.5vw",
