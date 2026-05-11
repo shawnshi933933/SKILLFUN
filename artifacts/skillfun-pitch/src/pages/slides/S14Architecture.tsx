@@ -394,13 +394,60 @@ export default function S14Architecture() {
         );
       })}
 
+      {/* ════════ STORAGE LAYER ════════ */}
+      {/* SVG connector lines: NFT cards → storage bar */}
+      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+        viewBox="0 0 1280 720" preserveAspectRatio="none">
+        {[129, 334, 539, 744, 949, 1153].map((cx) => (
+          <line key={cx} x1={cx} y1={536} x2={cx} y2={554}
+            stroke="rgba(52,211,153,0.3)" strokeWidth="1" strokeDasharray="3 2" />
+        ))}
+      </svg>
+
+      <div style={{
+        position: "absolute", top: "77vh", left: "3.1vw", right: "3.1vw", height: "4.5vh",
+        background: "rgba(52,211,153,0.06)",
+        border: "1px solid rgba(52,211,153,0.25)",
+        borderRadius: "0.7vw",
+        display: "flex", alignItems: "center",
+        paddingLeft: "1.4vw", paddingRight: "1.4vw",
+        justifyContent: "space-between",
+        gap: "1vw",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.7vw" }}>
+          <span style={{
+            fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700,
+            color: "#34D399", background: "rgba(52,211,153,0.14)",
+            border: "1px solid rgba(52,211,153,0.38)",
+            borderRadius: "0.22vw", padding: "0.08vh 0.4vw", letterSpacing: "0.07em",
+          }}>⛓ STORAGE</span>
+          <span style={{
+            fontFamily: "var(--font-display-family)", fontSize: "0.88vw",
+            fontWeight: 700, color: "#34D399",
+          }}>Ethereum Mainnet · EIP-4844 Blob</span>
+        </div>
+        <span style={{
+          fontFamily: "var(--font-body-family)", fontSize: "0.75vw",
+          color: "rgba(52,211,153,0.55)", lineHeight: 1.4,
+        }}>
+          Metadata stored on-chain via blob transactions — content hash anchored to each NFT token. No IPFS. No Arweave.
+        </span>
+        <span style={{
+          fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700,
+          color: "#34D399", background: "rgba(52,211,153,0.10)",
+          border: "1px solid rgba(52,211,153,0.3)",
+          borderRadius: "0.22vw", padding: "0.08vh 0.45vw", letterSpacing: "0.06em",
+          whiteSpace: "nowrap",
+        }}>ERC-8239 hash → blob tx</span>
+      </div>
+
       {/* Page number */}
       <div style={{
         position: "absolute", bottom: "3.5vh", right: "3.5vw",
         fontFamily: "var(--font-display-family)",
         color: "#3D4160", fontSize: "1.5vw", fontWeight: 600,
       }}>
-        16 / 16
+        15 / 15
       </div>
     </div>
   );

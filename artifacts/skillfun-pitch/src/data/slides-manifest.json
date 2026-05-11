@@ -112,16 +112,8 @@
                 "speakerNotes": ""
         },
         {
-                "id": "a1b2c3d4-0013-4000-8000-000000000013",
-                "position": 15,
-                "filepath": "src/pages/slides/S11TeamAsk.tsx",
-                "title": "Team & Ask",
-                "description": "Core team and seed round ask",
-                "speakerNotes": ""
-        },
-        {
                 "id": "a1b2c3d4-0016-4000-8000-000000000016",
-                "position": 16,
+                "position": 15,
                 "filepath": "src/pages/slides/S14Architecture.tsx",
                 "title": "System Architecture",
                 "description": "Full SkillFun protocol stack — five roles, three protocols, one market",

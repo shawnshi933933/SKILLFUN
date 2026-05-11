@@ -138,14 +138,14 @@ export default function S02TechStack() {
             </div>
           </div>
 
-          <div style={rowStyle}>
+          <div style={{ ...rowStyle, border: "1px solid rgba(52,211,153,0.22)", background: "rgba(52,211,153,0.05)" }}>
             <div style={{ whiteSpace: "nowrap" }}>
-              <span style={{ fontFamily: "var(--font-display-family)", color: "#7B7F9E", fontSize: "1.5vw", fontWeight: 700, fontStyle: "italic" }}>Memory</span>
+              <span style={{ fontFamily: "var(--font-display-family)", color: "#34D399", fontSize: "1.5vw", fontWeight: 700 }}>EIP-4844</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Storage</span>
             </div>
             <div style={dividerStyle} />
-            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4, fontStyle: "italic" }}>
-              Persistent agent memory and decentralized storage — standard not yet defined
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
+              Skill metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. No IPFS. No Arweave.
             </div>
           </div>
 

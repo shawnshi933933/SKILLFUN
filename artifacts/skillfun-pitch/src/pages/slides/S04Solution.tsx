@@ -54,7 +54,7 @@ export default function S04Solution() {
         className="absolute inset-0"
         style={{
           display: "grid",
-          gridTemplateRows: "auto 1fr",
+          gridTemplateRows: "auto 1fr auto",
           paddingLeft: "7vw",
           paddingRight: "7vw",
           paddingTop: "4.5vh",
@@ -103,6 +103,7 @@ export default function S04Solution() {
             minHeight: 0,
           }}
         >
+
           {cards.map((c) => (
             <div
               key={c.label}
@@ -173,6 +174,30 @@ export default function S04Solution() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Storage banner */}
+        <div style={{
+          marginTop: "1.8vh",
+          borderTop: "1px solid rgba(52,211,153,0.18)",
+          paddingTop: "1.2vh",
+          display: "flex",
+          alignItems: "center",
+          gap: "1.2vw",
+        }}>
+          <span style={{
+            fontFamily: "var(--font-body-family)", fontSize: "0.78vw", fontWeight: 700,
+            color: "#34D399", background: "rgba(52,211,153,0.10)",
+            border: "1px solid rgba(52,211,153,0.32)",
+            borderRadius: "0.3vw", padding: "0.15vh 0.55vw", letterSpacing: "0.07em",
+            whiteSpace: "nowrap",
+          }}>⛓ EIP-4844</span>
+          <span style={{
+            fontFamily: "var(--font-body-family)", fontSize: "1.15vw",
+            color: "rgba(52,211,153,0.65)", lineHeight: 1.4,
+          }}>
+            Skill metadata stored natively on Ethereum via blob transactions — content hash anchored to each NFT token on-chain. No IPFS. No Arweave.
+          </span>
         </div>
       </div>
 
