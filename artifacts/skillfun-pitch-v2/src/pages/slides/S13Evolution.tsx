@@ -1,4 +1,5 @@
 export default function S13Evolution() {
+  const base = import.meta.env.BASE_URL;
   return (
     <div
       className="relative w-screen h-screen overflow-hidden"
@@ -12,6 +13,15 @@ export default function S13Evolution() {
       <div
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${base}bg-evolution.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.10
+        }}
       />
 
       <div

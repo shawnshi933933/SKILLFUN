@@ -1,4 +1,5 @@
 export default function S04Solution() {
+  const base = import.meta.env.BASE_URL;
   const cardStyle = (bg: string, border: string) => ({
     background: bg,
     borderRadius: "1vw",
@@ -21,6 +22,15 @@ export default function S04Solution() {
       <div
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${base}bg-solution.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.10
+        }}
       />
       <div
         className="absolute inset-0"

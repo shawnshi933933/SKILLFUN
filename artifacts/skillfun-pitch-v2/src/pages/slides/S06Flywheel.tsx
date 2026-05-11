@@ -1,4 +1,5 @@
 export default function S06Flywheel() {
+  const base = import.meta.env.BASE_URL;
   const nodeBox = (
     bg: string, border: string, titleColor: string,
     title: string, sub: string
@@ -24,6 +25,15 @@ export default function S06Flywheel() {
       <div className="absolute left-0 top-0 bottom-0 w-[0.35vw]" style={{ background: "#8B5CF6" }} />
       <div className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }} />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${base}bg-flywheel.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.10
+        }}
+      />
 
       <div
         className="absolute inset-0 flex"

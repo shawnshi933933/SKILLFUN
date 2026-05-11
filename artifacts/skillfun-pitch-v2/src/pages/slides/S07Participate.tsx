@@ -1,4 +1,5 @@
 export default function S07Participate() {
+  const base = import.meta.env.BASE_URL;
   const card = (
     bg: string, border: string, badgeBg: string, badgeColor: string,
     label: string, icon: React.ReactNode,
@@ -48,6 +49,15 @@ export default function S07Participate() {
       <div
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${base}bg-participate.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.10
+        }}
       />
 
       <div

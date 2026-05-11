@@ -1,4 +1,5 @@
 export default function S02TechStack() {
+  const base = import.meta.env.BASE_URL;
   const rowStyle: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: "20vw 1px 1fr",
@@ -29,6 +30,15 @@ export default function S02TechStack() {
       <div
         className="absolute top-0 left-0 right-0 h-[0.15vh]"
         style={{ background: "linear-gradient(90deg, #8B5CF6, #22D3EE, transparent)" }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${base}bg-techstack.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.10
+        }}
       />
       <div
         className="absolute inset-0 flex flex-col"

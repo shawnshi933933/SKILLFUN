@@ -36,6 +36,66 @@ uri = "file://artifacts/skillfun-pitch-v2/public/bg-kol.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "J-i3v7S-oNeL6YIv8zcbd"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-problem.png"
+type = "image"
+title = "problem broken network"
+
+[[generated]]
+id = "zaBndBsIHpqxVcaWx8qgV"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-market.png"
+type = "image"
+title = "market opportunity vast network"
+
+[[generated]]
+id = "BYsomR16gMv5h9jzjNE-4"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-evolution.png"
+type = "image"
+title = "evolution blockchain transformation"
+
+[[generated]]
+id = "ZzSamswkrwlwLGO5Kp9Ct"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-solution.png"
+type = "image"
+title = "solution NFT blockchain crystal"
+
+[[generated]]
+id = "plJiOjDAZxv-yMcTEt0u6"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-techstack.png"
+type = "image"
+title = "tech stack protocol layers"
+
+[[generated]]
+id = "rNBIXDNTVZ0Xs3Rrm-GGL"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-howitworks.png"
+type = "image"
+title = "workflow process chain nodes"
+
+[[generated]]
+id = "5RpPHvmL7MLZ5YDumRE9I"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-participate.png"
+type = "image"
+title = "participants network community orbs"
+
+[[generated]]
+id = "BUEtAvtMYqte7_Ky3IhVN"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-flywheel.png"
+type = "image"
+title = "flywheel circular energy vortex"
+
+[[generated]]
+id = "PR-0wqvXPdX4nV7jzKbP9"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-encryption.png"
+type = "image"
+title = "encryption cryptographic patterns"
+
+[[generated]]
+id = "mML1sOciZGpQu9EM90Yi7"
+uri = "file://artifacts/skillfun-pitch-v2/public/bg-tokeneconomy.png"
+type = "image"
+title = "token economy financial flows"
+
 [[outputs]]
 id = "1bI6qw_nP-kzDKfdNayK6"
 uri = "file://.local/outputs/SKILL-MARKET.pdf"
