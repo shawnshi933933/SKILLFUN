@@ -263,7 +263,7 @@ export default function S14Architecture() {
         fontWeight: 700, color: "#34D399", letterSpacing: "0.08em",
       }}>MEMORY</div>
 
-      {/* AGENT — SVG icon, no emoji */}
+      {/* AGENT NODE */}
       <div style={{
         position: "absolute", top: "13.5vh", left: "47.5vw",
         width: "5vw", height: "5vw",
@@ -394,7 +394,7 @@ export default function S14Architecture() {
         display: "flex", alignItems: "center", gap: "0.6vw",
       }}>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.72vw", fontWeight: 700, color: "#8B5CF6", letterSpacing: "0.1em" }}>
-          SKILL NFTs
+          ◆ SKILL NFTs
         </span>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700, color: "#8B5CF6", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: "0.22vw", padding: "0.05vh 0.38vw", letterSpacing: "0.06em" }}>ERC-8239</span>
       </div>
