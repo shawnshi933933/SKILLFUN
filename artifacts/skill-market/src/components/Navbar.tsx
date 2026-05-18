@@ -12,9 +12,9 @@ export default function Navbar() {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   const navLinks = [
-    { href: "/app/market", label: "Market" },
+    { href: "/app/market", label: "Skills" },
+    { href: "/app/market?tab=bundles", label: "Bundles" },
     { href: "/app/stake", label: "Stake" },
-    { href: "/app/flywheel", label: "Flywheel" },
     { href: "/app/agent-api", label: "Agent API" },
     { href: "/app/kol", label: "KOL" },
   ];

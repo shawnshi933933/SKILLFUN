@@ -17,8 +17,6 @@ interface FormData {
   category: string;
   tags: string;
   storage: "ipfs" | "walrus";
-  totalShares: number;
-  creatorPercent: number;
   basePrice: string;
 }
 
@@ -33,8 +31,6 @@ export default function CreateSkill() {
     category: "",
     tags: "",
     storage: "ipfs",
-    totalShares: 1000,
-    creatorPercent: 50,
     basePrice: "0.05",
   });
 
@@ -223,7 +219,9 @@ export default function CreateSkill() {
                     <div className="flex justify-between text-sm"><span className="text-muted-foreground">Category</span><span>{form.category || "—"}</span></div>
                     <div className="flex justify-between text-sm"><span className="text-muted-foreground">Storage</span><span className="uppercase">{form.storage}</span></div>
                     <div className="flex justify-between text-sm"><span className="text-muted-foreground">Base Price</span><span className="font-mono">{form.basePrice} ETH</span></div>
-                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Creator Share</span><span>{form.creatorPercent}%</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Creator Royalty</span><span className="text-purple-400">10% (fixed on-chain)</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Owner Income</span><span className="text-blue-400">90% of net Base (fixed)</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Platform Fee</span><span className="text-muted-foreground">10% off total invoice</span></div>
                   </div>
                   <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2" onClick={handleMint} data-testid="button-mint-skill">
                     <Zap className="w-4 h-4" /> Mint to Sepolia

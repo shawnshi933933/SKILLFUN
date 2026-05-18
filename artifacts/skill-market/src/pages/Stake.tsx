@@ -221,6 +221,50 @@ export default function Stake() {
                 </div>
               ))}
             </div>
+
+            {/* Slash History */}
+            <div className="bg-card border border-amber-500/20 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                <div className="font-semibold text-sm">Slash History (Protocol-wide)</div>
+              </div>
+              <div className="text-xs text-muted-foreground mb-3">
+                Slashes are applied when a curator is found to have manipulated pricing, delivered degraded skills, or failed SLA commitments. Stakers in that bundle lose a portion of their stake proportionally.
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-muted-foreground">
+                      <th className="text-left pb-2 font-medium">Bundle</th>
+                      <th className="text-left pb-2 font-medium">Reason</th>
+                      <th className="text-right pb-2 font-medium">Slash %</th>
+                      <th className="text-right pb-2 font-medium">SKILL Lost</th>
+                      <th className="text-right pb-2 font-medium">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {[
+                      { bundle: "DeFi Quant Suite", reason: "SLA breach (>2s latency)", pct: "5%", lost: "12,400 SKILL", date: "Apr 28, 2026", severity: "low" },
+                      { bundle: "Crypto Alpha Bundle", reason: "Pricing manipulation detected", pct: "15%", lost: "38,700 SKILL", date: "Mar 14, 2026", severity: "high" },
+                      { bundle: "Social Intel Pack", reason: "Stale data / degraded output", pct: "8%", lost: "9,200 SKILL", date: "Feb 02, 2026", severity: "medium" },
+                      { bundle: "Research Toolkit", reason: "Unauthorized skill substitution", pct: "20%", lost: "51,000 SKILL", date: "Jan 11, 2026", severity: "high" },
+                    ].map((row) => (
+                      <tr key={row.date + row.bundle} className="text-muted-foreground hover:bg-white/5 transition-colors">
+                        <td className="py-2.5 text-foreground font-medium">{row.bundle}</td>
+                        <td className="py-2.5">{row.reason}</td>
+                        <td className={`py-2.5 text-right font-mono font-bold ${row.severity === "high" ? "text-red-400" : row.severity === "medium" ? "text-amber-400" : "text-yellow-300"}`}>{row.pct}</td>
+                        <td className="py-2.5 text-right font-mono text-red-400/80">{row.lost}</td>
+                        <td className="py-2.5 text-right">{row.date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-3 text-xs text-muted-foreground/60 flex items-center gap-1">
+                <Shield className="w-3 h-3 text-primary" />
+                Slash decisions are made by on-chain governance vote. All events are immutably recorded.
+              </div>
+            </div>
           </div>
         </div>
       </div>

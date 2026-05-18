@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import SkillCard from "@/components/SkillCard";
 import BundleCard from "@/components/BundleCard";
@@ -23,7 +23,14 @@ const BUNDLE_SORT = [
 ];
 
 export default function Market() {
-  const [tab, setTab] = useState<"skills" | "bundles">("skills");
+  const initialTab = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "bundles" ? "bundles" : "skills";
+  const [tab, setTab] = useState<"skills" | "bundles">(initialTab as "skills" | "bundles");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "bundles") setTab("bundles");
+    else setTab("skills");
+  }, [window.location.search]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("All");
   const [skillSort, setSkillSort] = useState("invoke-desc");

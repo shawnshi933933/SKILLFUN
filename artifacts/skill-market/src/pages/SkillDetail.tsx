@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import SkillTryPanel from "@/components/SkillTryPanel";
 
-const COLORS = ["hsl(265,85%,65%)", "hsl(217,91%,65%)", "hsl(185,85%,55%)"];
+const COLORS = ["hsl(0,0%,45%)", "hsl(265,85%,65%)", "hsl(217,91%,65%)"];
 
 const mockActivity = [
   { type: "agent", label: "GPT-Agent-7f2a", action: "invoked via x402 MCP", time: "2m ago" },
@@ -43,8 +43,9 @@ export default function SkillDetail() {
   }
 
   const pieData = [
-    { name: "Creator Royalty", value: skill.creatorShare },
-    { name: "Owner Income", value: skill.ownerShare },
+    { name: "Platform Fee (10% off top)", value: 10 },
+    { name: `Creator Royalty (${skill.creatorShare}% of net Base)`, value: Math.round(skill.creatorShare * 0.9) },
+    { name: `Owner Income (${skill.ownerShare}% of net Base)`, value: Math.round(skill.ownerShare * 0.9) },
   ];
 
   const handleBuy = () => {
@@ -230,7 +231,7 @@ export default function SkillDetail() {
                     </div>
                   ))}
                   <div className="text-xs text-muted-foreground/60 pt-1 border-t border-white/10">
-                    + curator markup split 50/50 between curator & stakers
+                    Curator Markup (if bundled) split 50% Curator / 50% Staker Pool
                   </div>
                 </div>
               </div>

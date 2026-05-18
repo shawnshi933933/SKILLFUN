@@ -142,11 +142,11 @@ export default function Landing() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { label: "Platform Fee (10% off top)", amount: "0.0115 ETH", color: "text-muted-foreground", bg: "bg-white/5" },
-                    { label: "Creator Royalty (10% of Base)", amount: "0.010 ETH", color: "text-purple-400", bg: "bg-purple-500/10 border border-purple-500/20" },
-                    { label: "Owner Income (90% of Base)", amount: "0.090 ETH", color: "text-blue-400", bg: "bg-blue-500/10 border border-blue-500/20" },
-                    { label: "Curator Share (50% of Markup)", amount: "0.0075 ETH", color: "text-accent", bg: "bg-accent/10 border border-accent/20" },
-                    { label: "Staker Pool (50% of Markup)", amount: "0.0075 ETH", color: "text-emerald-400", bg: "bg-emerald-500/10 border border-emerald-500/20" },
+                    { label: "Platform Fee (10% off total invoice)", amount: "0.0115 ETH", color: "text-muted-foreground", bg: "bg-white/5" },
+                    { label: "Creator Royalty (10% of net Base)", amount: "0.0090 ETH", color: "text-purple-400", bg: "bg-purple-500/10 border border-purple-500/20" },
+                    { label: "Owner Income (90% of net Base)", amount: "0.0810 ETH", color: "text-blue-400", bg: "bg-blue-500/10 border border-blue-500/20" },
+                    { label: "Curator Share (50% of net Markup)", amount: "0.0068 ETH", color: "text-accent", bg: "bg-accent/10 border border-accent/20" },
+                    { label: "Staker Pool (50% of net Markup)", amount: "0.0068 ETH", color: "text-emerald-400", bg: "bg-emerald-500/10 border border-emerald-500/20" },
                   ].map((row) => (
                     <div key={row.label} className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm ${row.bg}`}>
                       <span className={row.color}>{row.label}</span>
