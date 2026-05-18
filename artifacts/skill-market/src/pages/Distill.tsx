@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Zap, CheckCircle, Twitter } from "lucide-react";
+import { Bot, Zap, CheckCircle, Twitter, Share2, Copy, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface GeneratedSkill {
@@ -12,6 +12,7 @@ interface GeneratedSkill {
   category: string;
   tags: string[];
   confidence: number;
+  basePrice: number;
 }
 
 const mockGenerated: GeneratedSkill[] = [
@@ -21,6 +22,7 @@ const mockGenerated: GeneratedSkill[] = [
     category: "Trading",
     tags: ["Momentum", "Technical Analysis", "Signals"],
     confidence: 94,
+    basePrice: 0.08,
   },
   {
     name: "Risk Management Framework",
@@ -28,6 +30,7 @@ const mockGenerated: GeneratedSkill[] = [
     category: "Trading",
     tags: ["Risk", "Position Sizing", "Portfolio"],
     confidence: 88,
+    basePrice: 0.06,
   },
   {
     name: "Crypto Thread Writing",
@@ -35,15 +38,17 @@ const mockGenerated: GeneratedSkill[] = [
     category: "Writing",
     tags: ["Content", "Threads", "Engagement"],
     confidence: 82,
+    basePrice: 0.04,
   },
 ];
 
 const loadingSteps = [
   "Fetching recent posts from X...",
-  "Analyzing content patterns...",
+  "Analyzing content patterns with AI...",
   "Identifying core competencies...",
   "Distilling into Skill definitions...",
   "Scoring confidence levels...",
+  "Generating claim links...",
 ];
 
 export default function Distill() {
@@ -53,11 +58,15 @@ export default function Distill() {
   const [loadStep, setLoadStep] = useState(0);
   const [minting, setMinting] = useState<number | null>(null);
   const [minted, setMinted] = useState<number[]>([]);
+  const [claimLinks, setClaimLinks] = useState<Record<number, string>>({});
+  const [copied, setCopied] = useState<number | null>(null);
 
   const handleAnalyze = async () => {
     if (!handle.trim()) return;
     setState("loading");
     setLoadStep(0);
+    setMinted([]);
+    setClaimLinks({});
     for (let i = 0; i < loadingSteps.length; i++) {
       await new Promise((r) => setTimeout(r, 700));
       setLoadStep(i + 1);
@@ -70,25 +79,48 @@ export default function Distill() {
     await new Promise((r) => setTimeout(r, 2000));
     setMinting(null);
     setMinted((prev) => [...prev, idx]);
-    toast({ title: "Skill Minted for KOL", description: `Held in platform custody until @${handle} claims it` });
+    const claimId = Math.random().toString(36).slice(2, 10).toUpperCase();
+    const link = `https://skillfun.xyz/claim/${claimId}`;
+    setClaimLinks((prev) => ({ ...prev, [idx]: link }));
+    toast({ title: "Skill Minted for KOL", description: `Share the claim link with @${handle} — no wallet needed to claim` });
+  };
+
+  const handleCopy = (idx: number) => {
+    navigator.clipboard.writeText(claimLinks[idx]);
+    setCopied(idx);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 pt-24 pb-16">
+
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
             <Bot className="w-5 h-5 text-accent" />
           </div>
           <div>
             <h1 className="text-3xl font-bold">KOL Skill Distiller</h1>
-            <p className="text-muted-foreground text-sm">Platform admin tool</p>
+            <p className="text-muted-foreground text-sm">Turn any KOL's expertise into on-chain Skill NFTs</p>
           </div>
         </div>
-        <p className="text-muted-foreground mb-10 mt-3">
-          Enter a Twitter/X handle to AI-distill their expertise into Skill NFTs. The minted Skills are held in platform custody until the KOL claims them.
+        <p className="text-muted-foreground mb-4 mt-3">
+          Enter a Twitter/X handle. AI analyzes their posts, distills expertise into Skill NFTs, and generates a shareable claim link. The KOL claims without a wallet — auto-converts to on-chain purchase. They earn royalties on every future invocation.
         </p>
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          {[
+            { step: "1", label: "Distill", sub: "AI analyzes X posts → Skills", color: "text-accent" },
+            { step: "2", label: "Share Link", sub: "KOL gets social claim link", color: "text-primary" },
+            { step: "3", label: "Auto-Claim", sub: "No wallet → on-chain purchase", color: "text-emerald-400" },
+          ].map((s) => (
+            <div key={s.step} className="bg-card border border-white/10 rounded-xl p-4 text-center">
+              <div className={`text-lg font-bold font-mono mb-1 ${s.color}`}>{s.step}</div>
+              <div className="font-medium text-sm mb-0.5">{s.label}</div>
+              <div className="text-xs text-muted-foreground">{s.sub}</div>
+            </div>
+          ))}
+        </div>
 
         <div className="bg-card border border-white/10 rounded-2xl p-6 mb-8">
           <div className="flex gap-3">
@@ -102,14 +134,8 @@ export default function Distill() {
                 data-testid="input-twitter-handle"
               />
             </div>
-            <Button
-              className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
-              onClick={handleAnalyze}
-              disabled={state === "loading" || !handle.trim()}
-              data-testid="button-analyze"
-            >
-              <Bot className="w-4 h-4" />
-              Analyze
+            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2" onClick={handleAnalyze} disabled={state === "loading" || !handle.trim()} data-testid="button-analyze">
+              <Bot className="w-4 h-4" /> Analyze
             </Button>
           </div>
         </div>
@@ -126,13 +152,7 @@ export default function Distill() {
             <div className="space-y-3 max-w-sm mx-auto">
               {loadingSteps.map((step, i) => (
                 <div key={step} className={`flex items-center gap-3 text-sm transition-all ${i < loadStep ? "text-emerald-400" : i === loadStep - 1 ? "text-accent" : "text-muted-foreground/40"}`} data-testid={`load-step-${i}`}>
-                  {i < loadStep ? (
-                    <CheckCircle className="w-4 h-4 shrink-0" />
-                  ) : i === loadStep - 1 ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin shrink-0" />
-                  ) : (
-                    <div className="w-4 h-4 rounded-full border border-white/10 shrink-0" />
-                  )}
+                  {i < loadStep ? <CheckCircle className="w-4 h-4 shrink-0" /> : i === loadStep - 1 ? <div className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin shrink-0" /> : <div className="w-4 h-4 rounded-full border border-white/10 shrink-0" />}
                   {step}
                 </div>
               ))}
@@ -144,8 +164,7 @@ export default function Distill() {
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-6">
               <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 px-3 py-1">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Analysis Complete
+                <CheckCircle className="w-3 h-3 mr-1" /> Analysis Complete
               </Badge>
               <span className="text-muted-foreground text-sm">3 Skills distilled from @{handle}</span>
             </div>
@@ -158,12 +177,13 @@ export default function Distill() {
                       <h3 className="font-bold text-lg">{skill.name}</h3>
                       <Badge variant="outline" className="border-primary/30 text-primary text-xs">{skill.category}</Badge>
                     </div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-3 mb-3">
                       <div className="text-xs text-muted-foreground">Confidence:</div>
                       <div className="flex-1 max-w-[120px] h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className="h-full bg-accent rounded-full" style={{ width: `${skill.confidence}%` }} />
                       </div>
                       <span className="text-xs font-mono text-accent">{skill.confidence}%</span>
+                      <span className="text-xs font-mono text-muted-foreground">· {skill.basePrice} ETH/call</span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-3">{skill.description}</p>
                     <div className="flex flex-wrap gap-1">
@@ -174,22 +194,39 @@ export default function Distill() {
                   </div>
                 </div>
 
+                {minted.includes(i) && claimLinks[i] && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Link2 className="w-4 h-4 text-emerald-400" />
+                      <span className="text-sm font-medium text-emerald-400">Claim Link Generated</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 font-mono text-xs text-muted-foreground bg-white/5 rounded-lg px-3 py-2 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {claimLinks[i]}
+                      </div>
+                      <Button size="sm" variant="outline" className="border-emerald-500/30 text-emerald-400 shrink-0 gap-1" onClick={() => handleCopy(i)} data-testid={`button-copy-link-${i}`}>
+                        <Copy className="w-3 h-3" /> {copied === i ? "Copied!" : "Copy"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Share with <span className="text-primary">@{handle}</span> via DM. No wallet needed — clicking the link auto-converts to an on-chain purchase. They earn {skill.creatorShare ?? 10}% royalty on every future invocation.
+                    </p>
+                    <Button size="sm" variant="outline" className="mt-3 gap-1 border-white/20 text-muted-foreground" onClick={() => window.open(`https://twitter.com/intent/tweet?text=Hey%20@${handle}%20your%20expertise%20has%20been%20distilled%20into%20a%20Skill%20NFT!%20Claim%20it:%20${encodeURIComponent(claimLinks[i])}`, "_blank")} data-testid={`button-share-twitter-${i}`}>
+                      <Share2 className="w-3 h-3" /> Share via X
+                    </Button>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between border-t border-white/10 pt-4">
                   <p className="text-xs text-muted-foreground">
-                    Will be held in platform custody until <span className="text-primary">@{handle}</span> claims it
+                    {minted.includes(i) ? "Held in platform custody until claimed" : `Will be held in platform custody until @${handle} claims it`}
                   </p>
                   {minted.includes(i) ? (
                     <Badge variant="outline" className="border-emerald-500/30 text-emerald-400">
                       <CheckCircle className="w-3 h-3 mr-1" /> Minted
                     </Badge>
                   ) : (
-                    <Button
-                      size="sm"
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-                      onClick={() => handleMint(i)}
-                      disabled={minting === i}
-                      data-testid={`button-mint-for-kol-${i}`}
-                    >
+                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2" onClick={() => handleMint(i)} disabled={minting === i} data-testid={`button-mint-for-kol-${i}`}>
                       <Zap className="w-3 h-3" />
                       {minting === i ? "Minting..." : "Mint for KOL"}
                     </Button>

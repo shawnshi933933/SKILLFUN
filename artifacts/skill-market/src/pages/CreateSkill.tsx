@@ -163,24 +163,52 @@ export default function CreateSkill() {
           {step === 2 && (
             <div className="space-y-5">
               <h2 className="text-xl font-semibold mb-5">Economics</h2>
-              <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Total Shares</label>
-                <Input type="number" value={form.totalShares} onChange={(e) => update("totalShares", Number(e.target.value))} className="bg-background border-white/10 font-mono" data-testid="input-total-shares" />
-                <p className="text-xs text-muted-foreground mt-1">These shares represent ownership in your Skill's future earnings</p>
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Creator Keeps ({form.creatorPercent}%)</label>
-                <input type="range" min={10} max={90} value={form.creatorPercent} onChange={(e) => update("creatorPercent", Number(e.target.value))} className="w-full accent-primary" data-testid="slider-creator-percent" />
-                <div className="grid grid-cols-3 text-xs text-muted-foreground mt-2">
-                  <span>Creator: {form.creatorPercent}%</span>
-                  <span className="text-center">Early Sale: {Math.round((100 - form.creatorPercent) * 0.6)}%</span>
-                  <span className="text-right">Platform: {Math.round((100 - form.creatorPercent) * 0.4)}%</span>
+
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-2">
+                <div className="text-sm font-semibold mb-3">Revenue Split (fixed on-chain)</div>
+                <div className="space-y-2">
+                  {[
+                    { label: "Creator Royalty (you, perpetual)", pct: "10%", sub: "earned on every invocation, forever — even if you sell the NFT", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
+                    { label: "Owner Income", pct: "90%", sub: "whoever holds the Skill NFT earns 90% of each base-price call", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+                    { label: "Platform Fee", pct: "10% off top", sub: "deducted from total invoice before the above split", color: "text-muted-foreground bg-white/5 border-white/10" },
+                  ].map((r) => (
+                    <div key={r.label} className={`flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm ${r.color}`}>
+                      <div>
+                        <div className="font-medium">{r.label}</div>
+                        <div className="text-xs opacity-70 mt-0.5">{r.sub}</div>
+                      </div>
+                      <div className="font-mono font-bold text-base shrink-0 ml-4">{r.pct}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
+
               <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Base Price (ETH)</label>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Base Price per Call (ETH)</label>
                 <Input value={form.basePrice} onChange={(e) => update("basePrice", e.target.value)} placeholder="0.05" className="bg-background border-white/10 font-mono" data-testid="input-base-price" />
-                <p className="text-xs text-muted-foreground mt-1">Price increases automatically via bonding curve as more holders buy in</p>
+                <p className="text-xs text-muted-foreground mt-1">This is the fixed price an agent pays per invocation. Curators may add a markup on top when bundling your Skill.</p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="text-xs font-semibold text-muted-foreground mb-2">Earnings Preview (per invocation at {form.basePrice} ETH base)</div>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Your royalty (10%)</span>
+                    <span className="font-mono text-purple-400">{(parseFloat(form.basePrice || "0") * 0.1 * 0.9).toFixed(5)} ETH</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Owner income (90%)</span>
+                    <span className="font-mono text-blue-400">{(parseFloat(form.basePrice || "0") * 0.9 * 0.9).toFixed(5)} ETH</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground/60">After 10% platform fee</span>
+                    <span className="text-muted-foreground/60">per call</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
+                When a Curator bundles your Skill, they add their own markup on top of your base price. The markup is split 50/50 between the Curator and a Staker Pool — your earnings are unaffected.
               </div>
             </div>
           )}
