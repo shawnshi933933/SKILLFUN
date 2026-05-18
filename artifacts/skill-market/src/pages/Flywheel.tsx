@@ -34,12 +34,11 @@ const STATS = [
 ];
 
 const FLOW_NODES = [
-  { id: 1, label: "Creator Mints", sub: "ERC-8239 NFT + IPFS hash", color: "border-primary/40 bg-primary/10 text-primary" },
-  { id: 2, label: "Owner Earns", sub: "90% of base price / call", color: "border-blue-500/40 bg-blue-500/10 text-blue-400" },
-  { id: 3, label: "Curator Bundles", sub: "Single MCP endpoint", color: "border-accent/40 bg-accent/10 text-accent" },
-  { id: 4, label: "Staker Backs", sub: "SKILL tokens → yield", color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },
-  { id: 5, label: "Agent Invokes", sub: "x402 USDC payment", color: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
-  { id: 6, label: "Fees Split", sub: "10% platform · then splits on-chain", color: "border-purple-500/40 bg-purple-500/10 text-purple-400" },
+  { id: 1, label: "Creator", sub: "Mints Skill NFT — earns 10% royalty perpetually", color: "border-primary/40 bg-primary/10 text-primary" },
+  { id: 2, label: "Bundle", sub: "Curator adds markup, wraps Skills → single MCP endpoint", color: "border-accent/40 bg-accent/10 text-accent" },
+  { id: 3, label: "Staker", sub: "Stakes SKILL to a Bundle → earns 50% of curator markup", color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },
+  { id: 4, label: "Agent", sub: "Discovers Bundle via MCP, pays via x402 USDC — autonomous", color: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
+  { id: 5, label: "Revenue Split", sub: "10% platform off top · Base → Creator/Owner · Markup → Curator/Stakers", color: "border-purple-500/40 bg-purple-500/10 text-purple-400" },
 ];
 
 export default function Flywheel() {
@@ -81,8 +80,8 @@ export default function Flywheel() {
 
         {/* Flow Diagram */}
         <div className="bg-card border border-white/10 rounded-2xl p-8 mb-8">
-          <h2 className="font-semibold text-lg mb-8 text-center">The 6-Step Economic Flow</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-center">
+          <h2 className="font-semibold text-lg mb-8 text-center">The 5-Node Economic Flywheel</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-center">
             {FLOW_NODES.map((node, i) => (
               <div key={node.id} className="relative flex flex-col items-center gap-2">
                 <div className={`w-full border rounded-xl p-4 text-center ${node.color}`}>
@@ -109,11 +108,11 @@ export default function Flywheel() {
           <h2 className="font-semibold mb-4">Fee Split Per Invocation</h2>
           <div className="grid md:grid-cols-5 gap-4">
             {[
-              { label: "Platform (10% off top)", pct: "10%", color: "text-muted-foreground bg-white/5 border-white/10" },
-              { label: "Creator Royalty", pct: "9% of total", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
-              { label: "Owner Income", pct: "81% of Base", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
-              { label: "Curator Share", pct: "50% of Markup", color: "text-accent bg-accent/10 border-accent/20" },
-              { label: "Staker Pool", pct: "50% of Markup", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+              { label: "Platform (10% off total invoice)", pct: "10%", color: "text-muted-foreground bg-white/5 border-white/10" },
+              { label: "Creator Royalty (10% of net Base)", pct: "~9% net", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
+              { label: "Owner Income (90% of net Base)", pct: "~81% net", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+              { label: "Curator Share (50% of net Markup)", pct: "~45% of Markup", color: "text-accent bg-accent/10 border-accent/20" },
+              { label: "Staker Pool (50% of net Markup)", pct: "~45% of Markup", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
             ].map((f) => (
               <div key={f.label} className={`border rounded-xl p-4 text-center ${f.color}`}>
                 <div className="text-xl font-bold font-mono mb-1">{f.pct}</div>
