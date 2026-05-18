@@ -19,7 +19,7 @@ export default function Claim() {
   const [claiming, setClaiming] = useState<string | null>(null);
   const [claimed, setClaimed] = useState<string[]>([]);
 
-  const unclaimed = mockSkills.filter((s) => s.claimedBy === null);
+  const unclaimed = mockSkills.slice(0, 5);
 
   const handleConnectTwitter = () => {
     if (!handle.trim()) return;
@@ -265,14 +265,14 @@ export default function Claim() {
                         <div className="text-xs text-muted-foreground mb-1">Volume</div>
                         <div className="font-mono font-bold flex items-center gap-1">
                           <TrendingUp className="w-3 h-3 text-primary" />
-                          {skill.volume} ETH
+                          {skill.volume.toFixed(2)} ETH
                         </div>
                       </div>
                       <div className="bg-background rounded-lg p-3">
-                        <div className="text-xs text-muted-foreground mb-1">Agent Buys</div>
+                        <div className="text-xs text-muted-foreground mb-1">Invocations</div>
                         <div className="font-mono font-bold text-accent flex items-center gap-1">
                           <Bot className="w-3 h-3" />
-                          {skill.agentPurchaseCount}
+                          {skill.invocations.toLocaleString()}
                         </div>
                       </div>
                     </div>

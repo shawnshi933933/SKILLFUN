@@ -11,6 +11,7 @@ import CreateSkill from "@/pages/CreateSkill";
 import CreateBundle from "@/pages/CreateBundle";
 import Stake from "@/pages/Stake";
 import Distill from "@/pages/Distill";
+import Claim from "@/pages/Claim";
 import Flywheel from "@/pages/Flywheel";
 import AgentApi from "@/pages/AgentApi";
 import Profile from "@/pages/Profile";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/app/create-bundle" component={CreateBundle} />
       <Route path="/app/stake" component={Stake} />
       <Route path="/app/kol" component={Distill} />
+      <Route path="/app/claim" component={Claim} />
       <Route path="/app/flywheel" component={Flywheel} />
       <Route path="/app/agent-api" component={AgentApi} />
       <Route path="/app/profile" component={Profile} />

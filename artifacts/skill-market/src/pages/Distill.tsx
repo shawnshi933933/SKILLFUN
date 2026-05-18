@@ -209,7 +209,7 @@ export default function Distill() {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Share with <span className="text-primary">@{handle}</span> via DM. No wallet needed — clicking the link auto-converts to an on-chain purchase. They earn {skill.creatorShare ?? 10}% royalty on every future invocation.
+                      Share with <span className="text-primary">@{handle}</span> via DM. No wallet needed — clicking the link auto-converts to an on-chain purchase. They earn 10% royalty on every future invocation.
                     </p>
                     <Button size="sm" variant="outline" className="mt-3 gap-1 border-white/20 text-muted-foreground" onClick={() => window.open(`https://twitter.com/intent/tweet?text=Hey%20@${handle}%20your%20expertise%20has%20been%20distilled%20into%20a%20Skill%20NFT!%20Claim%20it:%20${encodeURIComponent(claimLinks[i])}`, "_blank")} data-testid={`button-share-twitter-${i}`}>
                       <Share2 className="w-3 h-3" /> Share via X

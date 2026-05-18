@@ -18,7 +18,7 @@ export default function Profile() {
 
   const purchasedSkills = mockSkills.slice(0, 3);
   const createdSkills = mockSkills.slice(3, 5);
-  const pendingClaim = mockSkills.filter((s) => !s.claimedBy).slice(0, 2);
+  const pendingClaim = mockSkills.slice(5, 7);
   const myBundles = mockBundles.slice(0, 2);
   const stakedBundles = mockBundles.filter((b) => (b.myStaked ?? 0) > 0);
   const totalStaked = stakedBundles.reduce((s, b) => s + (b.myStaked ?? 0), 0);
