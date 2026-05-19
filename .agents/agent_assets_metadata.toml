@@ -96,6 +96,24 @@ uri = "file://artifacts/skillfun-pitch-v2/public/bg-tokeneconomy.png"
 type = "image"
 title = "token economy financial flows"
 
+[[generated]]
+id = "6iFmfxDr-hBOKOoAFpqx8"
+uri = "file://attached_assets/logos/skillfun-logo-1.png"
+type = "image"
+title = "skillfun logo lightning bolt"
+
+[[generated]]
+id = "yUVrfzp1V7529DV7t89in"
+uri = "file://attached_assets/logos/skillfun-logo-2.png"
+type = "image"
+title = "skillfun logo network nodes"
+
+[[generated]]
+id = "HbuH6rbFkZRCufAs7dQt8"
+uri = "file://attached_assets/logos/skillfun-logo-3.png"
+type = "image"
+title = "skillfun logo hex chip"
+
 [[outputs]]
 id = "1bI6qw_nP-kzDKfdNayK6"
 uri = "file://.local/outputs/SKILL-MARKET.pdf"
@@ -107,3 +125,21 @@ id = "J04zNWBWGoIvp9y-ukfbx"
 uri = "file://.local/outputs/SKILL-MARKET.pptx"
 type = "slides"
 title = "SKILL MARKET.pptx"
+
+[[outputs]]
+id = "8Jr5xBz0JjIz1Kofk9vr5"
+uri = "file://attached_assets/logos/skillfun-logo-1.png"
+type = "image"
+title = "方案 A — 闪电图标 (Lightning Bolt)"
+
+[[outputs]]
+id = "eR1Hzy8itbEVj-qnw_gMR"
+uri = "file://attached_assets/logos/skillfun-logo-2.png"
+type = "image"
+title = "方案 B — 五节点网络 (Network Flywheel)"
+
+[[outputs]]
+id = "O_Ke6hsmiqDhkKcC92oE0"
+uri = "file://attached_assets/logos/skillfun-logo-3.png"
+type = "image"
+title = "方案 C — 六边形芯片 (Hex Chip)"
