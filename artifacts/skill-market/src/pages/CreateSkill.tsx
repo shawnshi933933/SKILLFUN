@@ -52,12 +52,12 @@ export default function CreateSkill() {
     setMintState("registering");
     await new Promise((r) => setTimeout(r, 1200));
     setMintState("done");
-    toast({ title: "Skill Minted!", description: `${form.name} is now live on Sepolia (mock)` });
+    toast({ title: "Skill Minted!", description: `${form.name} is now live on 0G Chain (mock)` });
   };
 
   const mintSteps = [
     { key: "uploading", label: `Uploading to ${form.storage === "ipfs" ? "IPFS" : "Walrus"}` },
-    { key: "minting", label: "Minting NFT on Sepolia" },
+    { key: "minting", label: "Minting ERC-7857 iNFT on 0G Chain" },
     { key: "registering", label: "Registering in Skill Registry" },
   ];
 
@@ -69,7 +69,7 @@ export default function CreateSkill() {
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 pt-24 pb-16">
         <h1 className="text-3xl font-bold mb-2">Create a Skill</h1>
-        <p className="text-muted-foreground mb-8">Mint your AI Agent Skill as an ERC-8239 NFT.</p>
+        <p className="text-muted-foreground mb-8">Mint your AI Agent Skill as an ERC-7857 iNFT on 0G Chain.</p>
 
         {/* Progress */}
         <div className="mb-8">
@@ -224,7 +224,7 @@ export default function CreateSkill() {
                     <div className="flex justify-between text-sm"><span className="text-muted-foreground">Platform Fee</span><span className="text-muted-foreground">10% off total invoice</span></div>
                   </div>
                   <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2" onClick={handleMint} data-testid="button-mint-skill">
-                    <Zap className="w-4 h-4" /> Mint to Sepolia
+                    <Zap className="w-4 h-4" /> Mint to 0G Chain
                   </Button>
                 </>
               )}
@@ -250,7 +250,7 @@ export default function CreateSkill() {
                   {mintState === "done" && (
                     <div className="text-center pt-4">
                       <div className="text-2xl font-bold text-emerald-400 mb-2">Skill Minted!</div>
-                      <p className="text-muted-foreground text-sm mb-4">Your Skill NFT is now live on Sepolia testnet (mock)</p>
+                      <p className="text-muted-foreground text-sm mb-4">Your ERC-7857 iNFT is now live on 0G Chain (mock)</p>
                       <div className="flex gap-3 justify-center">
                         <Button variant="outline" className="border-white/20" onClick={() => window.location.href = "/app/market"} data-testid="button-view-in-market">View in Market</Button>
                         <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => { setStep(0); setMintState("idle"); setMockCid(""); }} data-testid="button-create-another">Create Another</Button>

@@ -55,7 +55,7 @@ export default function CreateBundle() {
     setDeployState("registering");
     await new Promise((r) => setTimeout(r, 1200));
     setDeployState("done");
-    toast({ title: "Bundle Deployed!", description: `${form.name} is now live with a single MCP endpoint (mock — Sepolia testnet)` });
+    toast({ title: "Bundle Deployed!", description: `${form.name} is now live with a single MCP endpoint (mock — 0G Chain)` });
   };
 
   const deploySteps = [
@@ -227,7 +227,7 @@ export default function CreateBundle() {
                     Deploying creates an on-chain Bundle with a single ERC-8183 MCP endpoint. Agents can invoke all {selectedSkills.length} skills with one HTTP call and one x402 payment.
                   </div>
                   <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground gap-2" onClick={handleDeploy} data-testid="button-deploy-bundle">
-                    <Layers className="w-4 h-4" /> Deploy Bundle to Sepolia
+                    <Layers className="w-4 h-4" /> Deploy Bundle to 0G Chain
                   </Button>
                 </>
               )}

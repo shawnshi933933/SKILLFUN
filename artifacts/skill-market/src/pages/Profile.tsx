@@ -41,7 +41,7 @@ export default function Profile() {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Connect Your Wallet</h1>
-            <p className="text-muted-foreground">Connect MetaMask on Sepolia to view your Skills, earnings, and portfolio.</p>
+            <p className="text-muted-foreground">Connect MetaMask on 0G Chain (16661) to view your Skills, earnings, and portfolio.</p>
           </div>
           <Button
             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8"
@@ -74,7 +74,7 @@ export default function Profile() {
                 <button onClick={copyAddress} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="button-copy-address">
                   <Copy className="w-4 h-4" />
                 </button>
-                <Badge variant="outline" className="border-accent/30 text-accent text-xs">Sepolia</Badge>
+                <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 text-xs">0G Chain</Badge>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

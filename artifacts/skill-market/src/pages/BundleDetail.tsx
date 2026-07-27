@@ -46,7 +46,7 @@ export default function BundleDetail() {
     setStaking(true);
     setTimeout(() => {
       setStaking(false);
-      toast({ title: "Staked successfully", description: `${stakeAmount} SKILL staked to ${bundle.name} (mock — Sepolia testnet)` });
+      toast({ title: "Staked successfully", description: `${stakeAmount} SKILL staked to ${bundle.name} (mock — 0G Chain)` });
     }, 1800);
   };
 

@@ -52,7 +52,7 @@ export default function SkillDetail() {
     setPurchasing(true);
     setTimeout(() => {
       setPurchasing(false);
-      toast({ title: "Purchase simulated", description: "Skill NFT acquired (mock — Sepolia testnet)" });
+      toast({ title: "Purchase simulated", description: "ERC-7857 iNFT acquired (mock — 0G Chain)" });
     }, 1800);
   };
 

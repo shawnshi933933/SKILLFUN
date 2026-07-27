@@ -34,8 +34,8 @@ export default function SkillCard({ skill }: SkillCardProps) {
             {skill.category}
           </Badge>
           {skill.encryptionEnabled && (
-            <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-400 bg-emerald-500/10 gap-1 ml-1">
-              <Lock className="w-3 h-3" /> AES-256
+            <Badge variant="outline" className="text-xs border-cyan-500/40 text-cyan-400 bg-cyan-500/10 gap-1 ml-1">
+              <Lock className="w-3 h-3" /> 🔒 Encrypted
             </Badge>
           )}
         </div>

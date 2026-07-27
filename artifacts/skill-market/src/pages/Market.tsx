@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, Bot, Layers, Zap } from "lucide-react";
 
 const CATEGORIES = ["All", "Trading", "Writing", "Analysis", "Code", "Research", "Social"] as const;
+const PROTOCOLS = ["All", "ERC-7857", "0G Chain"] as const;
 const SKILL_SORT = [
   { label: "Most Invoked", value: "invoke-desc" },
   { label: "Price: High", value: "price-desc" },
@@ -36,6 +37,7 @@ export default function Market() {
   const [skillSort, setSkillSort] = useState("invoke-desc");
   const [bundleSort, setBundleSort] = useState("invoke-desc");
   const [encryptedOnly, setEncryptedOnly] = useState(false);
+  const [protocol, setProtocol] = useState<string>("All");
 
   const filteredSkills = mockSkills
     .filter((s: Skill) => {
@@ -119,6 +121,20 @@ export default function Market() {
               </div>
             </div>
 
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                Protocol
+              </div>
+              <div className="space-y-1">
+                {PROTOCOLS.map((p) => (
+                  <button key={p} onClick={() => setProtocol(p)} data-testid={`filter-protocol-${p.toLowerCase().replace(/\s/g, "-")}`}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${protocol === p ? "bg-cyan-500/20 text-cyan-400 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
+                    {p === "ERC-7857" ? "⚡ ERC-7857 iNFT" : p === "0G Chain" ? "🌐 0G Chain" : p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {tab === "skills" && (
               <>
                 <div>
@@ -137,9 +153,9 @@ export default function Market() {
                   <button
                     onClick={() => setEncryptedOnly(!encryptedOnly)}
                     data-testid="filter-encrypted"
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${encryptedOnly ? "bg-emerald-500/20 text-emerald-400 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${encryptedOnly ? "bg-cyan-500/20 text-cyan-400 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
                   >
-                    AES-256 Encrypted Only
+                    🔒 0G Encrypted Only
                   </button>
                 </div>
               </>
@@ -177,8 +193,8 @@ export default function Market() {
               <>
                 {encryptedOnly && (
                   <div className="flex items-center gap-2 mb-4">
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs cursor-pointer" onClick={() => setEncryptedOnly(false)}>
-                      AES-256 Encrypted ×
+                    <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 text-xs cursor-pointer" onClick={() => setEncryptedOnly(false)}>
+                      🔒 0G Encrypted ×
                     </Badge>
                     <Button variant="ghost" size="sm" className="text-xs h-6 text-muted-foreground" onClick={() => setEncryptedOnly(false)}>Clear</Button>
                   </div>

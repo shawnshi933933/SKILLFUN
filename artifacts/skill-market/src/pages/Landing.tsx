@@ -26,7 +26,7 @@ export default function Landing() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
         <div className="relative max-w-5xl mx-auto text-center">
           <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/10 px-4 py-1.5 text-sm">
-            ERC-8239 Skill NFT · ERC-8183 MCP Endpoint · x402 A2A Payments · Sepolia Testnet
+            ERC-7857 iNFT · ERC-8183 MCP Endpoint · x402 A2A Payments · 0G Chain (16661)
           </Badge>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
             A Skill is a
@@ -104,7 +104,7 @@ export default function Landing() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: <Zap className="w-6 h-6 text-primary" />, title: "Skill NFT", subtitle: "ERC-8239 · Immutable Ownership", desc: "Every AI skill is minted as an on-chain NFT. Creator earns 10% royalties forever. The Owner holds the NFT and earns 90% of base price per call. Content-hash locked, 72hr timelock, creator stake slashing.", glow: "from-primary/20" },
+              { icon: <Zap className="w-6 h-6 text-primary" />, title: "Skill NFT", subtitle: "ERC-7857 iNFT · Immutable Ownership", desc: "Every AI skill is minted as an on-chain NFT. Creator earns 10% royalties forever. The Owner holds the NFT and earns 90% of base price per call. Content-hash locked, 72hr timelock, creator stake slashing.", glow: "from-primary/20" },
               { icon: <Layers className="w-6 h-6 text-accent" />, title: "Bundle", subtitle: "Curator product · Single MCP endpoint", desc: "Curators assemble Skills into themed Bundles exposed on a single ERC-8183 MCP URL. They add a markup; stakers back the bundle with SKILL tokens and earn yield. AI agents call one URL for multiple capabilities.", glow: "from-accent/20" },
               { icon: <Bot className="w-6 h-6 text-emerald-400" />, title: "x402 A2A Payments", subtitle: "Autonomous Agent-to-Agent commerce", desc: "Agents discover Skills/Bundles, receive 402 Payment Required, send USDC via x402. No human approval. Agent identity via ERC-8004. ZK/TEE execution via ERC-8220. Blob storage via EIP-4844.", glow: "from-emerald-500/20" },
             ].map((p) => (
@@ -187,7 +187,7 @@ export default function Landing() {
             <div className="hidden md:block absolute left-[27px] top-8 bottom-8 w-px bg-gradient-to-b from-primary/40 via-accent/20 to-transparent" />
             <div className="space-y-5">
               {[
-                { step: "01", title: "Creator Mints a Skill NFT", desc: "Upload your AI skill, set base price. Minted as ERC-8239 NFT with immutable IPFS content hash. Encrypted payload optional (AES-256 / KMS). Creator stakes ETH to signal trust.", color: "bg-primary/20 border-primary/40 text-primary", tag: "Creator" },
+                { step: "01", title: "Creator Mints a Skill NFT", desc: "Upload your AI skill, set base price. Minted as ERC-7857 iNFT with immutable IPFS content hash. Encrypted payload stored on 0G Storage (AES-256). Creator stakes ETH to signal trust.", color: "bg-primary/20 border-primary/40 text-primary", tag: "Creator" },
                 { step: "02", title: "Owner Holds the Asset", desc: "The NFT can be sold on secondary markets. Owner earns 90% of every Base Price invocation — passive, perpetual, on-chain income. Creator continues to earn 10% royalty regardless of who owns it.", color: "bg-blue-500/20 border-blue-500/40 text-blue-400", tag: "Owner" },
                 { step: "03", title: "Curator Bundles Skills into a Product", desc: "Curators select Skills, set a Markup %, and publish a Bundle with a single ERC-8183 MCP endpoint. No NFT ownership required. The Bundle is discoverable by AI agents immediately.", color: "bg-accent/20 border-accent/40 text-accent", tag: "Curator" },
                 { step: "04", title: "Stakers Back the Bundle", desc: "SKILL token holders stake to Bundles they believe in. Stakers earn 50% of Markup fees as yield. Misbehaving curators slash the staker pool — aligning incentives with quality.", color: "bg-emerald-500/20 border-emerald-500/40 text-emerald-400", tag: "Staker" },
@@ -319,7 +319,7 @@ export default function Landing() {
           <p className="text-muted-foreground mb-12 max-w-xl mx-auto">Every invocation generates value. Every fee is split on-chain. Every role earns.</p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {[
-              { step: "01", label: "Creator Mints", sub: "ERC-8239 NFT", icon: <Code2 className="w-5 h-5" />, color: "text-purple-400" },
+              { step: "01", label: "Creator Mints", sub: "ERC-7857 iNFT", icon: <Code2 className="w-5 h-5" />, color: "text-purple-400" },
               { step: "02", label: "Owner Earns", sub: "90% base price", icon: <Coins className="w-5 h-5" />, color: "text-blue-400" },
               { step: "03", label: "Curator Bundles", sub: "Single MCP URL", icon: <Layers className="w-5 h-5" />, color: "text-accent" },
               { step: "04", label: "Staker Backs", sub: "SKILL token yield", icon: <TrendingUp className="w-5 h-5" />, color: "text-emerald-400" },
@@ -353,7 +353,7 @@ export default function Landing() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(139,92,246,0.1),transparent)]" />
             <div className="relative">
               <h2 className="text-3xl font-bold mb-4">Treat your Skill as an Asset</h2>
-              <p className="text-muted-foreground mb-8">847 Skills already generating autonomous revenue on Sepolia.</p>
+              <p className="text-muted-foreground mb-8">847 Skills already generating autonomous revenue on 0G Chain.</p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-10" onClick={() => setLocation("/app/market")} data-testid="button-cta-launch">
                   Browse Market <ArrowRight className="w-4 h-4" />
@@ -367,8 +367,20 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Powered by 0G strip */}
+      <div className="bg-gradient-to-r from-[#0a0a0f] via-[#0d1a2e] to-[#0a0a0f] border-t border-cyan-500/20 py-4 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-xs font-bold tracking-[0.2em] text-cyan-400 uppercase">Powered by 0G</span>
+          </div>
+          <span className="hidden md:block text-white/20">·</span>
+          <span className="text-xs text-white/40">Decentralised AI OS · 0G Chain (16661) · 0G Storage · 0G DA</span>
+        </div>
+      </div>
+
       <footer className="border-t border-white/10 py-8 px-4 text-center text-sm text-muted-foreground">
-        SkillFun — ERC-8239 Skill Registry · ERC-8183 MCP · x402 A2A Payments · Built on Sepolia Testnet · POC
+        SkillFun — ERC-7857 iNFT Registry · ERC-8183 MCP · x402 A2A Payments · Built on 0G Chain (16661) · POC
       </footer>
     </div>
   );

@@ -19,7 +19,7 @@ const TS_EXAMPLE = `import { SkillFunAgent } from "@skillfun/agent-sdk";
 // Agent identity via ERC-8004
 const agent = new SkillFunAgent({
   identity: process.env.ERC8004_IDENTITY,
-  network: "sepolia",
+  network: "0g-chain",
 });
 
 // 1. Discover Skills or Bundles
@@ -52,7 +52,7 @@ import os
 # ERC-8004 agent identity
 agent = SkillFunAgent(
     identity_key=os.environ["ERC8004_KEY"],
-    network="sepolia",
+    network="0g-chain",
 )
 
 # Discover and invoke a Bundle (single MCP endpoint)

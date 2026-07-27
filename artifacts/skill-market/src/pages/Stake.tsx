@@ -25,7 +25,7 @@ export default function Stake() {
     await new Promise((r) => setTimeout(r, 1800));
     setStaking(false);
     const bundle = mockBundles.find((b) => b.id === selectedBundle);
-    toast({ title: "Staked!", description: `${amount} SKILL staked to ${bundle?.name} (mock — Sepolia testnet)` });
+    toast({ title: "Staked!", description: `${amount} SKILL staked to ${bundle?.name} (mock — 0G Chain)` });
     setSelectedBundle(null);
   };
 
