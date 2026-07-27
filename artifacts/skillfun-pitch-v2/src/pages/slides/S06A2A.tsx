@@ -56,18 +56,18 @@ export default function S06A2A() {
           Zero-Human Transaction
         </h2>
         <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.5vw", color: "#7B7F9E", fontWeight: 300, marginBottom: "3vh" }}>
-          Agent B buys a skill from Agent A — no human involved at any step.
+          Agent B invokes a private Skill from Agent A — no human involved, implementation never exposed.
         </p>
 
         {/* Three participant boxes */}
         <div style={{ display: "flex", alignItems: "stretch", gap: "1.5vw", marginBottom: "3vh" }}>
           <div style={{ flex: 1, background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.30)", borderRadius: "0.8vw", padding: "2vh 2vw", textAlign: "center" }}>
             <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.4vw", fontWeight: 800, color: "#22D3EE" }}>Agent B</div>
-            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.2vw", color: "#7B7F9E", marginTop: "0.4vh" }}>Skill Buyer</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.2vw", color: "#7B7F9E", marginTop: "0.4vh" }}>Skill Invoker</div>
           </div>
           <div style={{ flex: 1.4, background: "rgba(139,92,246,0.14)", border: "1.5px solid rgba(139,92,246,0.50)", borderRadius: "0.8vw", padding: "2vh 2vw", textAlign: "center", boxShadow: "0 0 2.5vw rgba(139,92,246,0.18)" }}>
             <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.6vw", fontWeight: 800, color: "#8B5CF6" }}>SkillFun</div>
-            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.2vw", color: "#B4A0FF", marginTop: "0.4vh" }}>MCP Server · Bundle Layer</div>
+            <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.2vw", color: "#B4A0FF", marginTop: "0.4vh" }}>MCP Server · 0G Compute TEE</div>
           </div>
           <div style={{ flex: 1, background: "rgba(180,160,255,0.07)", border: "1px solid rgba(180,160,255,0.26)", borderRadius: "0.8vw", padding: "2vh 2vw", textAlign: "center" }}>
             <div style={{ fontFamily: "var(--font-display-family)", fontSize: "2.4vw", fontWeight: 800, color: "#B4A0FF" }}>Agent A</div>
@@ -92,7 +92,7 @@ export default function S06A2A() {
                 {pill("x402", "#FCD34D", "rgba(252,211,77,0.10)", "rgba(252,211,77,0.36)")}
                 <span style={{ color: "#FCD34D", fontSize: "1.1vw" }}>→</span>
               </div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E" }}>Per-call HTTP payment, instant rights</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E" }}>Per-call HTTP payment → TEE verifies &amp; executes</div>
             </div>
           </div>
 
@@ -103,10 +103,10 @@ export default function S06A2A() {
           <div style={{ display: "flex", flexDirection: "column", gap: "2vh" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(180,160,255,0.06)", border: "1px solid rgba(180,160,255,0.18)", borderRadius: "0.6vw", padding: "1.2vh 1.5vw" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5vw", flexShrink: 0 }}>
-                {pill("ERC-8239", "#B4A0FF", "rgba(180,160,255,0.12)", "rgba(180,160,255,0.40)")}
+                {pill("ERC-7857", "#B4A0FF", "rgba(180,160,255,0.12)", "rgba(180,160,255,0.40)")}
                 <span style={{ color: "#B4A0FF", fontSize: "1.1vw" }}>←</span>
               </div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E" }}>Skill NFT — price &amp; royalty terms</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E" }}>iNFT — encrypted Skill + royalty terms on 0G</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.18)", borderRadius: "0.6vw", padding: "1.2vh 1.5vw" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5vw", flexShrink: 0 }}>
@@ -124,7 +124,7 @@ export default function S06A2A() {
           <div style={{ display: "flex", flexDirection: "column", gap: "2vh", justifyContent: "center" }}>
             <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.3vw", color: "#7B7F9E", lineHeight: 1.5 }}>
               <span style={{ display: "block", fontFamily: "var(--font-display-family)", fontSize: "1.4vw", fontWeight: 700, color: "#34D399", marginBottom: "0.5vh" }}>Creator</span>
-              Royalty split at mint — enforced on-chain
+              Royalty split — enforced on-chain, forever
             </div>
             <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.3vw", color: "#7B7F9E", lineHeight: 1.5 }}>
               <span style={{ display: "block", fontFamily: "var(--font-display-family)", fontSize: "1.4vw", fontWeight: 700, color: "#22D3EE", marginBottom: "0.5vh" }}>Curator + Staker</span>
@@ -134,15 +134,15 @@ export default function S06A2A() {
         </div>
 
         {/* Bottom summary */}
-        <div style={{ marginTop: "2.5vh", padding: "1.2vh 2.5vw", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.25)", borderRadius: "0.6vw", textAlign: "center" }}>
-          <span style={{ fontFamily: "var(--font-display-family)", color: "#22D3EE", fontSize: "1.55vw", fontWeight: 700 }}>
-            Fully autonomous — one endpoint, one payment, auto-split, zero human involvement.
+        <div style={{ marginTop: "2.5vh", padding: "1.2vh 2.5vw", background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: "0.6vw", textAlign: "center" }}>
+          <span style={{ fontFamily: "var(--font-display-family)", color: "#34D399", fontSize: "1.55vw", fontWeight: 700 }}>
+            Fully autonomous — one endpoint, one payment, TEE-executed, auto-split, implementation never exposed.
           </span>
         </div>
       </div>
 
       <div className="absolute bottom-[3.5vh] right-[3.5vw]" style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}>
-        08 / 14
+        09 / 15
       </div>
     </div>
   );

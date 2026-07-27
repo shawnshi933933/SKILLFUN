@@ -31,14 +31,14 @@ export default function S12Encryption() {
             <span style={{ fontFamily: "var(--font-body-family)", color: "#22D3EE", fontSize: "1.35vw", fontWeight: 400, letterSpacing: "0.24em", textTransform: "uppercase" }}>
               IP Protection
             </span>
-            <span style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", fontWeight: 600, color: "#8B5CF6", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: "0.3vw", padding: "0.15vh 0.7vw", whiteSpace: "nowrap" }}>Optional</span>
-            <span style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", fontWeight: 600, color: "#B4A0FF", background: "rgba(180,160,255,0.10)", border: "1px solid rgba(180,160,255,0.32)", borderRadius: "0.3vw", padding: "0.15vh 0.7vw", whiteSpace: "nowrap" }}>High-Value Skills</span>
+            <span style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", fontWeight: 600, color: "#34D399", background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.40)", borderRadius: "0.3vw", padding: "0.15vh 0.7vw", whiteSpace: "nowrap" }}>Default for All Skills</span>
+            <span style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", fontWeight: 600, color: "#B4A0FF", background: "rgba(180,160,255,0.10)", border: "1px solid rgba(180,160,255,0.32)", borderRadius: "0.3vw", padding: "0.15vh 0.7vw", whiteSpace: "nowrap" }}>Powered by 0G</span>
           </div>
           <h2 style={{ fontFamily: "var(--font-display-family)", fontSize: "4vw", fontWeight: 800, color: "#F0F0F8", letterSpacing: "-0.02em", lineHeight: 1.05 }}>
-            Encrypted Skill Protection
+            Privacy by Default
           </h2>
-          <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.6vw", color: "#7B7F9E", fontWeight: 300, marginTop: "1vh", maxWidth: "60vw", lineHeight: 1.5 }}>
-            Anyone who pays can invoke a Skill and get results — <span style={{ color: "#F0F0F8" }}>but the original payload is never exposed.</span>
+          <p style={{ fontFamily: "var(--font-body-family)", fontSize: "1.6vw", color: "#7B7F9E", fontWeight: 300, marginTop: "1vh", maxWidth: "65vw", lineHeight: 1.5 }}>
+            Every Skill is encrypted end-to-end on 0G Storage — <span style={{ color: "#F0F0F8" }}>the implementation is never exposed, not even during execution.</span>
           </p>
         </div>
 
@@ -49,22 +49,22 @@ export default function S12Encryption() {
             <div style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.28)", borderRadius: "0.7vw", padding: "1.8vh 1.6vw", flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.7vw", marginBottom: "1.2vh" }}>
                 <div style={{ fontFamily: "var(--font-display-family)", fontSize: "0.95vw", fontWeight: 800, color: "#8B5CF6", background: "rgba(139,92,246,0.18)", borderRadius: "50%", width: "2vw", height: "2vw", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>1</div>
-                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.3vw", fontWeight: 700, color: "#8B5CF6" }}>Upload &amp; Encrypt</div>
+                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.3vw", fontWeight: 700, color: "#8B5CF6" }}>Mint &amp; Encrypt</div>
               </div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>Opt-in at mint — payload encrypted with AES-256</div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>Each Skill gets its own KMS key (AWS / Alibaba)</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>Creator mints ERC-7857 iNFT — Skill payload encrypted to 0G Storage</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5, marginTop: "0.4vh" }}>Only the NFT holder's key can unlock the content</div>
             </div>
             <div style={{ alignSelf: "center", padding: "0 0.6vw", color: "#3D4160", fontSize: "1.6vw", flexShrink: 0 }}>›</div>
           </div>
           {/* Step 2 */}
           <div style={{ display: "flex", alignItems: "flex-start", flex: 1 }}>
-            <div style={{ background: "rgba(180,160,255,0.07)", border: "1px solid rgba(180,160,255,0.25)", borderRadius: "0.7vw", padding: "1.8vh 1.6vw", flex: 1 }}>
+            <div style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.25)", borderRadius: "0.7vw", padding: "1.8vh 1.6vw", flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.7vw", marginBottom: "1.2vh" }}>
-                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "0.95vw", fontWeight: 800, color: "#B4A0FF", background: "rgba(180,160,255,0.18)", borderRadius: "50%", width: "2vw", height: "2vw", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>2</div>
-                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.3vw", fontWeight: 700, color: "#B4A0FF" }}>Invoke &amp; Decrypt</div>
+                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "0.95vw", fontWeight: 800, color: "#34D399", background: "rgba(52,211,153,0.18)", borderRadius: "50%", width: "2vw", height: "2vw", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>2</div>
+                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.3vw", fontWeight: 700, color: "#34D399" }}>Pay &amp; Authorize</div>
               </div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>Agent pays via x402 — MCP Server decrypts in memory</div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>Plaintext cleared immediately after execution</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>Agent pays via x402 — 0G Compute TEE verifies payment proof on-chain</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5, marginTop: "0.4vh" }}>TEE grants one-time execution authorization</div>
             </div>
             <div style={{ alignSelf: "center", padding: "0 0.6vw", color: "#3D4160", fontSize: "1.6vw", flexShrink: 0 }}>›</div>
           </div>
@@ -73,17 +73,17 @@ export default function S12Encryption() {
             <div style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.22)", borderRadius: "0.7vw", padding: "1.8vh 1.6vw", flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.7vw", marginBottom: "1.2vh" }}>
                 <div style={{ fontFamily: "var(--font-display-family)", fontSize: "0.95vw", fontWeight: 800, color: "#22D3EE", background: "rgba(34,211,238,0.18)", borderRadius: "50%", width: "2vw", height: "2vw", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</div>
-                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.3vw", fontWeight: 700, color: "#22D3EE" }}>NFT Transfer</div>
+                <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.3vw", fontWeight: 700, color: "#22D3EE" }}>Execute &amp; Return</div>
               </div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>KMS key is bound to the Skill, not the Owner</div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>Transfer has zero effect on encryption state</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5 }}>TEE decrypts inside enclave, executes, returns result to Agent</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.05vw", color: "#9DA3C8", lineHeight: 1.5, marginTop: "0.4vh" }}>Implementation never leaves the TEE — Agent sees only the output</div>
             </div>
           </div>
         </div>
 
-        {/* Key guarantees — SVG icons replace emoji */}
+        {/* Key guarantees */}
         <div style={{ display: "flex", gap: "4vw" }}>
-          {/* Guarantee 1 — Lock icon */}
+          {/* Guarantee 1 */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: "1.1vw" }}>
             <div style={{ width: "3.2vw", height: "3.2vw", borderRadius: "50%", flexShrink: 0, background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="50%" height="50%" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -92,23 +92,23 @@ export default function S12Encryption() {
               </svg>
             </div>
             <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.5vw", fontWeight: 700, color: "#F0F0F8" }}>Payload never leaves KMS boundary</div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E", lineHeight: 1.45, marginTop: "0.3vh" }}>Encrypted at rest. Platform cannot read without valid x402 payment.</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.5vw", fontWeight: 700, color: "#F0F0F8" }}>Encrypted at rest on 0G Storage</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E", lineHeight: 1.45, marginTop: "0.3vh" }}>Skill payload lives on 0G Storage, encrypted. No one — not even SkillFun — can read it without the NFT key.</div>
             </div>
           </div>
-          {/* Guarantee 2 — Lightning icon */}
+          {/* Guarantee 2 */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: "1.1vw" }}>
-            <div style={{ width: "3.2vw", height: "3.2vw", borderRadius: "50%", flexShrink: 0, background: "rgba(180,160,255,0.12)", border: "1px solid rgba(180,160,255,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="50%" height="50%" viewBox="0 0 24 24" fill="none" stroke="#B4A0FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div style={{ width: "3.2vw", height: "3.2vw", borderRadius: "50%", flexShrink: 0, background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="50%" height="50%" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
             </div>
             <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.5vw", fontWeight: 700, color: "#F0F0F8" }}>Stateless per-invocation decryption</div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E", lineHeight: 1.45, marginTop: "0.3vh" }}>Plaintext exists only in memory during execution — never written to disk.</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.5vw", fontWeight: 700, color: "#F0F0F8" }}>TEE execution — zero plaintext exposure</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E", lineHeight: 1.45, marginTop: "0.3vh" }}>Decryption happens only inside the 0G Compute enclave. Plaintext is never written to disk or sent over the wire.</div>
             </div>
           </div>
-          {/* Guarantee 3 — Link icon */}
+          {/* Guarantee 3 */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: "1.1vw" }}>
             <div style={{ width: "3.2vw", height: "3.2vw", borderRadius: "50%", flexShrink: 0, background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="50%" height="50%" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -117,8 +117,8 @@ export default function S12Encryption() {
               </svg>
             </div>
             <div>
-              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.5vw", fontWeight: 700, color: "#F0F0F8" }}>NFT ownership decoupled from IP</div>
-              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E", lineHeight: 1.45, marginTop: "0.3vh" }}>Transferring the NFT has zero effect on the encryption key. Royalties route automatically.</div>
+              <div style={{ fontFamily: "var(--font-display-family)", fontSize: "1.5vw", fontWeight: 700, color: "#F0F0F8" }}>0G Proxy Re-encryption on transfer</div>
+              <div style={{ fontFamily: "var(--font-body-family)", fontSize: "1.25vw", color: "#7B7F9E", lineHeight: 1.45, marginTop: "0.3vh" }}>When the NFT is sold, the re-encryption oracle rotates the key to the new owner. Previous owner loses access immediately.</div>
             </div>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function S12Encryption() {
 
       <div className="absolute bottom-[3.5vh] right-[3.5vw]"
         style={{ fontFamily: "var(--font-display-family)", color: "#3D4160", fontSize: "1.5vw", fontWeight: 600 }}>
-        11 / 14
+        12 / 15
       </div>
     </div>
   );

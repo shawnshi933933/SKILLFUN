@@ -16,6 +16,14 @@
 		"speakerNotes": ""
 	},
 	{
+		"id": "a1b2c3d4-0010-4000-8000-000000000010",
+		"position": 3,
+		"filepath": "src/pages/slides/S08Market.tsx",
+		"title": "Market Opportunity",
+		"description": "AI agent economy TAM/SAM sizing",
+		"speakerNotes": ""
+	},
+	{
 		"id": "a1b2c3d4-0015-4000-8000-000000000015",
 		"position": 4,
 		"filepath": "src/pages/slides/S13Evolution.tsx",
@@ -28,28 +36,28 @@
 		"position": 5,
 		"filepath": "src/pages/slides/S04Solution.tsx",
 		"title": "SkillFun Solution",
-		"description": "Tokenized skill marketplace on Sepolia testnet",
+		"description": "Private AI skill marketplace on 0G Chain — ERC-7857 iNFT, 0G Compute TEE, x402 agent payments",
+		"speakerNotes": ""
+	},
+	{
+		"id": "a1b2c3d4-0017-4000-8000-000000000017",
+		"position": 6,
+		"filepath": "src/pages/slides/S15BuiltOn0G.tsx",
+		"title": "Built on 0G",
+		"description": "0G infrastructure partnership — Storage (encrypted Skills), Compute (TEE execution), Chain (ERC-7857 settlement)",
 		"speakerNotes": ""
 	},
 	{
 		"id": "a1b2c3d4-0002-4000-8000-000000000002",
-		"position": 6,
+		"position": 7,
 		"filepath": "src/pages/slides/S02TechStack.tsx",
 		"title": "Protocol Landscape",
-		"description": "7-layer AI agent protocol stack: MCP, A2A, ERC-8004, x402, ERC-8183, ERC-8239, ERC-8220",
-		"speakerNotes": ""
-	},
-	{
-		"id": "a1b2c3d4-0010-4000-8000-000000000010",
-		"position": 3,
-		"filepath": "src/pages/slides/S08Market.tsx",
-		"title": "Market Opportunity",
-		"description": "AI agent economy TAM/SAM sizing",
+		"description": "8-layer AI agent protocol stack: MCP, A2A, ERC-8004, x402, ERC-8183, ERC-7857, 0G Storage, 0G Compute",
 		"speakerNotes": ""
 	},
 	{
 		"id": "a1b2c3d4-0006-4000-8000-000000000006",
-		"position": 7,
+		"position": 8,
 		"filepath": "src/pages/slides/S05HowItWorks.tsx",
 		"title": "How It Works",
 		"description": "Four-step flow: Mint, List, Use, Earn",
@@ -57,15 +65,15 @@
 	},
 	{
 		"id": "a1b2c3d4-0007-4000-8000-000000000007",
-		"position": 8,
+		"position": 9,
 		"filepath": "src/pages/slides/S06A2A.tsx",
 		"title": "Zero-Human Transaction",
-		"description": "Agent-to-agent skill sale scenario: ERC-8004, ERC-8239, x402, ERC-8183 — no human in the loop",
+		"description": "Agent-to-agent skill invocation: ERC-8004, ERC-7857, x402, 0G Compute TEE, ERC-8183 — no human in the loop",
 		"speakerNotes": ""
 	},
 	{
 		"id": "a1b2c3d4-0008-4000-8000-000000000008",
-		"position": 9,
+		"position": 10,
 		"filepath": "src/pages/slides/S07Participate.tsx",
 		"title": "Three Ways to Participate",
 		"description": "Creators, Agents, Stakers — roles and rewards",
@@ -73,7 +81,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0009-4000-8000-000000000009",
-		"position": 10,
+		"position": 11,
 		"filepath": "src/pages/slides/S06Flywheel.tsx",
 		"title": "Economic Flywheel",
 		"description": "Self-reinforcing growth model loop",
@@ -81,15 +89,15 @@
 	},
 	{
 		"id": "a1b2c3d4-0014-4000-8000-000000000014",
-		"position": 11,
+		"position": 12,
 		"filepath": "src/pages/slides/S12Encryption.tsx",
-		"title": "Encrypted Skill Protection",
-		"description": "Optional AES-256 + KMS encryption for high-value Skills — pay to invoke, payload never exposed",
+		"title": "Privacy by Default",
+		"description": "All Skills encrypted on 0G Storage by default — 0G Compute TEE verifies payment and executes, implementation never exposed",
 		"speakerNotes": ""
 	},
 	{
 		"id": "a1b2c3d4-0011-4000-8000-000000000011",
-		"position": 12,
+		"position": 13,
 		"filepath": "src/pages/slides/S09KOL.tsx",
 		"title": "KOL Growth Engine",
 		"description": "KOL distill-to-claim cold-start flywheel",
@@ -97,7 +105,7 @@
 	},
 	{
 		"id": "a1b2c3d4-0012-4000-8000-000000000012",
-		"position": 13,
+		"position": 14,
 		"filepath": "src/pages/slides/S10TokenEconomy.tsx",
 		"title": "Token Economy",
 		"description": "Revenue share, staking, and token flow",
@@ -105,10 +113,10 @@
 	},
 	{
 		"id": "a1b2c3d4-0016-4000-8000-000000000016",
-		"position": 14,
+		"position": 15,
 		"filepath": "src/pages/slides/S14Architecture.tsx",
 		"title": "System Architecture",
-		"description": "Full SkillFun protocol stack — five roles, three protocols, one market",
+		"description": "Full SkillFun protocol stack on 0G — five roles, four layers, ERC-7857 iNFTs, 0G Storage",
 		"speakerNotes": ""
 	}
 ]

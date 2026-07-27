@@ -395,7 +395,7 @@ export default function S14Architecture() {
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.72vw", fontWeight: 700, color: "#8B5CF6", letterSpacing: "0.1em" }}>
           ◆ SKILL NFTs
         </span>
-        <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700, color: "#8B5CF6", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: "0.22vw", padding: "0.05vh 0.38vw", letterSpacing: "0.06em" }}>ERC-8239</span>
+        <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700, color: "#8B5CF6", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: "0.22vw", padding: "0.05vh 0.38vw", letterSpacing: "0.06em" }}>ERC-7857 iNFT</span>
       </div>
       {/* NFT CARDS — inlined, no .map() */}
       <div style={{ position: "absolute", top: "66.9vh", left: "3.1vw", width: "14vw", height: "7.5vh", background: "rgba(139,92,246,0.12)", border: "1.5px solid rgba(139,92,246,0.38)", borderRadius: "0.5vw", padding: "0.6vh 0.8vw", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 0 0.8vw rgba(139,92,246,0.15)" }}>
@@ -462,14 +462,14 @@ export default function S14Architecture() {
             ⛓ STORAGE
           </span>
           <span style={{ fontFamily: "var(--font-display-family)", fontSize: "0.88vw", fontWeight: 700, color: "#34D399" }}>
-            Ethereum Mainnet · EIP-4844 Blob
+            0G Chain · 0G Storage
           </span>
         </div>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.75vw", color: "rgba(52,211,153,0.55)", lineHeight: 1.4 }}>
-          Metadata stored on-chain via blob transactions — content hash anchored to each NFT token.
+          Skill payloads encrypted on 0G Storage — content hash anchored to each ERC-7857 iNFT on-chain.
         </span>
         <span style={{ fontFamily: "var(--font-body-family)", fontSize: "0.68vw", fontWeight: 700, color: "#34D399", background: "rgba(52,211,153,0.10)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: "0.22vw", padding: "0.08vh 0.45vw", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
-          ERC-8239 hash → blob tx
+          ERC-7857 iNFT → 0G Storage
         </span>
       </div>
       {/* Page number */}
@@ -478,7 +478,7 @@ export default function S14Architecture() {
         fontFamily: "var(--font-display-family)",
         color: "#3D4160", fontSize: "1.5vw", fontWeight: 600,
       }}>
-        14 / 14
+        15 / 15
       </div>
     </div>
   );

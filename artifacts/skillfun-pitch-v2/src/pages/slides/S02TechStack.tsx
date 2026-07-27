@@ -7,7 +7,7 @@ export default function S02TechStack() {
     gap: "0 2vw",
     background: "rgba(22,25,41,0.85)",
     borderRadius: "0.6vw",
-    padding: "0.8vh 2.8vw",
+    padding: "0.7vh 2.8vw",
     border: "1px solid rgba(240,240,248,0.08)"
   };
 
@@ -77,10 +77,10 @@ export default function S02TechStack() {
             marginBottom: "1.2vh"
           }}
         >
-          Every layer of the agent stack is crystallizing now — SkillFun connects them all.
+          Every layer of the agent stack is crystallizing now — SkillFun connects them all on 0G.
         </p>
 
-        <div className="flex flex-col" style={{ flex: 1, justifyContent: "flex-start", gap: "1.2vh" }}>
+        <div className="flex flex-col" style={{ flex: 1, justifyContent: "flex-start", gap: "0.9vh" }}>
 
           <div style={rowStyle}>
             <div style={{ whiteSpace: "nowrap" }}>
@@ -126,14 +126,14 @@ export default function S02TechStack() {
             </div>
           </div>
 
-          <div style={rowStyle}>
+          <div style={{ ...rowStyle, border: "1px solid rgba(139,92,246,0.28)", background: "rgba(139,92,246,0.08)" }}>
             <div style={{ whiteSpace: "nowrap" }}>
-              <span style={{ fontFamily: "var(--font-display-family)", color: "#B4A0FF", fontSize: "1.5vw", fontWeight: 700 }}>ERC-8239</span>
+              <span style={{ fontFamily: "var(--font-display-family)", color: "#8B5CF6", fontSize: "1.5vw", fontWeight: 700 }}>ERC-7857</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Capability</span>
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              NFT standard for tokenized AI skills and royalties
+              iNFT standard for AI Skills — private metadata, proxy re-encryption, self-sovereign ownership
             </div>
           </div>
 
@@ -148,14 +148,25 @@ export default function S02TechStack() {
             </div>
           </div>
 
-          <div style={{ ...rowStyle, border: "1px solid rgba(52,211,153,0.22)", background: "rgba(52,211,153,0.05)" }}>
+          <div style={{ ...rowStyle, border: "1px solid rgba(52,211,153,0.28)", background: "rgba(52,211,153,0.06)" }}>
             <div style={{ whiteSpace: "nowrap" }}>
-              <span style={{ fontFamily: "var(--font-display-family)", color: "#34D399", fontSize: "1.5vw", fontWeight: 700 }}>EIP-4844</span>
+              <span style={{ fontFamily: "var(--font-display-family)", color: "#34D399", fontSize: "1.5vw", fontWeight: 700 }}>0G Storage</span>
               <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Storage</span>
             </div>
             <div style={dividerStyle} />
             <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
-              Skill metadata stored via Ethereum blob transactions
+              Decentralized encrypted Skill storage — proxy re-encryption on NFT transfer
+            </div>
+          </div>
+
+          <div style={{ ...rowStyle, border: "1px solid rgba(52,211,153,0.22)", background: "rgba(52,211,153,0.04)" }}>
+            <div style={{ whiteSpace: "nowrap" }}>
+              <span style={{ fontFamily: "var(--font-display-family)", color: "#34D399", fontSize: "1.5vw", fontWeight: 700 }}>0G Compute</span>
+              <span style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.25vw", marginLeft: "0.6vw" }}>Execution</span>
+            </div>
+            <div style={dividerStyle} />
+            <div style={{ fontFamily: "var(--font-body-family)", color: "#7B7F9E", fontSize: "1.35vw", lineHeight: 1.4 }}>
+              TEE execution · verifiable invocations · implementation never exposed to callers
             </div>
           </div>
 
@@ -170,7 +181,7 @@ export default function S02TechStack() {
           fontWeight: 600
         }}
       >
-        06 / 14
+        07 / 15
       </div>
     </div>
   );
