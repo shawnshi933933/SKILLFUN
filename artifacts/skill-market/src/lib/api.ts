@@ -9,10 +9,12 @@
 const API_BASE = "/api";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  // Destructure so `...restInit` never overrides the merged `headers` object.
+  const { headers: extraHeaders, ...restInit } = init ?? {};
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...init?.headers },
-    ...init,
+    headers: { "Content-Type": "application/json", ...extraHeaders },
+    ...restInit,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
