@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -52,14 +52,15 @@ const INITIAL_FORM: FormData = {
 // GitHub fetch state
 type FetchStatus = "idle" | "loading" | "found" | "not_found" | "error";
 interface GitHubState {
-  status:     FetchStatus;
-  fileType:   string | null;
-  rawContent: string | null;
-  githubUrl:  string | null;
-  warning:    string | null;
+  status:         FetchStatus;
+  fileType:       string | null;
+  rawContent:     string | null;
+  githubUrl:      string | null;
+  warning:        string | null;
+  fetchedForRepo: string | null;  // which repo slug was last successfully fetched
 }
 const INITIAL_GH: GitHubState = {
-  status: "idle", fileType: null, rawContent: null, githubUrl: null, warning: null,
+  status: "idle", fileType: null, rawContent: null, githubUrl: null, warning: null, fetchedForRepo: null,
 };
 
 // ─── Phase labels ──────────────────────────────────────────────────────────────
@@ -82,10 +83,9 @@ export default function CreateSkill() {
   const { address } = useAccount();
   const { state: mintState, mint, reset } = useSelfMint();
 
-  const [step, setStep]     = useState(0);
-  const [form, setForm]     = useState<FormData>(INITIAL_FORM);
-  const [gh, setGh]         = useState<GitHubState>(INITIAL_GH);
-  const lastFetchedRepo     = useRef<string>("");
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const [gh, setGh]     = useState<GitHubState>(INITIAL_GH);
 
   const update = (key: keyof FormData, val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
@@ -93,47 +93,58 @@ export default function CreateSkill() {
   // ── GitHub auto-fetch on repo blur ─────────────────────────────────────────
 
   const handleRepoUrlBlur = async () => {
-    const raw = form.repoUrl.trim();
-    // Normalise: strip github.com prefix if user pasted a full URL
-    const repo = raw.replace(/^(https?:\/\/)?(www\.)?github\.com\//, "");
-    if (!repo.includes("/") || repo === lastFetchedRepo.current) {
-      // Fallback name from slug if still blank
-      if (!form.name && repo) {
-        update("name", repo.split("/").pop()!.replace(/[-_]/g, " ").trim());
-      }
+    const raw  = form.repoUrl.trim();
+    // Normalise: strip protocol + github.com prefix
+    const repo = raw
+      .replace(/^https?:\/\/(www\.)?github\.com\//, "")
+      .replace(/\/$/, "");
+
+    if (!repo.includes("/")) {
+      // Not a valid owner/repo — just derive name from slug
+      if (!form.name && repo) update("name", repo.replace(/[-_]/g, " ").trim());
       return;
     }
-    lastFetchedRepo.current = repo;
 
-    setGh({ ...INITIAL_GH, status: "loading" });
+    // Already in-flight → skip
+    if (gh.status === "loading") return;
+    // Already have a successful result for this exact repo → skip
+    if (gh.status === "found" && gh.fetchedForRepo === repo) return;
+
+    setGh({ ...INITIAL_GH, status: "loading", fetchedForRepo: null });
 
     try {
       const result: GitHubManifestResult = await githubApi.fetchSkillManifest(repo);
 
       setGh({
-        status:     result.found ? "found" : "not_found",
-        fileType:   result.fileType,
-        rawContent: result.rawContent,
-        githubUrl:  result.githubUrl,
-        warning:    result.warning ?? null,
+        status:         result.found ? "found" : "not_found",
+        fileType:       result.fileType,
+        rawContent:     result.rawContent,
+        githubUrl:      result.githubUrl,
+        warning:        result.warning ?? null,
+        fetchedForRepo: repo,
       });
 
-      // Auto-fill fields from parsed data (don't overwrite if already edited)
+      // Auto-fill fields from parsed data (don't overwrite if already manually edited)
       const p = result.parsed;
+      const slugName = repo.split("/").pop()!.replace(/[-_]/g, " ").trim();
       setForm((f) => ({
         ...f,
-        name:         f.name         || p.name         || repo.split("/").pop()!.replace(/[-_]/g, " ").trim(),
-        description:  f.description  || p.description  || "",
-        version:      f.version !== "1.0.0" ? f.version : (p.version      || "1.0.0"),
-        category:     f.category !== "Code" ? f.category : (p.category    || "Code"),
-        basePrice:    f.basePrice !== "0.01" ? f.basePrice : (p.basePrice  != null ? String(p.basePrice) : "0.01"),
+        name:         f.name        || p.name         || slugName,
+        description:  f.description || p.description  || "",
+        version:      f.version !== "1.0.0"
+          ? f.version : (p.version || "1.0.0"),
+        category:     f.category !== "Code"
+          ? f.category : (p.category || "Code"),
+        basePrice:    f.basePrice !== "0.01"
+          ? f.basePrice : (p.basePrice != null ? String(p.basePrice) : "0.01"),
         capabilities: f.capabilities !== DEFAULT_CAPABILITIES.join(", ")
           ? f.capabilities
           : (p.capabilities?.join(", ") || DEFAULT_CAPABILITIES.join(", ")),
-        tags:         f.tags || (p.tags?.join(", ") || ""),
+        tags: f.tags || (p.tags?.join(", ") || ""),
       }));
-    } catch {
-      setGh({ ...INITIAL_GH, status: "error", warning: "Could not reach GitHub. Fill in the form manually." });
+    } catch (err) {
+      console.error("[GitHubFetch] error:", err);
+      setGh({ ...INITIAL_GH, status: "error", fetchedForRepo: null, warning: "Could not reach GitHub. Fill in the form manually." });
       if (!form.name && raw) {
         update("name", raw.split("/").pop()!.replace(/[-_]/g, " ").trim());
       }
@@ -216,7 +227,7 @@ export default function CreateSkill() {
             <Button
               variant="outline"
               className="border-white/10"
-              onClick={() => { reset(); setForm(INITIAL_FORM); setGh(INITIAL_GH); setStep(0); lastFetchedRepo.current = ""; }}
+              onClick={() => { reset(); setForm(INITIAL_FORM); setGh(INITIAL_GH); setStep(0); }}
             >
               Mint another
             </Button>
@@ -283,10 +294,8 @@ export default function CreateSkill() {
                     onChange={(e) => {
                       const v = e.target.value.replace(/^https?:\/\/(github\.com\/)?/, "");
                       update("repoUrl", v);
-                      // Reset fetch state if user changes the repo
-                      if (v !== lastFetchedRepo.current) {
-                        setGh(INITIAL_GH);
-                      }
+                      // Reset fetch badge whenever the repo field changes
+                      setGh(INITIAL_GH);
                     }}
                     onBlur={handleRepoUrlBlur}
                   />
