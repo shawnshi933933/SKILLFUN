@@ -70,9 +70,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Strings__factory>;
     getContractFactory(
+      name: "IERC7857",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC7857__factory>;
+    getContractFactory(
+      name: "IERC7857DataVerifier",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC7857DataVerifier__factory>;
+    getContractFactory(
+      name: "IERC7857Metadata",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC7857Metadata__factory>;
+    getContractFactory(
       name: "SkillFunOracle",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.SkillFunOracle__factory>;
+    getContractFactory(
+      name: "SkillFunVerifierStub",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SkillFunVerifierStub__factory>;
     getContractFactory(
       name: "SkillNFT",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -149,10 +165,30 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Strings>;
     getContractAt(
+      name: "IERC7857",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC7857>;
+    getContractAt(
+      name: "IERC7857DataVerifier",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC7857DataVerifier>;
+    getContractAt(
+      name: "IERC7857Metadata",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC7857Metadata>;
+    getContractAt(
       name: "SkillFunOracle",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.SkillFunOracle>;
+    getContractAt(
+      name: "SkillFunVerifierStub",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SkillFunVerifierStub>;
     getContractAt(
       name: "SkillNFT",
       address: string | ethers.Addressable,
@@ -216,9 +252,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Strings>;
     deployContract(
+      name: "IERC7857",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC7857>;
+    deployContract(
+      name: "IERC7857DataVerifier",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC7857DataVerifier>;
+    deployContract(
+      name: "IERC7857Metadata",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC7857Metadata>;
+    deployContract(
       name: "SkillFunOracle",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.SkillFunOracle>;
+    deployContract(
+      name: "SkillFunVerifierStub",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SkillFunVerifierStub>;
     deployContract(
       name: "SkillNFT",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -295,10 +347,30 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Strings>;
     deployContract(
+      name: "IERC7857",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC7857>;
+    deployContract(
+      name: "IERC7857DataVerifier",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC7857DataVerifier>;
+    deployContract(
+      name: "IERC7857Metadata",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC7857Metadata>;
+    deployContract(
       name: "SkillFunOracle",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.SkillFunOracle>;
+    deployContract(
+      name: "SkillFunVerifierStub",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.SkillFunVerifierStub>;
     deployContract(
       name: "SkillNFT",
       args: any[],

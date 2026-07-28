@@ -45,11 +45,23 @@ description: Core design decisions for SkillFun POC — chain, contracts, claim 
 - Deploy script auto-writes `packages/abi/src/addresses.json` keyed by chainId
 - Deployer + cold wallet: `0xbb32AD3470290635a852EDc5F2895B75497cA368`
 
-## Deployed Contracts — 0G Mainnet (chainId 16661)
-- SkillFunOracle: `0xCA37B688Eb5DBE16233E7733605d1A8eF2832d4E`
-- SkillNFT:       `0x3136d38Cbd12052249e9eB79f6C7Ff01b2439c53`
+## Deployed Contracts — 0G Mainnet (chainId 16661) — ERC-7857 compliant
+- SkillFunOracle:       `0x831a69d64eFB4BaE6BD47E2eDf8F92c3e1d9770e`
+- SkillFunVerifierStub: `0x97F8f4a20d279B58Ebf8a13aB4cE856BbA8bb0f8` (swap for real TEE in Step 4)
+- SkillNFT:             `0x3030F26d3d61B43866a3c166d8f49A9C29A27c5A`
 - RPC: `https://evmrpc.0g.ai`
-- Env vars: `SKILLFUN_ORACLE_ADDRESS`, `SKILLNFT_ADDRESS`, `ZEROG_RPC_URL`, `ZEROG_CHAIN_ID`
+- Env vars: `SKILLFUN_ORACLE_ADDRESS`, `SKILLFUN_VERIFIER_ADDRESS`, `SKILLNFT_ADDRESS`, `ZEROG_RPC_URL`, `ZEROG_CHAIN_ID`
+
+## ERC-7857 Contract Architecture
+- Interfaces in `packages/contracts/contracts/interfaces/`: IERC7857Types, IERC7857DataVerifier, IERC7857Metadata, IERC7857
+- `intelligentDataOf(tokenId)` → returns IntelligentData[] with 0G Storage rootHash
+- `registerSkill(repoUrl, skillURI, rootHash)` — rootHash anchored at mint time
+- `iTransfer(to, tokenId, proofs)` — proof-verified transfer; stub verifier accepts any proof
+- `iClone(to, tokenId, proofs)` — mint new token from existing
+- `authorizeUsage / revokeAuthorization` — usage rights without ownership
+- `updateDataHash(tokenId, newHash, index)` — called after 0G proxy re-encryption
+- `setVerifier(addr)` — upgrade path to real TEE verifier (Step 4)
+- SkillFun extensions: `manifestOwner` (GitHub repo path), `claim()` (Oracle-based), `invokeSkill() payable`
 
 ## Backend
 - Go + PostgreSQL (BFF pattern, borrowing skillfun-apps schema)

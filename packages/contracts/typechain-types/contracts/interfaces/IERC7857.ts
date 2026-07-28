@@ -21,7 +21,7 @@ import type {
   TypedLogDescription,
   TypedListener,
   TypedContractMethod,
-} from "../common";
+} from "../../common";
 
 export type AccessProofStruct = {
   oldDataHash: BytesLike;
@@ -96,41 +96,26 @@ export type IntelligentDataStructOutput = [
   dataHash: string
 ] & { dataDescription: string; dataHash: string };
 
-export interface SkillNFTInterface extends Interface {
+export interface IERC7857Interface extends Interface {
   getFunction(
     nameOrSignature:
       | "approve"
       | "authorizeUsage"
       | "balanceOf"
-      | "claim"
       | "getApproved"
       | "iClone"
       | "iTransfer"
       | "intelligentDataOf"
-      | "invokeSkill"
       | "isApprovedForAll"
-      | "isAuthorized"
-      | "manifestOwner"
       | "name"
-      | "onERC721Received"
-      | "oracle"
-      | "owner"
       | "ownerOf"
-      | "registerSkill"
-      | "renounceOwnership"
       | "revokeAuthorization"
       | "safeTransferFrom(address,address,uint256)"
       | "safeTransferFrom(address,address,uint256,bytes)"
       | "setApprovalForAll"
-      | "setVerifier"
       | "supportsInterface"
       | "symbol"
-      | "tokenURI"
       | "transferFrom"
-      | "transferOwnership"
-      | "updateDataHash"
-      | "verifier"
-      | "withdraw"
   ): FunctionFragment;
 
   getEvent(
@@ -139,13 +124,6 @@ export interface SkillNFTInterface extends Interface {
       | "ApprovalForAll"
       | "Authorization"
       | "AuthorizationRevoked"
-      | "BatchMetadataUpdate"
-      | "DataHashUpdated"
-      | "MetadataUpdate"
-      | "OwnershipTransferred"
-      | "SkillClaimed"
-      | "SkillInvoked"
-      | "SkillRegistered"
       | "Transfer"
       | "Transferred"
   ): EventFragment;
@@ -162,7 +140,6 @@ export interface SkillNFTInterface extends Interface {
     functionFragment: "balanceOf",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(functionFragment: "claim", values: [BigNumberish]): string;
   encodeFunctionData(
     functionFragment: "getApproved",
     values: [BigNumberish]
@@ -180,39 +157,13 @@ export interface SkillNFTInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "invokeSkill",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "isApprovedForAll",
     values: [AddressLike, AddressLike]
   ): string;
-  encodeFunctionData(
-    functionFragment: "isAuthorized",
-    values: [BigNumberish, AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "manifestOwner",
-    values: [BigNumberish]
-  ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "onERC721Received",
-    values: [AddressLike, AddressLike, BigNumberish, BytesLike]
-  ): string;
-  encodeFunctionData(functionFragment: "oracle", values?: undefined): string;
-  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "ownerOf",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "registerSkill",
-    values: [string, string, BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "renounceOwnership",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "revokeAuthorization",
@@ -231,32 +182,14 @@ export interface SkillNFTInterface extends Interface {
     values: [AddressLike, boolean]
   ): string;
   encodeFunctionData(
-    functionFragment: "setVerifier",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "supportsInterface",
     values: [BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "symbol", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "tokenURI",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "transferFrom",
     values: [AddressLike, AddressLike, BigNumberish]
   ): string;
-  encodeFunctionData(
-    functionFragment: "transferOwnership",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "updateDataHash",
-    values: [BigNumberish, BytesLike, BigNumberish]
-  ): string;
-  encodeFunctionData(functionFragment: "verifier", values?: undefined): string;
-  encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
 
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(
@@ -264,7 +197,6 @@ export interface SkillNFTInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getApproved",
     data: BytesLike
@@ -276,37 +208,11 @@ export interface SkillNFTInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "invokeSkill",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "isApprovedForAll",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "isAuthorized",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "manifestOwner",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "onERC721Received",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "oracle", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "ownerOf", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "registerSkill",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "renounceOwnership",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "revokeAuthorization",
     data: BytesLike
@@ -324,29 +230,14 @@ export interface SkillNFTInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setVerifier",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "tokenURI", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferFrom",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "transferOwnership",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "updateDataHash",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "verifier", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 }
 
 export namespace ApprovalEvent {
@@ -425,121 +316,6 @@ export namespace AuthorizationRevokedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace BatchMetadataUpdateEvent {
-  export type InputTuple = [
-    _fromTokenId: BigNumberish,
-    _toTokenId: BigNumberish
-  ];
-  export type OutputTuple = [_fromTokenId: bigint, _toTokenId: bigint];
-  export interface OutputObject {
-    _fromTokenId: bigint;
-    _toTokenId: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace DataHashUpdatedEvent {
-  export type InputTuple = [
-    tokenId: BigNumberish,
-    oldHash: BytesLike,
-    newHash: BytesLike
-  ];
-  export type OutputTuple = [tokenId: bigint, oldHash: string, newHash: string];
-  export interface OutputObject {
-    tokenId: bigint;
-    oldHash: string;
-    newHash: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace MetadataUpdateEvent {
-  export type InputTuple = [_tokenId: BigNumberish];
-  export type OutputTuple = [_tokenId: bigint];
-  export interface OutputObject {
-    _tokenId: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace OwnershipTransferredEvent {
-  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
-  export type OutputTuple = [previousOwner: string, newOwner: string];
-  export interface OutputObject {
-    previousOwner: string;
-    newOwner: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace SkillClaimedEvent {
-  export type InputTuple = [tokenId: BigNumberish, claimer: AddressLike];
-  export type OutputTuple = [tokenId: bigint, claimer: string];
-  export interface OutputObject {
-    tokenId: bigint;
-    claimer: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace SkillInvokedEvent {
-  export type InputTuple = [
-    tokenId: BigNumberish,
-    caller: AddressLike,
-    value: BigNumberish
-  ];
-  export type OutputTuple = [tokenId: bigint, caller: string, value: bigint];
-  export interface OutputObject {
-    tokenId: bigint;
-    caller: string;
-    value: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace SkillRegisteredEvent {
-  export type InputTuple = [
-    tokenId: BigNumberish,
-    repoUrl: string,
-    skillURI: string,
-    rootHash: BytesLike
-  ];
-  export type OutputTuple = [
-    tokenId: bigint,
-    repoUrl: string,
-    skillURI: string,
-    rootHash: string
-  ];
-  export interface OutputObject {
-    tokenId: bigint;
-    repoUrl: string;
-    skillURI: string;
-    rootHash: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
 export namespace TransferEvent {
   export type InputTuple = [
     from: AddressLike,
@@ -576,11 +352,11 @@ export namespace TransferredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export interface SkillNFT extends BaseContract {
-  connect(runner?: ContractRunner | null): SkillNFT;
+export interface IERC7857 extends BaseContract {
+  connect(runner?: ContractRunner | null): IERC7857;
   waitForDeployment(): Promise<this>;
 
-  interface: SkillNFTInterface;
+  interface: IERC7857Interface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -633,8 +409,6 @@ export interface SkillNFT extends BaseContract {
 
   balanceOf: TypedContractMethod<[owner: AddressLike], [bigint], "view">;
 
-  claim: TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
-
   getApproved: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
   iClone: TypedContractMethod<
@@ -663,43 +437,15 @@ export interface SkillNFT extends BaseContract {
     "view"
   >;
 
-  invokeSkill: TypedContractMethod<[tokenId: BigNumberish], [void], "payable">;
-
   isApprovedForAll: TypedContractMethod<
     [owner: AddressLike, operator: AddressLike],
     [boolean],
     "view"
   >;
 
-  isAuthorized: TypedContractMethod<
-    [tokenId: BigNumberish, user: AddressLike],
-    [boolean],
-    "view"
-  >;
-
-  manifestOwner: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
-
   name: TypedContractMethod<[], [string], "view">;
 
-  onERC721Received: TypedContractMethod<
-    [arg0: AddressLike, arg1: AddressLike, arg2: BigNumberish, arg3: BytesLike],
-    [string],
-    "view"
-  >;
-
-  oracle: TypedContractMethod<[], [string], "view">;
-
-  owner: TypedContractMethod<[], [string], "view">;
-
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
-
-  registerSkill: TypedContractMethod<
-    [repoUrl: string, skillURI: string, rootHash: BytesLike],
-    [bigint],
-    "nonpayable"
-  >;
-
-  renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
   revokeAuthorization: TypedContractMethod<
     [_tokenId: BigNumberish, _user: AddressLike],
@@ -730,12 +476,6 @@ export interface SkillNFT extends BaseContract {
     "nonpayable"
   >;
 
-  setVerifier: TypedContractMethod<
-    [_verifier: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
   supportsInterface: TypedContractMethod<
     [interfaceId: BytesLike],
     [boolean],
@@ -744,29 +484,11 @@ export interface SkillNFT extends BaseContract {
 
   symbol: TypedContractMethod<[], [string], "view">;
 
-  tokenURI: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
-
   transferFrom: TypedContractMethod<
     [from: AddressLike, to: AddressLike, tokenId: BigNumberish],
     [void],
     "nonpayable"
   >;
-
-  transferOwnership: TypedContractMethod<
-    [newOwner: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
-  updateDataHash: TypedContractMethod<
-    [tokenId: BigNumberish, newHash: BytesLike, index: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-
-  verifier: TypedContractMethod<[], [string], "view">;
-
-  withdraw: TypedContractMethod<[], [void], "nonpayable">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -789,9 +511,6 @@ export interface SkillNFT extends BaseContract {
   getFunction(
     nameOrSignature: "balanceOf"
   ): TypedContractMethod<[owner: AddressLike], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "claim"
-  ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "getApproved"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
@@ -825,9 +544,6 @@ export interface SkillNFT extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "invokeSkill"
-  ): TypedContractMethod<[tokenId: BigNumberish], [void], "payable">;
-  getFunction(
     nameOrSignature: "isApprovedForAll"
   ): TypedContractMethod<
     [owner: AddressLike, operator: AddressLike],
@@ -835,44 +551,11 @@ export interface SkillNFT extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "isAuthorized"
-  ): TypedContractMethod<
-    [tokenId: BigNumberish, user: AddressLike],
-    [boolean],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "manifestOwner"
-  ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
-  getFunction(
     nameOrSignature: "name"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "onERC721Received"
-  ): TypedContractMethod<
-    [arg0: AddressLike, arg1: AddressLike, arg2: BigNumberish, arg3: BytesLike],
-    [string],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "oracle"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "ownerOf"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
-  getFunction(
-    nameOrSignature: "registerSkill"
-  ): TypedContractMethod<
-    [repoUrl: string, skillURI: string, rootHash: BytesLike],
-    [bigint],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "renounceOwnership"
-  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "revokeAuthorization"
   ): TypedContractMethod<
@@ -907,17 +590,11 @@ export interface SkillNFT extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "setVerifier"
-  ): TypedContractMethod<[_verifier: AddressLike], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "symbol"
   ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "tokenURI"
-  ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
   getFunction(
     nameOrSignature: "transferFrom"
   ): TypedContractMethod<
@@ -925,22 +602,6 @@ export interface SkillNFT extends BaseContract {
     [void],
     "nonpayable"
   >;
-  getFunction(
-    nameOrSignature: "transferOwnership"
-  ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "updateDataHash"
-  ): TypedContractMethod<
-    [tokenId: BigNumberish, newHash: BytesLike, index: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "verifier"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "withdraw"
-  ): TypedContractMethod<[], [void], "nonpayable">;
 
   getEvent(
     key: "Approval"
@@ -969,55 +630,6 @@ export interface SkillNFT extends BaseContract {
     AuthorizationRevokedEvent.InputTuple,
     AuthorizationRevokedEvent.OutputTuple,
     AuthorizationRevokedEvent.OutputObject
-  >;
-  getEvent(
-    key: "BatchMetadataUpdate"
-  ): TypedContractEvent<
-    BatchMetadataUpdateEvent.InputTuple,
-    BatchMetadataUpdateEvent.OutputTuple,
-    BatchMetadataUpdateEvent.OutputObject
-  >;
-  getEvent(
-    key: "DataHashUpdated"
-  ): TypedContractEvent<
-    DataHashUpdatedEvent.InputTuple,
-    DataHashUpdatedEvent.OutputTuple,
-    DataHashUpdatedEvent.OutputObject
-  >;
-  getEvent(
-    key: "MetadataUpdate"
-  ): TypedContractEvent<
-    MetadataUpdateEvent.InputTuple,
-    MetadataUpdateEvent.OutputTuple,
-    MetadataUpdateEvent.OutputObject
-  >;
-  getEvent(
-    key: "OwnershipTransferred"
-  ): TypedContractEvent<
-    OwnershipTransferredEvent.InputTuple,
-    OwnershipTransferredEvent.OutputTuple,
-    OwnershipTransferredEvent.OutputObject
-  >;
-  getEvent(
-    key: "SkillClaimed"
-  ): TypedContractEvent<
-    SkillClaimedEvent.InputTuple,
-    SkillClaimedEvent.OutputTuple,
-    SkillClaimedEvent.OutputObject
-  >;
-  getEvent(
-    key: "SkillInvoked"
-  ): TypedContractEvent<
-    SkillInvokedEvent.InputTuple,
-    SkillInvokedEvent.OutputTuple,
-    SkillInvokedEvent.OutputObject
-  >;
-  getEvent(
-    key: "SkillRegistered"
-  ): TypedContractEvent<
-    SkillRegisteredEvent.InputTuple,
-    SkillRegisteredEvent.OutputTuple,
-    SkillRegisteredEvent.OutputObject
   >;
   getEvent(
     key: "Transfer"
@@ -1077,83 +689,6 @@ export interface SkillNFT extends BaseContract {
       AuthorizationRevokedEvent.InputTuple,
       AuthorizationRevokedEvent.OutputTuple,
       AuthorizationRevokedEvent.OutputObject
-    >;
-
-    "BatchMetadataUpdate(uint256,uint256)": TypedContractEvent<
-      BatchMetadataUpdateEvent.InputTuple,
-      BatchMetadataUpdateEvent.OutputTuple,
-      BatchMetadataUpdateEvent.OutputObject
-    >;
-    BatchMetadataUpdate: TypedContractEvent<
-      BatchMetadataUpdateEvent.InputTuple,
-      BatchMetadataUpdateEvent.OutputTuple,
-      BatchMetadataUpdateEvent.OutputObject
-    >;
-
-    "DataHashUpdated(uint256,bytes32,bytes32)": TypedContractEvent<
-      DataHashUpdatedEvent.InputTuple,
-      DataHashUpdatedEvent.OutputTuple,
-      DataHashUpdatedEvent.OutputObject
-    >;
-    DataHashUpdated: TypedContractEvent<
-      DataHashUpdatedEvent.InputTuple,
-      DataHashUpdatedEvent.OutputTuple,
-      DataHashUpdatedEvent.OutputObject
-    >;
-
-    "MetadataUpdate(uint256)": TypedContractEvent<
-      MetadataUpdateEvent.InputTuple,
-      MetadataUpdateEvent.OutputTuple,
-      MetadataUpdateEvent.OutputObject
-    >;
-    MetadataUpdate: TypedContractEvent<
-      MetadataUpdateEvent.InputTuple,
-      MetadataUpdateEvent.OutputTuple,
-      MetadataUpdateEvent.OutputObject
-    >;
-
-    "OwnershipTransferred(address,address)": TypedContractEvent<
-      OwnershipTransferredEvent.InputTuple,
-      OwnershipTransferredEvent.OutputTuple,
-      OwnershipTransferredEvent.OutputObject
-    >;
-    OwnershipTransferred: TypedContractEvent<
-      OwnershipTransferredEvent.InputTuple,
-      OwnershipTransferredEvent.OutputTuple,
-      OwnershipTransferredEvent.OutputObject
-    >;
-
-    "SkillClaimed(uint256,address)": TypedContractEvent<
-      SkillClaimedEvent.InputTuple,
-      SkillClaimedEvent.OutputTuple,
-      SkillClaimedEvent.OutputObject
-    >;
-    SkillClaimed: TypedContractEvent<
-      SkillClaimedEvent.InputTuple,
-      SkillClaimedEvent.OutputTuple,
-      SkillClaimedEvent.OutputObject
-    >;
-
-    "SkillInvoked(uint256,address,uint256)": TypedContractEvent<
-      SkillInvokedEvent.InputTuple,
-      SkillInvokedEvent.OutputTuple,
-      SkillInvokedEvent.OutputObject
-    >;
-    SkillInvoked: TypedContractEvent<
-      SkillInvokedEvent.InputTuple,
-      SkillInvokedEvent.OutputTuple,
-      SkillInvokedEvent.OutputObject
-    >;
-
-    "SkillRegistered(uint256,string,string,bytes32)": TypedContractEvent<
-      SkillRegisteredEvent.InputTuple,
-      SkillRegisteredEvent.OutputTuple,
-      SkillRegisteredEvent.OutputObject
-    >;
-    SkillRegistered: TypedContractEvent<
-      SkillRegisteredEvent.InputTuple,
-      SkillRegisteredEvent.OutputTuple,
-      SkillRegisteredEvent.OutputObject
     >;
 
     "Transfer(address,address,uint256)": TypedContractEvent<

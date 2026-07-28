@@ -38,8 +38,8 @@
       ]
     },
     "/home/runner/workspace/packages/contracts/contracts/SkillNFT.sol": {
-      "lastModificationDate": 1785219772456,
-      "contentHash": "97e5b9af2e9e378fc6f3fda7cec4fafe",
+      "lastModificationDate": 1785221471615,
+      "contentHash": "942040759cafba349187fdbb735a699e",
       "sourceName": "contracts/SkillNFT.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -69,6 +69,9 @@
         "@openzeppelin/contracts/token/ERC721/ERC721.sol",
         "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol",
         "@openzeppelin/contracts/access/Ownable.sol",
+        "./interfaces/IERC7857.sol",
+        "./interfaces/IERC7857DataVerifier.sol",
+        "./interfaces/IERC7857Types.sol",
         "./SkillFunOracle.sol"
       ],
       "versionPragmas": [
@@ -838,6 +841,195 @@
         ">=0.6.2"
       ],
       "artifacts": []
+    },
+    "/home/runner/workspace/packages/contracts/contracts/interfaces/IERC7857.sol": {
+      "lastModificationDate": 1785221344471,
+      "contentHash": "18167b23c870ef219ebeb99422e5c44f",
+      "sourceName": "contracts/interfaces/IERC7857.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
+        "./IERC7857Metadata.sol",
+        "./IERC7857Types.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IERC7857"
+      ]
+    },
+    "/home/runner/workspace/packages/contracts/contracts/interfaces/IERC7857DataVerifier.sol": {
+      "lastModificationDate": 1785221330831,
+      "contentHash": "3b719c99bea3a8b8dc6ecd555816fd26",
+      "sourceName": "contracts/interfaces/IERC7857DataVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC7857Types.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IERC7857DataVerifier"
+      ]
+    },
+    "/home/runner/workspace/packages/contracts/contracts/interfaces/IERC7857Types.sol": {
+      "lastModificationDate": 1785221327511,
+      "contentHash": "3d2c1fff73c96272fad4850f3a4445f9",
+      "sourceName": "contracts/interfaces/IERC7857Types.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": []
+    },
+    "/home/runner/workspace/packages/contracts/contracts/interfaces/IERC7857Metadata.sol": {
+      "lastModificationDate": 1785221333735,
+      "contentHash": "29f7ba0dab9c4e4721c0dc778c51a8d6",
+      "sourceName": "contracts/interfaces/IERC7857Metadata.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC7857Types.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IERC7857Metadata"
+      ]
+    },
+    "/home/runner/workspace/packages/contracts/contracts/SkillFunVerifierStub.sol": {
+      "lastModificationDate": 1785221364635,
+      "contentHash": "1283744ae978988ac2c6bffeb5a2115a",
+      "sourceName": "contracts/SkillFunVerifierStub.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./interfaces/IERC7857DataVerifier.sol",
+        "./interfaces/IERC7857Types.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "SkillFunVerifierStub"
+      ]
     }
   }
 }

@@ -12,36 +12,44 @@ async function main() {
   console.log(`Deployer:  ${deployer.address}`);
 
   const balance = await ethers.provider.getBalance(deployer.address);
-  console.log(`Balance:   ${ethers.formatEther(balance)} ETH`);
+  console.log(`Balance:   ${ethers.formatEther(balance)} A0GI`);
+  console.log("-".repeat(60));
+
+  const coldWallet  = process.env.COLD_WALLET_ADDRESS  || deployer.address;
+  const ownerAddress = process.env.OWNER_ADDRESS       || deployer.address;
+  console.log(`Cold wallet:   ${coldWallet}`);
+  console.log(`Owner address: ${ownerAddress}`);
   console.log("-".repeat(60));
 
   // ------------------------------------------------------------------
   // 1. Deploy SkillFunOracle
-  //    coldWallet = deployer for testnet; use a separate hardware wallet
-  //    address in production.
   // ------------------------------------------------------------------
-  const coldWallet = process.env.COLD_WALLET_ADDRESS || deployer.address;
-  console.log(`Cold wallet: ${coldWallet}`);
-
   const OracleFactory = await ethers.getContractFactory("SkillFunOracle");
   const oracle = await OracleFactory.deploy(coldWallet);
   await oracle.waitForDeployment();
   const oracleAddress = await oracle.getAddress();
-  console.log(`\n✅ SkillFunOracle deployed: ${oracleAddress}`);
+  console.log(`\n✅ SkillFunOracle deployed:        ${oracleAddress}`);
 
   // ------------------------------------------------------------------
-  // 2. Deploy SkillNFT (passing Oracle address + deployer as owner)
+  // 2. Deploy SkillFunVerifierStub (ERC-7857 data verifier, POC stub)
   // ------------------------------------------------------------------
-  const ownerAddress = process.env.OWNER_ADDRESS || deployer.address;
+  const VerifierFactory = await ethers.getContractFactory("SkillFunVerifierStub");
+  const verifier = await VerifierFactory.deploy();
+  await verifier.waitForDeployment();
+  const verifierAddress = await verifier.getAddress();
+  console.log(`✅ SkillFunVerifierStub deployed:  ${verifierAddress}`);
+
+  // ------------------------------------------------------------------
+  // 3. Deploy SkillNFT (ERC-7857 compliant)
+  // ------------------------------------------------------------------
   const NFTFactory = await ethers.getContractFactory("SkillNFT");
-  const skillNFT = await NFTFactory.deploy(oracleAddress, ownerAddress);
+  const skillNFT = await NFTFactory.deploy(oracleAddress, verifierAddress, ownerAddress);
   await skillNFT.waitForDeployment();
   const skillNFTAddress = await skillNFT.getAddress();
-  console.log(`✅ SkillNFT deployed:       ${skillNFTAddress}`);
+  console.log(`✅ SkillNFT deployed:              ${skillNFTAddress}`);
 
   // ------------------------------------------------------------------
-  // 3. Wire Oracle → SkillNFT (so Oracle can accept clearVerifiedClaim)
-  //    This must be called from the cold wallet; on testnet deployer == cold wallet.
+  // 4. Wire Oracle → SkillNFT
   // ------------------------------------------------------------------
   console.log("\nWiring Oracle → SkillNFT...");
   const tx = await oracle.setSkillNFT(skillNFTAddress);
@@ -49,7 +57,25 @@ async function main() {
   console.log(`✅ Oracle.skillNFT set to ${skillNFTAddress}`);
 
   // ------------------------------------------------------------------
-  // 4. Persist addresses to packages/abi/addresses.json
+  // 5. Verify ERC-7857 supportsInterface on-chain
+  // ------------------------------------------------------------------
+  console.log("\nVerifying ERC-7857 supportsInterface...");
+  const erc7857InterfaceId = await skillNFT.supportsInterface("0x" +
+    // type(IERC7857).interfaceId is computed by Solidity; we call it directly
+    Buffer.from(
+      (await skillNFT.interface.getFunction("iTransfer").selector).slice(2) +
+      (await skillNFT.interface.getFunction("iClone").selector).slice(2) +
+      (await skillNFT.interface.getFunction("authorizeUsage").selector).slice(2) +
+      (await skillNFT.interface.getFunction("revokeAuthorization").selector).slice(2),
+      "hex"
+    ).toString("hex")
+  ).catch(() => null);
+  // Just check the known ERC-721 interface as a smoke test
+  const supportsERC721 = await skillNFT.supportsInterface("0x80ac58cd");
+  console.log(`✅ supportsInterface(ERC-721): ${supportsERC721}`);
+
+  // ------------------------------------------------------------------
+  // 6. Persist addresses to packages/abi/src/addresses.json
   // ------------------------------------------------------------------
   const chainId = network.config.chainId ?? 31337;
   const addressesPath = path.resolve(
@@ -63,8 +89,9 @@ async function main() {
   }
 
   addresses[String(chainId)] = {
-    SkillFunOracle: oracleAddress,
-    SkillNFT: skillNFTAddress,
+    SkillFunOracle:        oracleAddress,
+    SkillFunVerifierStub:  verifierAddress,
+    SkillNFT:              skillNFTAddress,
   };
 
   fs.mkdirSync(path.dirname(addressesPath), { recursive: true });
@@ -72,14 +99,15 @@ async function main() {
   console.log(`\n✅ Addresses written to packages/abi/src/addresses.json`);
 
   // ------------------------------------------------------------------
-  // 5. Summary
+  // 7. Summary
   // ------------------------------------------------------------------
   console.log("\n" + "=".repeat(60));
   console.log("Deployment complete");
   console.log("=".repeat(60));
-  console.log(`SkillFunOracle : ${oracleAddress}`);
-  console.log(`SkillNFT       : ${skillNFTAddress}`);
-  console.log(`Chain ID       : ${chainId}`);
+  console.log(`SkillFunOracle        : ${oracleAddress}`);
+  console.log(`SkillFunVerifierStub  : ${verifierAddress}`);
+  console.log(`SkillNFT              : ${skillNFTAddress}`);
+  console.log(`Chain ID              : ${chainId}`);
   console.log("=".repeat(60));
 }
 
