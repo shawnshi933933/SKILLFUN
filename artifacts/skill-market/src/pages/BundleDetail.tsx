@@ -1,277 +1,277 @@
 import { useRoute, useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
-import { mockBundles } from "@/data/mockBundles";
-import { mockSkills } from "@/data/mockSkills";
+import { useBundle } from "@/hooks/use-skills";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Bot, Layers, TrendingUp, Coins, Shield, Lock, ExternalLink, Zap } from "lucide-react";
+import {
+  ArrowLeft, Bot, Layers, Coins, Shield, Lock,
+  ExternalLink, Zap, Loader2, AlertCircle, Package,
+} from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { type DbSkill, type DbBundle } from "@/lib/api";
 
 const mockAgentActivity = [
-  { agent: "GPT-Agent-7f2a", skill: "Whale Wallet Tracker", time: "45s ago" },
-  { agent: "Claude-opus-3x9", skill: "Yield Farming Optimizer", time: "2m ago" },
-  { agent: "AutoGPT-9z1k", skill: "Sentiment Analysis Engine", time: "4m ago" },
-  { agent: "Grok-Agent-4p7", skill: "MEV Bot Strategy", time: "7m ago" },
-  { agent: "GPT-Agent-2k9a", skill: "Whale Wallet Tracker", time: "11m ago" },
+  { agent: "GPT-Agent-7f2a", skill: "—", time: "45s ago" },
+  { agent: "Claude-opus-3x9", skill: "—", time: "2m ago" },
 ];
+
+function getMeta<T>(obj: DbBundle | DbSkill, key: string, fallback: T): T {
+  return ((obj.meta as Record<string, unknown>)[key] as T) ?? fallback;
+}
 
 export default function BundleDetail() {
   const [, params] = useRoute("/app/bundle/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [staking, setStaking] = useState(false);
+  const [staking, setStaking]       = useState(false);
   const [stakeAmount, setStakeAmount] = useState("500");
 
-  const bundle = mockBundles.find((b) => b.id === params?.id);
+  const { data, isLoading, error } = useBundle(params?.id);
 
-  if (!bundle) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-muted-foreground mb-4">Bundle not found</div>
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !data?.bundle) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-8 h-8 text-destructive mx-auto" />
+          <div className="text-muted-foreground">{error ? "Failed to load bundle" : "Bundle not found"}</div>
           <Button onClick={() => setLocation("/app/market")}>Back to Market</Button>
         </div>
       </div>
     );
   }
 
-  const skills = bundle.constituentSkillIds
-    .map((id) => mockSkills.find((s) => s.id === id))
-    .filter(Boolean);
+  const { bundle, skills } = data;
+
+  const apy           = getMeta<number>(bundle, "apy", 0);
+  const stakerPool    = getMeta<number>(bundle, "stakerPool", 0);
+  const invocations   = getMeta<number>(bundle, "invocations", 0);
+  const curatorMarkup = getMeta<number>(bundle, "curatorMarkup", 10);
+  const tags          = getMeta<string[]>(bundle, "tags", []);
+
+  const totalBasePrice = skills.reduce((s, k) => s + getMeta<number>(k, "basePrice", 0), 0);
+  const bundleTotal    = totalBasePrice * (1 + curatorMarkup / 100);
 
   const handleStake = () => {
     setStaking(true);
     setTimeout(() => {
       setStaking(false);
-      toast({ title: "Staked successfully", description: `${stakeAmount} SKILL staked to ${bundle.name} (mock — 0G Chain)` });
+      toast({
+        title: "Staked successfully",
+        description: `${stakeAmount} SKILL staked to ${bundle.name} (demo — 0G Chain)`,
+      });
     }, 1800);
   };
-
-  const totalBasePrice = skills.reduce((s, k) => s + (k?.basePrice ?? 0), 0);
-  const bundleTotal = totalBasePrice * (1 + bundle.curatorMarkup / 100);
-  const platformFee = bundleTotal * 0.1;
-  const curatorEarning = (bundleTotal * bundle.curatorMarkup / 100 / bundleTotal) * bundleTotal * 0.5 * (1 - 0.1);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 pt-24 pb-16">
-        <button onClick={() => setLocation("/app/market")} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 text-sm transition-colors" data-testid="button-back-market">
+        <button
+          onClick={() => setLocation("/app/market")}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 text-sm transition-colors"
+          data-testid="button-back-market"
+        >
           <ArrowLeft className="w-4 h-4" /> Back to Market
         </button>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left — Info */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Header */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <Badge variant="outline" className="border-accent/30 text-accent gap-1">
                   <Layers className="w-3 h-3" /> Bundle
                 </Badge>
-                <Badge variant="outline" className="border-emerald-500/30 text-emerald-400">
-                  {bundle.apy.toFixed(1)}% APY
-                </Badge>
+                {apy > 0 && (
+                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-400">
+                    {apy.toFixed(1)}% APY
+                  </Badge>
+                )}
                 <Badge variant="outline" className="border-primary/30 text-primary">
                   ERC-8183 MCP
                 </Badge>
+                <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live on 0G
+                </span>
               </div>
               <h1 className="text-4xl font-bold mb-2">{bundle.name}</h1>
-              <p className="text-muted-foreground text-sm mb-1">
-                Curated by <span className="text-accent font-medium">{bundle.curatorAddress}</span>
+              {bundle.description && (
+                <p className="text-muted-foreground text-sm mb-2">{bundle.description}</p>
+              )}
+              <p className="text-muted-foreground text-sm mb-3">
+                Curated by{" "}
+                <span className="font-mono text-accent text-xs">
+                  {bundle.ownerAddress.slice(0, 8)}…{bundle.ownerAddress.slice(-6)}
+                </span>
               </p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {bundle.tags.map((tag) => (
-                  <span key={tag} className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-muted-foreground">{tag}</span>
-                ))}
-              </div>
-              <p className="text-muted-foreground text-lg leading-relaxed">{bundle.description}</p>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <Badge key={tag} variant="outline" className="border-white/10 text-muted-foreground text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* MCP Endpoint */}
-            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Bot className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold text-sm text-primary">Single MCP Endpoint (ERC-8183)</h3>
-              </div>
-              <div className="font-mono text-sm bg-background border border-white/10 rounded-lg px-4 py-3 mb-3">
-                <span className="text-muted-foreground">GET </span>
-                <span className="text-foreground">https://mcp.skillfun.xyz/bundle/{bundle.id}</span>
-              </div>
-              <div className="space-y-1.5 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  <span>Returns HTTP 402 → Agent sends USDC via x402 → Executes all {skills.length} skills in one call</span>
+            {/* Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Skills", value: String(skills.length) },
+                { label: "Invocations", value: invocations.toLocaleString() },
+                { label: "Staker Pool", value: stakerPool > 0 ? `${stakerPool.toLocaleString()} SKILL` : "—" },
+                { label: "Curator Markup", value: `${curatorMarkup}%` },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
+                  <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
+                  <div className="font-mono font-semibold text-sm">{stat.value}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span>Agent identity verified via ERC-8004 · ZK execution proof via ERC-8220</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Fee split happens on-chain atomically — no delays, no invoices</span>
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Constituent Skills */}
-            <div>
-              <h3 className="font-semibold mb-4">Skills in this Bundle ({skills.length})</h3>
-              <div className="space-y-3">
-                {skills.map((skill) => skill && (
-                  <Link key={skill.id} href={`/app/skill/${skill.id}`}>
-                    <div className="flex items-center justify-between bg-card border border-white/10 rounded-xl px-5 py-4 hover:border-primary/30 hover:bg-white/5 transition-colors cursor-pointer">
-                      <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                          <Zap className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">{skill.name}</div>
-                          <div className="font-mono text-xs text-muted-foreground/60">{skill.mcpToolName}()</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-right">
-                        <div>
-                          <div className="text-xs text-muted-foreground">Base Price</div>
-                          <div className="font-mono text-sm">{skill.basePrice} ETH</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground">Invocations</div>
-                          <div className="flex items-center gap-1 text-accent font-mono text-sm">
-                            <Bot className="w-3 h-3" /> {skill.invocations.toLocaleString()}
-                          </div>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-muted-foreground/40" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <Tabs defaultValue="activity">
+            {/* Tabs */}
+            <Tabs defaultValue="skills">
               <TabsList className="bg-card border border-white/10">
-                <TabsTrigger value="activity" data-testid="tab-activity">Agent Activity</TabsTrigger>
-                <TabsTrigger value="economics" data-testid="tab-economics">Economics</TabsTrigger>
+                <TabsTrigger value="skills">Skills ({skills.length})</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="activity" className="mt-4 space-y-2">
-                {mockAgentActivity.map((a, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-card border border-white/10 rounded-lg px-4 py-3" data-testid={`agent-activity-${i}`}>
-                    <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                      <Bot className="w-4 h-4 text-accent" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-sm font-mono font-medium text-accent">{a.agent}</span>
-                      <span className="text-sm text-muted-foreground"> invoked </span>
-                      <span className="text-sm font-medium">{a.skill}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{a.time}</span>
+              <TabsContent value="skills" className="mt-4">
+                {skills.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+                    <Package className="w-8 h-8" />
+                    <span className="text-sm">No skills in this bundle yet</span>
                   </div>
-                ))}
+                ) : (
+                  <div className="space-y-2">
+                    {skills.map((skill) => {
+                      const skillName = getMeta<string>(skill, "name", skill.repoUrl.split("/").pop() ?? skill.skillId);
+                      const basePrice = getMeta<number>(skill, "basePrice", 0);
+                      return (
+                        <Link key={skill.skillId} href={`/app/skill/${skill.skillId}`}>
+                          <div className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                              <Zap className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">{skillName}</div>
+                              <div className="text-xs text-muted-foreground font-mono truncate">{skill.repoUrl}</div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              {basePrice > 0 && (
+                                <div className="text-xs font-mono text-primary">{basePrice} A0GI</div>
+                              )}
+                              <Badge className="text-[10px] border mt-0.5" variant="outline">
+                                {skill.mintStatus}
+                              </Badge>
+                            </div>
+                            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </TabsContent>
 
-              <TabsContent value="economics" className="mt-4">
-                <div className="bg-card border border-white/10 rounded-xl p-5 space-y-4">
-                  <h4 className="font-semibold text-sm">Per-Invocation Revenue Breakdown</h4>
-                  <div className="space-y-2">
-                    {[
-                      { label: "Total invoice (Base + Markup)", amount: `~${bundleTotal.toFixed(4)} ETH`, color: "text-foreground", bg: "bg-white/5" },
-                      { label: "Platform Fee (10% off top)", amount: `~${platformFee.toFixed(4)} ETH`, color: "text-muted-foreground", bg: "bg-white/5" },
-                      { label: "Owner Income (90% of each Base Price)", amount: "Distributed per Skill Owner", color: "text-blue-400", bg: "bg-blue-500/10 border border-blue-500/20" },
-                      { label: `Curator Share (50% of ${bundle.curatorMarkup}% markup)`, amount: `~${(totalBasePrice * bundle.curatorMarkup / 100 * 0.5 * 0.9).toFixed(5)} ETH`, color: "text-accent", bg: "bg-accent/10 border border-accent/20" },
-                      { label: "Staker Pool (50% of markup)", amount: `~${(totalBasePrice * bundle.curatorMarkup / 100 * 0.5 * 0.9).toFixed(5)} ETH`, color: "text-emerald-400", bg: "bg-emerald-500/10 border border-emerald-500/20" },
-                    ].map((row) => (
-                      <div key={row.label} className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm ${row.bg}`}>
-                        <span className={row.color}>{row.label}</span>
-                        <span className={`font-mono font-medium ${row.color}`}>{row.amount}</span>
-                      </div>
-                    ))}
-                  </div>
+              <TabsContent value="activity" className="mt-4">
+                <div className="space-y-2">
+                  {mockAgentActivity.map((a, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 text-sm">
+                      <Bot className="w-4 h-4 text-primary shrink-0" />
+                      <span className="font-mono text-xs text-muted-foreground">{a.agent}</span>
+                      <span className="text-muted-foreground text-xs flex-1">invoked via x402 MCP</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    Live x402 activity will appear here after MCP integration (Step 8)
+                  </p>
                 </div>
               </TabsContent>
             </Tabs>
-          </div>
-
-          {/* Right — Stake Panel */}
-          <div className="space-y-5">
-            <div className="bg-card border border-white/10 rounded-2xl p-5">
-              <div className="text-xs text-muted-foreground mb-1">Total Invocations</div>
-              <div className="text-3xl font-bold font-mono text-foreground mb-0.5">{bundle.invocations.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground mb-4">Lifetime invocations via MCP</div>
-
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-                  <div className="text-xs text-muted-foreground mb-1">Curator Markup</div>
-                  <div className="font-mono font-bold text-primary">+{bundle.curatorMarkup}%</div>
-                </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
-                  <div className="text-xs text-muted-foreground mb-1">Staker APY</div>
-                  <div className="font-mono font-bold text-emerald-400">{bundle.apy.toFixed(1)}%</div>
-                </div>
-              </div>
-
-              <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground gap-2 mb-2" onClick={() => setLocation("/app/stake")} data-testid="button-stake-bundle">
-                <TrendingUp className="w-4 h-4" /> Stake SKILL to Earn {bundle.apy.toFixed(1)}% APY
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">Staking supports the bundle's trust score. Slashing applies for curator misconduct.</p>
-            </div>
-
-            {/* Staker Pool */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Coins className="w-4 h-4 text-emerald-400" />
-                <span className="font-semibold text-sm">SKILL Staker Pool</span>
-              </div>
-              <div className="text-2xl font-bold font-mono mb-1">{bundle.stakerPool.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground mb-4">SKILL tokens staked</div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden mb-2">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-accent rounded-full" style={{ width: `${Math.min(bundle.stakerPool / 500, 100)}%` }} />
-              </div>
-              <div className="text-xs text-muted-foreground">{bundle.stakerPool > 20000 ? "High confidence" : bundle.stakerPool > 10000 ? "Medium confidence" : "Growing"} — staking signals curator quality</div>
-            </div>
-
-            {/* Quick Stake Widget */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5">
-              <div className="text-sm font-semibold mb-3">Quick Stake</div>
-              <div className="flex gap-2 mb-3">
-                {["100", "500", "1000", "5000"].map((amt) => (
-                  <button key={amt} onClick={() => setStakeAmount(amt)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition-colors ${stakeAmount === amt ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/5 text-muted-foreground hover:bg-white/10"}`}>
-                    {amt}
-                  </button>
-                ))}
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3 text-sm">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">Stake amount</span>
-                  <span className="font-mono text-foreground">{parseInt(stakeAmount).toLocaleString()} SKILL</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Est. daily yield</span>
-                  <span className="font-mono text-emerald-400">+{(parseInt(stakeAmount) * bundle.apy / 100 / 365).toFixed(2)} SKILL</span>
-                </div>
-              </div>
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2" onClick={handleStake} disabled={staking} data-testid="button-confirm-stake">
-                <Coins className="w-4 h-4" />
-                {staking ? "Staking..." : `Stake ${parseInt(stakeAmount).toLocaleString()} SKILL`}
-              </Button>
-            </div>
 
             {/* Security */}
             <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
               <div className="text-xs text-muted-foreground">Bundle Security</div>
-              <div className="flex items-center gap-2 text-sm">
-                <Lock className="w-4 h-4 text-primary" /> <span>All Skill hashes locked</span>
+              <div className="flex items-center gap-2 text-sm"><Lock className="w-4 h-4 text-primary" /> All Skill hashes locked</div>
+              <div className="flex items-center gap-2 text-sm"><Shield className="w-4 h-4 text-emerald-400" /> Staker slashing enabled</div>
+              <div className="flex items-center gap-2 text-sm"><Bot className="w-4 h-4 text-accent" /> A2A x402 payments active</div>
+            </div>
+          </div>
+
+          {/* Right — Stake panel */}
+          <div className="space-y-4">
+            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-0.5">Bundle Price</div>
+                  <div className="text-2xl font-bold font-mono">
+                    {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} A0GI` : "—"}
+                  </div>
+                </div>
+                {apy > 0 && (
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 border">
+                    {apy.toFixed(1)}% APY
+                  </Badge>
+                )}
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Shield className="w-4 h-4 text-emerald-400" /> <span>Staker slashing enabled</span>
+
+              <div className="text-xs text-muted-foreground">Quick Stake</div>
+              <div className="flex gap-1.5">
+                {["100", "500", "1000", "5000"].map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => setStakeAmount(amt)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition-colors ${
+                      stakeAmount === amt
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                    }`}
+                  >
+                    {amt}
+                  </button>
+                ))}
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Bot className="w-4 h-4 text-accent" /> <span>A2A x402 payments active</span>
+
+              <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Stake</span>
+                  <span className="font-mono">{parseInt(stakeAmount).toLocaleString()} SKILL</span>
+                </div>
+                {apy > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Est. daily yield</span>
+                    <span className="font-mono text-emerald-400">
+                      +{(parseInt(stakeAmount) * apy / 100 / 365).toFixed(2)} SKILL
+                    </span>
+                  </div>
+                )}
               </div>
+
+              <Button
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                onClick={handleStake}
+                disabled={staking}
+                data-testid="button-confirm-stake"
+              >
+                <Coins className="w-4 h-4" />
+                {staking ? "Staking…" : `Stake ${parseInt(stakeAmount).toLocaleString()} SKILL`}
+              </Button>
             </div>
           </div>
         </div>

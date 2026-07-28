@@ -1,28 +1,60 @@
 import { useState, useEffect } from "react";
-import { useSearch } from "wouter";
+import { useSearch, Link } from "wouter";
 import Navbar from "@/components/Navbar";
 import SkillCard from "@/components/SkillCard";
 import BundleCard from "@/components/BundleCard";
-import { mockSkills, Skill } from "@/data/mockSkills";
-import { mockBundles, Bundle } from "@/data/mockBundles";
+import { useSkills, useBundles } from "@/hooks/use-skills";
+import { type DbSkill, type DbBundle } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal, Bot, Layers, Zap } from "lucide-react";
+import { Search, SlidersHorizontal, Bot, Layers, Zap, Loader2, AlertCircle } from "lucide-react";
 
 const CATEGORIES = ["All", "Trading", "Writing", "Analysis", "Code", "Research", "Social"] as const;
-const PROTOCOLS = ["All", "ERC-7857", "0G Chain"] as const;
-const SKILL_SORT = [
-  { label: "Most Invoked", value: "invoke-desc" },
-  { label: "Price: High", value: "price-desc" },
-  { label: "Price: Low", value: "price-asc" },
-  { label: "Volume", value: "volume-desc" },
-];
-const BUNDLE_SORT = [
-  { label: "Most Invoked", value: "invoke-desc" },
-  { label: "Highest APY", value: "apy-desc" },
-  { label: "Biggest Pool", value: "pool-desc" },
-];
+
+/** Adapt a DbSkill to the shape SkillCard expects */
+function adaptSkill(s: DbSkill) {
+  const meta = s.meta as Record<string, unknown>;
+  return {
+    id:                s.skillId,
+    name:              (meta.name as string | undefined) ?? s.repoUrl.split("/").pop() ?? s.skillId,
+    description:       (meta.description as string | undefined) ?? s.repoUrl,
+    category:          (meta.category as string | undefined) ?? "Code",
+    version:           (meta.version as string | undefined) ?? "1.0.0",
+    basePrice:         (meta.basePrice as number | undefined) ?? 0,
+    invocations:       (meta.invocations as number | undefined) ?? 0,
+    volume:            (meta.volume as number | undefined) ?? 0,
+    creatorShare:      (meta.creatorShare as number | undefined) ?? 80,
+    ownerShare:        (meta.ownerShare as number | undefined) ?? 10,
+    royaltyRate:       (meta.royaltyRate as number | undefined) ?? 5,
+    encryptionEnabled: !!s.rootHash,
+    isTimelockPending: false,
+    contentHash:       s.rootHash ?? "0x0000000000000000000000000000000000000000000000000000000000000000",
+    tokenId:           s.tokenId,
+    mintStatus:        s.mintStatus,
+    ownerAddress:      s.ownerAddress,
+    // Live badge = minted on-chain
+    isLive:            s.mintStatus === "minted" || s.mintStatus === "claimed",
+  };
+}
+
+/** Adapt a DbBundle to the shape BundleCard expects */
+function adaptBundle(b: DbBundle) {
+  const meta = b.meta as Record<string, unknown>;
+  return {
+    id:                  b.bundleId,
+    name:                b.name,
+    description:         b.description ?? "",
+    curatorAddress:      b.ownerAddress,
+    constituentSkillIds: (meta.skillIds as string[] | undefined) ?? [],
+    apy:                 (meta.apy as number | undefined) ?? 0,
+    stakerPool:          (meta.stakerPool as number | undefined) ?? 0,
+    invocations:         (meta.invocations as number | undefined) ?? 0,
+    curatorMarkup:       (meta.curatorMarkup as number | undefined) ?? 10,
+    tags:                (meta.tags as string[] | undefined) ?? [],
+    isLive:              true,
+  };
+}
 
 export default function Market() {
   const urlSearch = useSearch();
@@ -32,41 +64,30 @@ export default function Market() {
     const params = new URLSearchParams(urlSearch);
     setTab(params.get("tab") === "bundles" ? "bundles" : "skills");
   }, [urlSearch]);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("All");
-  const [skillSort, setSkillSort] = useState("invoke-desc");
-  const [bundleSort, setBundleSort] = useState("invoke-desc");
+
+  const [search, setSearch]             = useState("");
+  const [category, setCategory]         = useState<string>("All");
   const [encryptedOnly, setEncryptedOnly] = useState(false);
-  const [protocol, setProtocol] = useState<string>("All");
 
-  const filteredSkills = mockSkills
-    .filter((s: Skill) => {
-      const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
-      const matchCategory = category === "All" || s.category === category;
-      const matchEncrypted = !encryptedOnly || s.encryptionEnabled;
-      return matchSearch && matchCategory && matchEncrypted;
-    })
-    .sort((a: Skill, b: Skill) => {
-      if (skillSort === "invoke-desc") return b.invocations - a.invocations;
-      if (skillSort === "price-desc") return b.basePrice - a.basePrice;
-      if (skillSort === "price-asc") return a.basePrice - b.basePrice;
-      if (skillSort === "volume-desc") return b.volume - a.volume;
-      return 0;
-    });
+  const { data: skillsData, isLoading: skillsLoading, error: skillsError } = useSkills();
+  const { data: bundlesData, isLoading: bundlesLoading, error: bundlesError } = useBundles();
 
-  const filteredBundles = mockBundles
-    .filter((b: Bundle) => {
-      const matchSearch = b.name.toLowerCase().includes(search.toLowerCase()) || b.description.toLowerCase().includes(search.toLowerCase());
-      return matchSearch;
-    })
-    .sort((a: Bundle, b: Bundle) => {
-      if (bundleSort === "invoke-desc") return b.invocations - a.invocations;
-      if (bundleSort === "apy-desc") return b.apy - a.apy;
-      if (bundleSort === "pool-desc") return b.stakerPool - a.stakerPool;
-      return 0;
-    });
+  const skills  = (skillsData?.skills  ?? []).map(adaptSkill);
+  const bundles = (bundlesData?.bundles ?? []).map(adaptBundle);
 
-  const totalInvocations = mockSkills.reduce((s, k) => s + k.invocations, 0);
+  const filteredSkills = skills.filter((s) => {
+    const matchSearch    = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
+    const matchCategory  = category === "All" || s.category === category;
+    const matchEncrypted = !encryptedOnly || s.encryptionEnabled;
+    return matchSearch && matchCategory && matchEncrypted;
+  });
+
+  const filteredBundles = bundles.filter((b) =>
+    b.name.toLowerCase().includes(search.toLowerCase()) ||
+    (b.description ?? "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalInvocations = skills.reduce((s, k) => s + k.invocations, 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -76,155 +97,165 @@ export default function Market() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">SkillFun Market</h1>
-            <p className="text-muted-foreground mt-1">{mockSkills.length} Skills · {mockBundles.length} Bundles · {totalInvocations.toLocaleString()} total invocations</p>
+            <p className="text-muted-foreground mt-1">
+              {skills.length} Skills · {bundles.length} Bundles
+              {totalInvocations > 0 && ` · ${totalInvocations.toLocaleString()} total invocations`}
+              {" "}
+              <span className="inline-flex items-center gap-1 text-emerald-400 text-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live on 0G Mainnet
+              </span>
+            </p>
           </div>
-          <div className="flex items-center gap-2 bg-card border border-white/10 rounded-xl px-4 py-2 text-sm text-accent">
-            <Bot className="w-4 h-4 animate-pulse" />
-            <span className="font-mono">7 agent invocations in the last minute</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-card border border-white/10 rounded-lg p-1">
+              <button
+                onClick={() => setTab("skills")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "skills" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                data-testid="tab-skills"
+              >
+                <Zap className="w-3.5 h-3.5" /> Skills
+              </button>
+              <button
+                onClick={() => setTab("bundles")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "bundles" ? "bg-accent/20 text-accent" : "text-muted-foreground hover:text-foreground"}`}
+                data-testid="tab-bundles"
+              >
+                <Layers className="w-3.5 h-3.5" /> Bundles
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1 mb-8 bg-card border border-white/10 rounded-xl p-1 w-fit">
-          <button
-            onClick={() => setTab("skills")}
-            data-testid="tab-skills"
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === "skills" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            <Zap className="w-4 h-4" /> Skills
-            <Badge variant="outline" className="text-xs border-primary/30 text-primary ml-1">{mockSkills.length}</Badge>
-          </button>
-          <button
-            onClick={() => setTab("bundles")}
-            data-testid="tab-bundles"
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === "bundles" ? "bg-accent/20 text-accent" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            <Layers className="w-4 h-4" /> Bundles
-            <Badge variant="outline" className="text-xs border-accent/30 text-accent ml-1">{mockBundles.length}</Badge>
-          </button>
-        </div>
+        {/* Search + Filters */}
+        <div className="flex flex-col md:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search skills, bundles..."
+              className="pl-9 bg-card border-white/10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              data-testid="input-search"
+            />
+          </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <aside className="lg:w-56 shrink-0 space-y-6">
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                <SlidersHorizontal className="w-3 h-3" /> Category
-              </div>
-              <div className="space-y-1">
+          {tab === "skills" && (
+            <>
+              <div className="flex flex-wrap gap-1.5">
                 {CATEGORIES.map((cat) => (
-                  <button key={cat} onClick={() => setCategory(cat)} data-testid={`filter-category-${cat.toLowerCase()}`}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${category === cat ? "bg-primary/20 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
+                  <button
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                      category === cat
+                        ? "bg-primary/20 text-primary border border-primary/30"
+                        : "bg-card border border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    }`}
+                    data-testid={`filter-category-${cat.toLowerCase()}`}
+                  >
                     {cat}
                   </button>
                 ))}
               </div>
-            </div>
+              <button
+                onClick={() => setEncryptedOnly(!encryptedOnly)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  encryptedOnly
+                    ? "bg-primary/20 border-primary/30 text-primary"
+                    : "bg-card border-white/10 text-muted-foreground hover:text-foreground"
+                }`}
+                data-testid="filter-encrypted"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" /> Encrypted
+              </button>
+            </>
+          )}
+        </div>
 
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                Protocol
-              </div>
-              <div className="space-y-1">
-                {PROTOCOLS.map((p) => (
-                  <button key={p} onClick={() => setProtocol(p)} data-testid={`filter-protocol-${p.toLowerCase().replace(/\s/g, "-")}`}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${protocol === p ? "bg-cyan-500/20 text-cyan-400 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
-                    {p === "ERC-7857" ? "⚡ ERC-7857 iNFT" : p === "0G Chain" ? "🌐 0G Chain" : p}
-                  </button>
+        {/* Loading states */}
+        {(skillsLoading || bundlesLoading) && (
+          <div className="flex items-center justify-center py-20 gap-2 text-muted-foreground">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Loading from 0G Mainnet…</span>
+          </div>
+        )}
+
+        {/* Error states */}
+        {(skillsError || bundlesError) && !skillsLoading && !bundlesLoading && (
+          <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/30 rounded-xl px-5 py-4 text-sm text-destructive mb-6">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            Failed to load data from API. Is the server running?
+          </div>
+        )}
+
+        {/* Skills grid */}
+        {tab === "skills" && !skillsLoading && (
+          <>
+            {filteredSkills.length === 0 ? (
+              <EmptyState
+                icon={<Zap className="w-8 h-8 text-muted-foreground" />}
+                title="No skills yet"
+                description="Be the first to register an AI skill on 0G Chain."
+                cta={{ href: "/app/create", label: "Register a Skill" }}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="skills-grid">
+                {filteredSkills.map((skill) => (
+                  <SkillCard key={skill.id} skill={skill} />
                 ))}
               </div>
-            </div>
-
-            {tab === "skills" && (
-              <>
-                <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort Skills</div>
-                  <div className="space-y-1">
-                    {SKILL_SORT.map((o) => (
-                      <button key={o.value} onClick={() => setSkillSort(o.value)} data-testid={`sort-${o.value}`}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${skillSort === o.value ? "bg-primary/20 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Filter</div>
-                  <button
-                    onClick={() => setEncryptedOnly(!encryptedOnly)}
-                    data-testid="filter-encrypted"
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${encryptedOnly ? "bg-cyan-500/20 text-cyan-400 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
-                  >
-                    🔒 0G Encrypted Only
-                  </button>
-                </div>
-              </>
             )}
+          </>
+        )}
 
-            {tab === "bundles" && (
-              <div>
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sort Bundles</div>
-                <div className="space-y-1">
-                  {BUNDLE_SORT.map((o) => (
-                    <button key={o.value} onClick={() => setBundleSort(o.value)} data-testid={`bundle-sort-${o.value}`}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${bundleSort === o.value ? "bg-accent/20 text-accent font-medium" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
-                      {o.label}
-                    </button>
-                  ))}
-                </div>
+        {/* Bundles grid */}
+        {tab === "bundles" && !bundlesLoading && (
+          <>
+            {filteredBundles.length === 0 ? (
+              <EmptyState
+                icon={<Layers className="w-8 h-8 text-muted-foreground" />}
+                title="No bundles yet"
+                description="Bundle skills together into a curated MCP-ready package."
+                cta={{ href: "/app/create-bundle", label: "Create a Bundle" }}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="bundles-grid">
+                {filteredBundles.map((bundle) => (
+                  <BundleCard key={bundle.id} bundle={bundle} />
+                ))}
               </div>
             )}
-          </aside>
-
-          {/* Main Content */}
-          <div className="flex-1">
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={tab === "skills" ? "Search skills by name or description..." : "Search bundles..."}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-card border-white/10"
-                data-testid="input-search-skills"
-              />
-            </div>
-
-            {tab === "skills" && (
-              <>
-                {encryptedOnly && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 text-xs cursor-pointer" onClick={() => setEncryptedOnly(false)}>
-                      🔒 0G Encrypted ×
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="text-xs h-6 text-muted-foreground" onClick={() => setEncryptedOnly(false)}>Clear</Button>
-                  </div>
-                )}
-                <div className="mb-4 text-sm text-muted-foreground">{filteredSkills.length} Skills found</div>
-                {filteredSkills.length === 0 ? (
-                  <div className="text-center py-20 text-muted-foreground">No Skills match your filters.</div>
-                ) : (
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {filteredSkills.map((skill) => <SkillCard key={skill.id} skill={skill} />)}
-                  </div>
-                )}
-              </>
-            )}
-
-            {tab === "bundles" && (
-              <>
-                <div className="mb-4 text-sm text-muted-foreground">{filteredBundles.length} Bundles found</div>
-                {filteredBundles.length === 0 ? (
-                  <div className="text-center py-20 text-muted-foreground">No Bundles match your search.</div>
-                ) : (
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {filteredBundles.map((bundle) => <BundleCard key={bundle.id} bundle={bundle} />)}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  description,
+  cta,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  cta: { href: string; label: string };
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
+      {icon}
+      <div>
+        <div className="font-semibold text-foreground mb-1">{title}</div>
+        <div className="text-sm text-muted-foreground max-w-xs">{description}</div>
+      </div>
+      <Link href={cta.href}>
+        <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10">
+          {cta.label}
+        </Button>
+      </Link>
     </div>
   );
 }
