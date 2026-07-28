@@ -38,7 +38,12 @@ description: Core design decisions for SkillFun POC — chain, contracts, claim 
 - `SkillNFT.sol`: `registerSkill()`, `claim()`, `invokeSkill() payable`
 - `SkillFunOracle.sol`: `setVerifiedClaims(tokenIds[], owners[])` — coldWallet only
 - ABI centralized in `packages/abi/`
-- Deploy target: 0G testnet (chainId 16661)
+- Deploy target: 0G testnet (chainId 16601) — note chainId is 16601 not 16661
+- Solidity 0.8.24 + `evmVersion: "cancun"` required for OpenZeppelin v5 (mcopy opcode)
+- `setSkillNFT()` must be called on Oracle after SkillNFT is deployed (one-time, cold wallet only)
+- 15 tests all pass in `packages/contracts/test/SkillContracts.test.ts`
+- Deploy script auto-writes `packages/abi/src/addresses.json` keyed by chainId
+- To deploy to 0G testnet: set `ZEROG_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, optionally `COLD_WALLET_ADDRESS` + `OWNER_ADDRESS`
 
 ## Backend
 - Go + PostgreSQL (BFF pattern, borrowing skillfun-apps schema)
