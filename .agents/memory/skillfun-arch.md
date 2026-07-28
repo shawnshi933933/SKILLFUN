@@ -43,7 +43,13 @@ description: Core design decisions for SkillFun POC — chain, contracts, claim 
 - `setSkillNFT()` must be called on Oracle after SkillNFT is deployed (one-time, cold wallet only)
 - 15 tests all pass in `packages/contracts/test/SkillContracts.test.ts`
 - Deploy script auto-writes `packages/abi/src/addresses.json` keyed by chainId
-- To deploy to 0G testnet: set `ZEROG_RPC_URL`, `DEPLOYER_PRIVATE_KEY`, optionally `COLD_WALLET_ADDRESS` + `OWNER_ADDRESS`
+- Deployer + cold wallet: `0xbb32AD3470290635a852EDc5F2895B75497cA368`
+
+## Deployed Contracts — 0G Mainnet (chainId 16661)
+- SkillFunOracle: `0xCA37B688Eb5DBE16233E7733605d1A8eF2832d4E`
+- SkillNFT:       `0x3136d38Cbd12052249e9eB79f6C7Ff01b2439c53`
+- RPC: `https://evmrpc.0g.ai`
+- Env vars: `SKILLFUN_ORACLE_ADDRESS`, `SKILLNFT_ADDRESS`, `ZEROG_RPC_URL`, `ZEROG_CHAIN_ID`
 
 ## Backend
 - Go + PostgreSQL (BFF pattern, borrowing skillfun-apps schema)
