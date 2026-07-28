@@ -4,7 +4,7 @@ description: Core design decisions for SkillFun POC — chain, contracts, claim 
 ---
 
 ## Chain & Standard
-- 0G Chain, chainId 16661
+- 0G Chain **mainnet**, chainId 16661 (NOT testnet — deploy directly to mainnet)
 - ERC-7857 inspired iNFT (not standard ERC-721 only)
 - NFT mints to `address(this)` — contract self-custody until claimed
 

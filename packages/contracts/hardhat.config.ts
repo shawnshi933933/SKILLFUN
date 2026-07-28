@@ -17,8 +17,8 @@ const config: HardhatUserConfig = {
       chainId: 31337,
     },
     zeroG: {
-      url: process.env.ZEROG_RPC_URL || "https://evmrpc-testnet.0g.ai",
-      chainId: 16601,
+      url: process.env.ZEROG_RPC_URL || "https://evmrpc.0g.ai",
+      chainId: 16661,
       accounts: process.env.DEPLOYER_PRIVATE_KEY
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],

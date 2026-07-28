@@ -5,7 +5,7 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy:testnet": "hardhat run scripts/deploy.ts --network zeroG",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network zeroG",
     "deploy:local": "hardhat run scripts/deploy.ts --network hardhat",
     "export-abi": "ts-node scripts/export-abi.ts"
   },
