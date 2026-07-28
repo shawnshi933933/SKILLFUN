@@ -34,3 +34,9 @@ externalPort = 80
 [[ports]]
 localPort = 22013
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+COLD_WALLET_ADDRESS = "0xbb32AD3470290635a852EDc5F2895B75497cA368"
+DEPLOYER_ADDRESS = "0xbb32AD3470290635a852EDc5F2895B75497cA368"
