@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckCircle, Zap, ArrowRight, ArrowLeft,
   ExternalLink, Loader2, Shield, User, Users,
-  Wallet,
+  Wallet, Github, AlertCircle, FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSelfMint, type MintPhase } from "@/hooks/use-self-mint";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { githubApi, type GitHubManifestResult } from "@/lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,19 @@ const INITIAL_FORM: FormData = {
   ownerMode:    "mine",
 };
 
+// GitHub fetch state
+type FetchStatus = "idle" | "loading" | "found" | "not_found" | "error";
+interface GitHubState {
+  status:     FetchStatus;
+  fileType:   string | null;
+  rawContent: string | null;
+  githubUrl:  string | null;
+  warning:    string | null;
+}
+const INITIAL_GH: GitHubState = {
+  status: "idle", fileType: null, rawContent: null, githubUrl: null, warning: null,
+};
+
 // ─── Phase labels ──────────────────────────────────────────────────────────────
 
 const PHASE_LABEL: Record<MintPhase, string> = {
@@ -68,23 +82,68 @@ export default function CreateSkill() {
   const { address } = useAccount();
   const { state: mintState, mint, reset } = useSelfMint();
 
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const [step, setStep]     = useState(0);
+  const [form, setForm]     = useState<FormData>(INITIAL_FORM);
+  const [gh, setGh]         = useState<GitHubState>(INITIAL_GH);
+  const lastFetchedRepo     = useRef<string>("");
 
   const update = (key: keyof FormData, val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
-  const handleRepoUrlBlur = () => {
-    if (!form.name && form.repoUrl) {
-      const part = form.repoUrl.split("/").pop() ?? "";
-      update("name", part.replace(/[-_]/g, " ").trim());
+  // ── GitHub auto-fetch on repo blur ─────────────────────────────────────────
+
+  const handleRepoUrlBlur = async () => {
+    const raw = form.repoUrl.trim();
+    // Normalise: strip github.com prefix if user pasted a full URL
+    const repo = raw.replace(/^(https?:\/\/)?(www\.)?github\.com\//, "");
+    if (!repo.includes("/") || repo === lastFetchedRepo.current) {
+      // Fallback name from slug if still blank
+      if (!form.name && repo) {
+        update("name", repo.split("/").pop()!.replace(/[-_]/g, " ").trim());
+      }
+      return;
+    }
+    lastFetchedRepo.current = repo;
+
+    setGh({ ...INITIAL_GH, status: "loading" });
+
+    try {
+      const result: GitHubManifestResult = await githubApi.fetchSkillManifest(repo);
+
+      setGh({
+        status:     result.found ? "found" : "not_found",
+        fileType:   result.fileType,
+        rawContent: result.rawContent,
+        githubUrl:  result.githubUrl,
+        warning:    result.warning ?? null,
+      });
+
+      // Auto-fill fields from parsed data (don't overwrite if already edited)
+      const p = result.parsed;
+      setForm((f) => ({
+        ...f,
+        name:         f.name         || p.name         || repo.split("/").pop()!.replace(/[-_]/g, " ").trim(),
+        description:  f.description  || p.description  || "",
+        version:      f.version !== "1.0.0" ? f.version : (p.version      || "1.0.0"),
+        category:     f.category !== "Code" ? f.category : (p.category    || "Code"),
+        basePrice:    f.basePrice !== "0.01" ? f.basePrice : (p.basePrice  != null ? String(p.basePrice) : "0.01"),
+        capabilities: f.capabilities !== DEFAULT_CAPABILITIES.join(", ")
+          ? f.capabilities
+          : (p.capabilities?.join(", ") || DEFAULT_CAPABILITIES.join(", ")),
+        tags:         f.tags || (p.tags?.join(", ") || ""),
+      }));
+    } catch {
+      setGh({ ...INITIAL_GH, status: "error", warning: "Could not reach GitHub. Fill in the form manually." });
+      if (!form.name && raw) {
+        update("name", raw.split("/").pop()!.replace(/[-_]/g, " ").trim());
+      }
     }
   };
 
   const canNext = () => {
     if (step === 0) return form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
     if (step === 1) return parseFloat(form.basePrice) >= 0;
-    if (step === 2) return !!address; // wallet required before mint
+    if (step === 2) return !!address;
     return true;
   };
 
@@ -94,8 +153,10 @@ export default function CreateSkill() {
 
     try {
       await mint({
-        repoUrl:   form.repoUrl.trim(),
-        ownerMode: form.ownerMode,
+        repoUrl:           form.repoUrl.trim(),
+        ownerMode:         form.ownerMode,
+        skillFileContent:  gh.rawContent ?? undefined,
+        fileType:          gh.fileType   ?? undefined,
         meta: {
           name:         form.name.trim(),
           description:  form.description.trim(),
@@ -130,13 +191,9 @@ export default function CreateSkill() {
           <h1 className="text-2xl font-bold">Skill Minted!</h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
             {isMine ? (
-              <>
-                <span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 iNFT on 0G Chain — owned by your wallet.
-              </>
+              <><span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 iNFT on 0G Chain — owned by your wallet.</>
             ) : (
-              <>
-                <span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 iNFT on 0G Chain, held in platform custody. The GitHub owner can claim it later.
-              </>
+              <><span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 iNFT on 0G Chain, held in platform custody. The GitHub owner can claim it later.</>
             )}
           </p>
 
@@ -145,6 +202,7 @@ export default function CreateSkill() {
             <StatusRow label="Token ID"  value={String(mintState.tokenId)} />
             <StatusRow label="Owner"     value={isMine ? "Your wallet" : "Platform custody"} />
             <StatusRow label="TX Hash"   value={mintState.txHash!.slice(0, 20) + "…"} mono />
+            {gh.fileType && <StatusRow label="Source File" value={gh.fileType} />}
           </div>
 
           <div className="flex gap-3 justify-center flex-wrap">
@@ -158,7 +216,7 @@ export default function CreateSkill() {
             <Button
               variant="outline"
               className="border-white/10"
-              onClick={() => { reset(); setForm(INITIAL_FORM); setStep(0); }}
+              onClick={() => { reset(); setForm(INITIAL_FORM); setGh(INITIAL_GH); setStep(0); lastFetchedRepo.current = ""; }}
             >
               Mint another
             </Button>
@@ -217,13 +275,24 @@ export default function CreateSkill() {
             <div className="space-y-5">
               <h2 className="text-lg font-semibold">Basic Information</h2>
 
-              <Field label="GitHub Repo" hint="e.g. alice/weather-skill or github.com/alice/weather-skill">
-                <Input
-                  placeholder="owner/repo-name"
-                  value={form.repoUrl}
-                  onChange={(e) => update("repoUrl", e.target.value.replace(/^https?:\/\/(github\.com\/)?/, ""))}
-                  onBlur={handleRepoUrlBlur}
-                />
+              <Field label="GitHub Repo" hint="e.g. alice/weather-skill — we'll fetch skill.md automatically">
+                <div className="space-y-2">
+                  <Input
+                    placeholder="owner/repo-name"
+                    value={form.repoUrl}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/^https?:\/\/(github\.com\/)?/, "");
+                      update("repoUrl", v);
+                      // Reset fetch state if user changes the repo
+                      if (v !== lastFetchedRepo.current) {
+                        setGh(INITIAL_GH);
+                      }
+                    }}
+                    onBlur={handleRepoUrlBlur}
+                  />
+                  {/* GitHub fetch status badge */}
+                  <GitHubBadge gh={gh} />
+                </div>
               </Field>
 
               <Field label="Skill Name">
@@ -333,7 +402,6 @@ export default function CreateSkill() {
               </p>
 
               <div className="grid grid-cols-1 gap-3">
-                {/* My Repo */}
                 <button
                   type="button"
                   onClick={() => update("ownerMode", "mine")}
@@ -359,7 +427,6 @@ export default function CreateSkill() {
                   </div>
                 </button>
 
-                {/* Community / Not My Repo */}
                 <button
                   type="button"
                   onClick={() => update("ownerMode", "community")}
@@ -386,7 +453,6 @@ export default function CreateSkill() {
                 </button>
               </div>
 
-              {/* Wallet connection required */}
               {!address ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 text-xs text-amber-400">
@@ -424,12 +490,32 @@ export default function CreateSkill() {
                   label="Ownership"
                   value={form.ownerMode === "mine" ? "My Repo — NFT to my wallet" : "Community — platform custody"}
                 />
+                <ReviewRow
+                  label="0G Storage"
+                  value={gh.fileType
+                    ? `Real file: ${gh.fileType}`
+                    : "Form data (no skill.md found)"}
+                />
               </div>
+
+              {/* Source file info */}
+              {gh.fileType && gh.githubUrl && (
+                <a
+                  href={gh.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs text-primary/80 hover:text-primary bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5 shrink-0" />
+                  Uploading <span className="font-mono">{gh.fileType}</span> from GitHub →
+                  <ExternalLink className="w-3 h-3 ml-auto shrink-0" />
+                </a>
+              )}
 
               {/* Mint process steps */}
               <div className="bg-card border border-primary/20 rounded-xl p-4 space-y-2 text-xs">
                 <div className="text-primary font-medium mb-2">What happens when you click Mint</div>
-                <MintStep n={1} label="Sign EIP-712 message → server uploads manifest to 0G Storage" done={["confirming","finalizing","done"].includes(mintState.phase)} />
+                <MintStep n={1} label={`Sign EIP-712 message → server uploads ${gh.fileType ?? "manifest"} to 0G Storage`} done={["confirming","finalizing","done"].includes(mintState.phase)} />
                 <MintStep n={2} label="Sign transaction in wallet → registerSkill() on 0G Chain" done={["confirming","finalizing","done"].includes(mintState.phase)} />
                 <MintStep n={3}
                   label={form.ownerMode === "mine"
@@ -439,7 +525,6 @@ export default function CreateSkill() {
                 />
               </div>
 
-              {/* Live phase indicator while minting */}
               {isMinting && (
                 <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
                   <Loader2 className="w-4 h-4 animate-spin shrink-0" />
@@ -472,9 +557,11 @@ export default function CreateSkill() {
             <Button
               className="bg-primary hover:bg-primary/90 gap-1"
               onClick={() => setStep((s) => s + 1)}
-              disabled={!canNext()}
+              disabled={!canNext() || gh.status === "loading"}
             >
-              Next <ArrowRight className="w-4 h-4" />
+              {gh.status === "loading" && step === 0
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Fetching…</>
+                : <>Next <ArrowRight className="w-4 h-4" /></>}
             </Button>
           ) : (
             <Button
@@ -495,32 +582,91 @@ export default function CreateSkill() {
   );
 }
 
+// ─── GitHub fetch badge ───────────────────────────────────────────────────────
+
+function GitHubBadge({ gh }: { gh: GitHubState }) {
+  if (gh.status === "idle") return null;
+
+  if (gh.status === "loading") {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        Fetching skill manifest from GitHub…
+      </div>
+    );
+  }
+
+  if (gh.status === "found" && gh.fileType) {
+    return (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full px-2.5 py-0.5">
+          <CheckCircle className="w-3 h-3" />
+          Fetched <span className="font-mono">{gh.fileType}</span> from GitHub ✓
+        </span>
+        {gh.githubUrl && (
+          <a
+            href={gh.githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Github className="w-3 h-3" /> View file <ExternalLink className="w-2.5 h-2.5" />
+          </a>
+        )}
+        {gh.warning && (
+          <span className="text-xs text-amber-400/80">{gh.warning}</span>
+        )}
+      </div>
+    );
+  }
+
+  if (gh.status === "not_found") {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-amber-400/80">
+        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+        No <span className="font-mono mx-0.5">skillfun.json</span> or <span className="font-mono mx-0.5">skill.md</span> found — fill in the form manually.
+      </div>
+    );
+  }
+
+  if (gh.status === "error") {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-destructive/80">
+        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+        {gh.warning ?? "Could not fetch from GitHub — fill in the form manually."}
+      </div>
+    );
+  }
+
+  return null;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <label className="text-sm font-medium">{label}</label>
-      {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       {children}
     </div>
   );
 }
 
-function ReviewRow({ label, value }: { label: string; value: string }) {
+function ReviewRow({ label, value }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-1.5">
-      <span className="text-muted-foreground shrink-0 w-28">{label}</span>
-      <span className="text-right break-all">{value}</span>
+    <div className="flex justify-between gap-4 py-1.5 border-b border-white/5 last:border-0">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <span className="text-right text-sm truncate max-w-[60%]">{value}</span>
     </div>
   );
 }
 
 function StatusRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={mono ? "font-mono text-xs break-all text-right max-w-[60%]" : ""}>{value}</span>
+    <div className="flex justify-between gap-4">
+      <span className="text-muted-foreground text-xs">{label}</span>
+      <span className={`text-xs text-right truncate max-w-[60%] ${mono ? "font-mono" : ""}`}>{value}</span>
     </div>
   );
 }
@@ -528,10 +674,10 @@ function StatusRow({ label, value, mono }: { label: string; value: string; mono?
 function MintStep({ n, label, done }: { n: number; label: string; done: boolean }) {
   return (
     <div className="flex items-start gap-2">
-      <span className={`mt-0.5 ${done ? "text-emerald-400" : "text-primary"}`}>
-        {done ? <CheckCircle className="w-3.5 h-3.5" /> : <span>{n}.</span>}
-      </span>
-      <span className="text-muted-foreground">{label}</span>
+      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold ${done ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" : "border-white/20 text-muted-foreground"}`}>
+        {done ? "✓" : n}
+      </div>
+      <span className={done ? "text-emerald-400" : "text-muted-foreground"}>{label}</span>
     </div>
   );
 }

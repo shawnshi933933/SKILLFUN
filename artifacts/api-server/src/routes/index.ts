@@ -6,6 +6,7 @@ import skillsRouter  from "./skills.js";
 import bundlesRouter from "./bundles.js";
 import claimsRouter  from "./claims.js";
 import adminRouter   from "./admin.js";
+import githubRouter  from "./github.js";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(skillsRouter);
 router.use(bundlesRouter);
 router.use(claimsRouter);
 router.use(adminRouter);
+router.use(githubRouter);
 
 export default router;

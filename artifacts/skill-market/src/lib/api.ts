@@ -90,8 +90,12 @@ export interface CreateSkillInput {
 
 // Self-mint flow types
 export interface PrepareMintInput {
-  repoUrl:   string;
-  ownerMode: "mine" | "community";
+  repoUrl:            string;
+  ownerMode:          "mine" | "community";
+  /** Raw file content fetched from GitHub (skill.md / skillfun.json). */
+  skillFileContent?:  string;
+  /** "skillfun.json" | "skill.md" | "README.md" */
+  fileType?:          string;
   meta?: {
     name?:         string;
     description?:  string;
@@ -101,6 +105,24 @@ export interface PrepareMintInput {
     capabilities?: string[];
     tags?:         string[];
   };
+}
+
+// GitHub manifest fetch
+export interface GitHubManifestResult {
+  found:       boolean;
+  fileType:    string | null;
+  rawContent:  string | null;
+  parsed: {
+    name?:         string;
+    description?:  string;
+    version?:      string;
+    category?:     string;
+    basePrice?:    number;
+    capabilities?: string[];
+    tags?:         string[];
+  };
+  githubUrl:   string;
+  warning?:    string;
 }
 
 export interface PrepareMintResponse {
@@ -132,7 +154,7 @@ export const skillsApi = {
       body: JSON.stringify(input),
     }),
 
-  /** Step 1 of self-mint: upload manifest, create DB record, get contract call params */
+  /** Step 1 of self-mint: upload manifest (+ real skill file if fetched), create DB record */
   prepareMint: (input: PrepareMintInput, sigHeader: string) =>
     apiFetch<PrepareMintResponse>("/skills/prepare-mint", {
       method: "POST",
@@ -147,6 +169,17 @@ export const skillsApi = {
       headers: { "X-Wallet-Signature": sigHeader },
       body: JSON.stringify(body),
     }),
+};
+
+// ---------------------------------------------------------------------------
+// GitHub
+// ---------------------------------------------------------------------------
+export const githubApi = {
+  /** Fetch skill manifest from a public GitHub repo (no auth required). */
+  fetchSkillManifest: (repo: string) =>
+    apiFetch<GitHubManifestResult>(
+      `/github/skill-manifest?repo=${encodeURIComponent(repo)}`
+    ),
 };
 
 // ---------------------------------------------------------------------------

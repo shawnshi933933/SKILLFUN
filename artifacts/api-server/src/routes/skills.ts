@@ -150,10 +150,14 @@ router.post("/skills/prepare-mint", async (req, res) => {
     return;
   }
 
-  const { repoUrl, ownerMode, meta } = req.body as {
-    repoUrl:    string;
-    ownerMode:  "mine" | "community";
-    meta?:      Record<string, unknown>;
+  const { repoUrl, ownerMode, meta, skillFileContent, fileType } = req.body as {
+    repoUrl:           string;
+    ownerMode:         "mine" | "community";
+    meta?:             Record<string, unknown>;
+    /** Raw file content fetched from GitHub (skill.md / skillfun.json) */
+    skillFileContent?: string;
+    /** "skillfun.json" | "skill.md" | "README.md" */
+    fileType?:         string;
   };
 
   if (!repoUrl?.trim()) {
@@ -170,7 +174,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
   const resolvedOwner    = ownerMode === "mine" ? callerAddress : callerAddress; // always record submitter
   const manifestOwnerVal = (repoUrl as string).trim();
 
-  // Build manifest for 0G Storage
+  // Build manifest envelope for 0G Storage
   const manifest: Record<string, unknown> = {
     skillId,
     repoUrl:       manifestOwnerVal,
@@ -178,14 +182,17 @@ router.post("/skills/prepare-mint", async (req, res) => {
     ownerMode,
     submittedBy:   callerAddress,
     ...resolvedMeta,
+    ...(fileType ? { sourceFile: fileType } : {}),
     mintedAt:  new Date().toISOString(),
     chainId:   16661,
   };
 
-  // Upload to 0G Storage (falls back to keccak256 if unavailable)
+  // Upload to 0G Storage (falls back to keccak256 if unavailable).
+  // When skillFileContent is provided (fetched from GitHub) that real file
+  // is what gets stored — the rootHash anchors the actual skill definition.
   let uploadResult: { rootHash: string; skillUri: string; uploaded: boolean };
   try {
-    uploadResult = await uploadSkillManifest(manifest);
+    uploadResult = await uploadSkillManifest(manifest, skillFileContent ?? undefined);
   } catch (err) {
     logger.error({ err, skillId }, "0G Storage upload failed in prepare-mint");
     apiError(res, ErrorCode.RPC_ERROR, "Failed to upload manifest");

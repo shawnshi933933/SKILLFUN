@@ -27,19 +27,34 @@ export interface UploadResult {
 }
 
 /**
- * Upload a skill manifest JSON blob to 0G Storage and return the content hash.
- * If the private key is missing or upload fails, returns a keccak256 fallback
- * so the on-chain mint can still proceed in the demo.
+ * Upload skill content to 0G Storage and return the content hash.
+ *
+ * @param manifest    Metadata envelope — always included in the upload.
+ * @param rawContent  Optional raw file fetched from GitHub (skill.md / skillfun.json).
+ *                    When provided, THIS is what gets uploaded so the rootHash
+ *                    anchors the real skill definition, not just form data.
+ *                    The manifest is JSON-stringified and appended as a comment
+ *                    so both are preserved in the same blob.
+ *
+ * Falls back to keccak256 if upload fails so the mint pipeline always proceeds.
  */
 export async function uploadSkillManifest(
-  manifest: Record<string, unknown>
+  manifest: Record<string, unknown>,
+  rawContent?: string
 ): Promise<UploadResult> {
-  const json = JSON.stringify(manifest, null, 2);
-  const jsonBytes = Buffer.from(json, "utf8");
+  // Build the blob to upload:
+  //   • If we have the real GitHub file content, upload that (with a metadata footer).
+  //   • Otherwise upload the manifest JSON envelope.
+  const uploadBlob = rawContent
+    ? `${rawContent}\n\n<!-- skillfun-manifest\n${JSON.stringify(manifest, null, 2)}\n-->`
+    : JSON.stringify(manifest, null, 2);
+
+  const json      = uploadBlob;   // kept for naming consistency below
+  const jsonBytes = Buffer.from(uploadBlob, "utf8");
 
   // ── Local fallback hash (always computed) ──────────────────────────────────
   const localRootHash = keccak256(toBytes(json)) as `0x${string}`;
-  const localSkillUri = `data:application/json;charset=utf-8,${encodeURIComponent(json.slice(0, 800))}`;
+  const localSkillUri = `data:text/plain;charset=utf-8,${encodeURIComponent(json.slice(0, 800))}`;
 
   // ── 0G Storage upload (best-effort) ───────────────────────────────────────
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
@@ -50,8 +65,9 @@ export async function uploadSkillManifest(
 
   let tmpFile: string | null = null;
   try {
-    // Write manifest to a temp file (ZgFile.fromFilePath requires a path)
-    tmpFile = path.join(os.tmpdir(), `skillfun-manifest-${Date.now()}.json`);
+    // Write content to a temp file (ZgFile.fromFilePath requires a path)
+    const ext = rawContent ? (rawContent.trimStart().startsWith("{") ? ".json" : ".md") : ".json";
+    tmpFile = path.join(os.tmpdir(), `skillfun-upload-${Date.now()}${ext}`);
     fs.writeFileSync(tmpFile, jsonBytes);
 
     // Dynamic import to avoid top-level ESM issues
