@@ -134,6 +134,38 @@ export function authMiddleware(expectedAction?: string) {
   };
 }
 
+/**
+ * Stateless signature verification — for optional auth contexts where we don't
+ * need the session-bound nonce (e.g. community skill submission).
+ * Only checks: valid EIP-712 sig, action matches, timestamp within window.
+ * Returns the recovered signer address (lowercase) or throws.
+ */
+export async function verifyWalletSignature(
+  raw: string,
+  expectedAction: string
+): Promise<string> {
+  let parsed: { action: string; nonce: string; timestamp: number; signature: string };
+  try { parsed = JSON.parse(raw); } catch {
+    throw new Error("Invalid signature header format");
+  }
+  const { action, nonce, timestamp, signature } = parsed;
+  if (!action || !nonce || !timestamp || !signature)
+    throw new Error("Signature header missing required fields");
+  if (action !== expectedAction)
+    throw new Error(`Expected action '${expectedAction}', got '${action}'`);
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (Math.abs(nowSec - timestamp) > 5 * 60)
+    throw new Error("Signature timestamp out of window");
+  const recovered = await recoverTypedDataAddress({
+    domain: EIP712_DOMAIN,
+    types: EIP712_TYPES,
+    primaryType: "Action",
+    message: { action, nonce, timestamp: BigInt(timestamp) },
+    signature: signature as `0x${string}`,
+  });
+  return recovered.toLowerCase();
+}
+
 // Augment Express Request type
 declare global {
   namespace Express {

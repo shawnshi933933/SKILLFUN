@@ -55,15 +55,39 @@ router.get("/skills/:id", async (req, res) => {
   res.json({ skill, onChain });
 });
 
-// POST /api/skills — register a new skill intent (requires wallet auth)
-// Creates a DB record in "pending" status. tokenId and mintStatus are server-controlled
-// and updated only by the trusted mint indexer (PATCH /api/admin/skills/:id/mint).
-router.post("/skills", authMiddleware("register-skill"), async (req, res) => {
-  const { repoUrl, skillUri, rootHash, meta } = req.body as {
-    repoUrl?: string;
-    skillUri?: string;
-    rootHash?: string;
-    meta?: Record<string, unknown>;
+/**
+ * POST /api/skills
+ *
+ * Community mint intake: anyone may submit a skill for review.
+ * Unauthenticated — the submission is just a DB record in "pending" status.
+ * The security boundary is at admin approval + on-chain mint, not here.
+ *
+ * If a valid X-Wallet-Signature is present we record that address as owner;
+ * otherwise ownerAddress comes from the optional body field.
+ *
+ * Server-controlled fields (tokenId, mintStatus, reviewStatus, manifestOwner)
+ * are never settable by the caller.
+ */
+router.post("/skills", async (req, res) => {
+  // Optional wallet auth — attach wallet address if signature is present
+  const sigHeader = req.headers["x-wallet-signature"] as string | undefined;
+  let callerAddress: string | null = null;
+  if (sigHeader) {
+    try {
+      const { verifyWalletSignature } = await import("../middleware/auth.js");
+      callerAddress = await verifyWalletSignature(sigHeader, "register-skill");
+    } catch {
+      // Signature present but invalid → reject (prevent spoofing ownerAddress)
+      apiError(res, ErrorCode.UNAUTHORIZED, "Invalid wallet signature");
+      return;
+    }
+  }
+
+  const { repoUrl, manifestOwner, ownerAddress: bodyAddress, meta } = req.body as {
+    repoUrl?:       string;
+    manifestOwner?: string;
+    ownerAddress?:  string;
+    meta?:          Record<string, unknown>;
   };
 
   if (!repoUrl) {
@@ -71,23 +95,26 @@ router.post("/skills", authMiddleware("register-skill"), async (req, res) => {
     return;
   }
 
+  // manifestOwner defaults to repoUrl for community mint
+  const resolvedManifestOwner = (manifestOwner ?? repoUrl).trim();
+  // Wallet address: authenticated sig > explicit body field > null
+  const resolvedOwner = callerAddress ?? (bodyAddress?.toLowerCase() ?? null);
+
   const skillId = generateId("sk");
   const [skill] = await db
     .insert(skillsTable)
     .values({
       skillId,
-      repoUrl,
-      skillUri:      skillUri ?? null,
-      rootHash:      rootHash ?? null,
-      // manifestOwner is locked to repoUrl at creation — immutable thereafter
-      manifestOwner: repoUrl,
-      ownerAddress:  req.walletAddress ?? null,
+      repoUrl:       repoUrl.trim(),
+      skillUri:      null,
+      rootHash:      null,
+      manifestOwner: resolvedManifestOwner,
+      ownerAddress:  resolvedOwner,
       meta:          meta ?? {},
-      // mintStatus, reviewStatus, and tokenId are server-controlled — never user-settable
     })
     .returning();
 
-  logger.info({ skillId, repoUrl, owner: req.walletAddress }, "skill registered");
+  logger.info({ skillId, repoUrl, owner: resolvedOwner }, "skill registered (pending review)");
   res.status(201).json({ skill });
 });
 

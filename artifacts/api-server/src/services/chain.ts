@@ -2,6 +2,7 @@ import { createPublicClient, http, formatEther } from "viem";
 import { ZEROG_MAINNET, SkillNFT_ABI, SkillFunOracle_ABI, getAddresses } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
 import { cached, cacheKey, TTL } from "./cache.js";
+import { getWalletClient, getPublicClient } from "./wallet.js";
 
 const CHAIN_ID = 16661;
 
@@ -88,6 +89,82 @@ export async function getOnChainOwner(tokenId: number): Promise<string | null> {
     } catch {
       return null; // token not yet minted or reverted
     }
+  });
+}
+
+/**
+ * Mint a new Skill NFT on-chain using the deployer wallet.
+ * Calls SkillNFT.registerSkill(repoUrl, skillURI, rootHash).
+ * Returns the new tokenId and transaction hash.
+ */
+export async function mintSkillOnChain(
+  repoUrl: string,
+  skillUri: string,
+  rootHash: `0x${string}`
+): Promise<{ tokenId: number; txHash: string }> {
+  return rpcCall("mintSkillOnChain", async () => {
+    const walletClient = getWalletClient();
+    const publicCl     = getPublicClient();
+
+    const rootHashBytes32: `0x${string}` = rootHash.startsWith("0x")
+      ? (rootHash.padEnd(66, "0") as `0x${string}`)
+      : (`0x${rootHash.padEnd(64, "0")}` as `0x${string}`);
+
+    const txHash = await walletClient.writeContract({
+      address: addresses.SkillNFT as `0x${string}`,
+      abi: SkillNFT_ABI,
+      functionName: "registerSkill",
+      args: [repoUrl, skillUri, rootHashBytes32 as `0x${string}`],
+    });
+
+    logger.info({ txHash, repoUrl }, "registerSkill tx submitted, waiting for receipt…");
+    const receipt = await publicCl.waitForTransactionReceipt({ hash: txHash, timeout: 60_000 });
+
+    if (receipt.status !== "success") {
+      throw new Error(`registerSkill reverted — tx: ${txHash}`);
+    }
+
+    // Parse SkillRegistered event to get tokenId
+    const { decodeEventLog } = await import("viem");
+    const skillRegisteredTopic = "0x" + Buffer.from(
+      "SkillRegistered(uint256,string,string,bytes32)"
+    ).toString("hex"); // placeholder — we parse by known topic
+
+    let tokenId: number | null = null;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: SkillNFT_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decoded.eventName === "SkillRegistered") {
+          tokenId = Number((decoded.args as { tokenId: bigint }).tokenId);
+          break;
+        }
+      } catch { /* not a matching log */ }
+    }
+
+    if (tokenId === null) {
+      // Fallback: read nextTokenId by checking Transfer events
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({ abi: SkillNFT_ABI, data: log.data, topics: log.topics });
+          if (decoded.eventName === "Transfer") {
+            const args = decoded.args as { tokenId: bigint };
+            tokenId = Number(args.tokenId);
+            break;
+          }
+        } catch { /* skip */ }
+      }
+    }
+
+    if (tokenId === null) {
+      throw new Error(`Could not determine tokenId from receipt ${txHash}`);
+    }
+
+    logger.info({ txHash, tokenId }, "registerSkill confirmed");
+    return { tokenId, txHash };
   });
 }
 

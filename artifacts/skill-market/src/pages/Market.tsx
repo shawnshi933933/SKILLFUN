@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearch, Link } from "wouter";
 import Navbar from "@/components/Navbar";
-import SkillCard from "@/components/SkillCard";
-import BundleCard from "@/components/BundleCard";
+import SkillCard, { type SkillCardData } from "@/components/SkillCard";
+import BundleCard, { type BundleCardData } from "@/components/BundleCard";
 import { useSkills, useBundles } from "@/hooks/use-skills";
 import { type DbSkill, type DbBundle } from "@/lib/api";
 import { Input } from "@/components/ui/input";

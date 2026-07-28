@@ -63,20 +63,43 @@ export interface OnChainSkillData {
 }
 
 export interface ChainBalance {
-  address:    string;
-  balanceWei: string;
+  address:     string;
+  balanceWei:  string;
   balanceA0GI: string;
 }
 
 // ---------------------------------------------------------------------------
 // Skills
 // ---------------------------------------------------------------------------
+export interface CreateSkillInput {
+  repoUrl:       string;   // "owner/repo"
+  manifestOwner: string;   // same as repoUrl for community mint
+  ownerAddress?: string;
+  meta?: {
+    name?:         string;
+    description?:  string;
+    category?:     string;
+    version?:      string;
+    basePrice?:    number;
+    capabilities?: string[];
+    tags?:         string[];
+  };
+}
+
 export const skillsApi = {
   list: (params?: { status?: MintStatus; owner?: string; repo?: string }) =>
-    apiFetch<{ skills: DbSkill[] }>("/skills" + (params ? "?" + new URLSearchParams(params as Record<string,string>).toString() : "")),
+    apiFetch<{ skills: DbSkill[] }>(
+      "/skills" + (params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "")
+    ),
 
   get: (id: string) =>
     apiFetch<{ skill: DbSkill; onChain: OnChainSkillData | null }>(`/skills/${id}`),
+
+  create: (input: CreateSkillInput) =>
+    apiFetch<{ skill: DbSkill }>("/skills", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
 };
 
 // ---------------------------------------------------------------------------
@@ -108,5 +131,26 @@ export const chainApi = {
 // ---------------------------------------------------------------------------
 export const authApi = {
   challenge: () => apiFetch<{ nonce: string }>("/auth/challenge"),
-  me: () => apiFetch<{ authenticated: boolean; githubUsername?: string; evmAddress?: string }>("/auth/me"),
+  me: () =>
+    apiFetch<{ authenticated: boolean; githubUsername?: string; evmAddress?: string }>("/auth/me"),
+};
+
+// ---------------------------------------------------------------------------
+// Admin (deployer-wallet only)
+// ---------------------------------------------------------------------------
+export const adminApi = {
+  mintSkill: (skillId: string, sigHeader: string, overrides?: Record<string, unknown>) =>
+    apiFetch<{ skill: DbSkill; storage: { uploaded: boolean; rootHash: string } }>(
+      `/admin/skills/${skillId}/mint`,
+      {
+        method: "POST",
+        headers: { "X-Wallet-Signature": sigHeader },
+        body: JSON.stringify(overrides ?? {}),
+      }
+    ),
+
+  listSkills: (sigHeader: string) =>
+    apiFetch<{ skills: DbSkill[] }>("/admin/skills", {
+      headers: { "X-Wallet-Signature": sigHeader },
+    }),
 };
