@@ -1,0 +1,1 @@
+- [SkillFun Architecture](skillfun-arch.md) — core design decisions: ERC-7857 on 0G Chain, Oracle-based claim, two-step flow
