@@ -86,6 +86,35 @@ export interface CreateSkillInput {
   };
 }
 
+// Self-mint flow types
+export interface PrepareMintInput {
+  repoUrl:   string;
+  ownerMode: "mine" | "community";
+  meta?: {
+    name?:         string;
+    description?:  string;
+    category?:     string;
+    version?:      string;
+    basePrice?:    number;
+    capabilities?: string[];
+    tags?:         string[];
+  };
+}
+
+export interface PrepareMintResponse {
+  skillId:         string;
+  rootHash:        string;
+  skillUri:        string;
+  manifestOwner:   string;
+  skillNFTAddress: string;
+  storage:         { uploaded: boolean };
+}
+
+export interface ConfirmMintResponse {
+  skill:        DbSkill;
+  onChainOwner: string;
+}
+
 export const skillsApi = {
   list: (params?: { status?: MintStatus; owner?: string; repo?: string }) =>
     apiFetch<{ skills: DbSkill[] }>(
@@ -99,6 +128,22 @@ export const skillsApi = {
     apiFetch<{ skill: DbSkill }>("/skills", {
       method: "POST",
       body: JSON.stringify(input),
+    }),
+
+  /** Step 1 of self-mint: upload manifest, create DB record, get contract call params */
+  prepareMint: (input: PrepareMintInput, sigHeader: string) =>
+    apiFetch<PrepareMintResponse>("/skills/prepare-mint", {
+      method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify(input),
+    }),
+
+  /** Step 2 of self-mint: confirm tx landed, update DB to minted */
+  confirmMint: (skillId: string, body: { tokenId: number; txHash: string }, sigHeader: string) =>
+    apiFetch<ConfirmMintResponse>(`/skills/${skillId}/confirm-mint`, {
+      method: "PATCH",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify(body),
     }),
 };
 

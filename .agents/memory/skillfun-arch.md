@@ -1,85 +1,49 @@
 ---
-name: SkillFun Architecture Decisions
-description: Core design decisions for SkillFun POC — chain, contracts, claim flow, backend, frontend
+name: SkillFun Architecture
+description: Core design decisions — ERC-7857 on 0G Chain, self-mint flow, contract addresses, key quirks
 ---
 
-## Chain & Standard
-- 0G Chain **mainnet**, chainId 16661 (NOT testnet — deploy directly to mainnet)
-- ERC-7857 inspired iNFT (not standard ERC-721 only)
-- NFT mints to `address(this)` — contract self-custody until claimed
+## Deployed Contracts (0G Mainnet, chainId 16661) — v2
 
-## Claim Flow (Two-Step, Oracle-based)
-1. User does GitHub OAuth on SkillFun
-2. Backend verifies `authenticated_user == manifestOwner[tokenId]` (stored at mint)
-3. Backend writes `pending_claims` to DB
-4. Platform operator uses cold wallet to call `oracle.setVerifiedClaims([tokenId], [walletAddr])`
-5. User calls `claim(tokenId)` — contract checks `msg.sender == oracle.verifiedOwner[tokenId]`
-6. NFT transfers; Oracle entry cleared (one-time use)
+| Contract | Address |
+|---|---|
+| `SkillFunOracle` | `0xE95089DF5F6B296129bAF8701a260F6F1692f13d` |
+| `SkillFunVerifierStub` | `0x9b583eCDDAf5ddabAb2D0FB52c1aF596235D13a9` |
+| `SkillNFT` | `0x27c2Cf883e822B3D8C4cA1FA0877e3eBC4bf79A1` |
 
-**Why:** Eliminates hot signing key. Cold wallet is offline hardware wallet — much harder to compromise than a backend signer. Even if compromised, Oracle updates are on-chain and monitorable.
+Deployer: `0xbb32AD3470290635a852EDc5F2895B75497cA368`
 
-## manifestOwner
-- Stored at mint: `manifestOwner[tokenId] = "alice/weather-skill"` (GitHub repo path)
-- Used by backend to verify claim requests
-- Public on-chain — anyone can see which GitHub repo each skill came from
+Previous v1 SkillNFT (deprecated): `0x3030F26d3d61B43866a3c166d8f49A9C29A27c5A`
 
-## Two Mint Paths
-1. **Community Mint**: Anyone submits public GitHub URL → platform backend mints → NFT held by contract → owner claims later
-2. **Creator Self-Mint**: Creator does GitHub OAuth first → mints directly → NFT goes straight to Creator wallet (no claim needed)
+## Self-Mint Architecture (v2)
 
-## 0G Storage
-- Skill payloads encrypted AES-256, stored on 0G Storage
-- rootHash anchored in NFT metadata
-- At Community Mint: encrypted with Platform pubkey
-- At Claim: proxy re-encryption rotates to Creator pubkey
-- At Self-Mint: Creator pubkey used directly
+`registerSkill(repoUrl, skillURI, rootHash, to)` — open to anyone (no `onlyOwner`).
 
-## Smart Contracts
-- `SkillNFT.sol`: `registerSkill()`, `claim()`, `invokeSkill() payable`
-- `SkillFunOracle.sol`: `setVerifiedClaims(tokenIds[], owners[])` — coldWallet only
-- ABI centralized in `packages/abi/`
-- Deploy target: 0G testnet (chainId 16601) — note chainId is 16601 not 16661
-- Solidity 0.8.24 + `evmVersion: "cancun"` required for OpenZeppelin v5 (mcopy opcode)
-- `setSkillNFT()` must be called on Oracle after SkillNFT is deployed (one-time, cold wallet only)
-- 15 tests all pass in `packages/contracts/test/SkillContracts.test.ts`
-- Deploy script auto-writes `packages/abi/src/addresses.json` keyed by chainId
-- Deployer + cold wallet: `0xbb32AD3470290635a852EDc5F2895B75497cA368`
+- **"My Repo" mode**: `to = userAddress` → NFT goes to user's wallet immediately
+- **"Community" mode**: `to = address(this)` → NFT held by SkillNFT contract in self-custody; real GitHub owner claims via Oracle later
 
-## Deployed Contracts — 0G Mainnet (chainId 16661) — ERC-7857 compliant
-- SkillFunOracle:       `0x831a69d64eFB4BaE6BD47E2eDf8F92c3e1d9770e`
-- SkillFunVerifierStub: `0x97F8f4a20d279B58Ebf8a13aB4cE856BbA8bb0f8` (swap for real TEE in Step 4)
-- SkillNFT:             `0x3030F26d3d61B43866a3c166d8f49A9C29A27c5A`
-- RPC: `https://evmrpc.0g.ai`
-- Env vars: `SKILLFUN_ORACLE_ADDRESS`, `SKILLFUN_VERIFIER_ADDRESS`, `SKILLNFT_ADDRESS`, `ZEROG_RPC_URL`, `ZEROG_CHAIN_ID`
+Frontend self-mint flow (2 EIP-712 sigs + 1 on-chain tx):
+1. `POST /api/skills/prepare-mint` (action: `user:prepare-mint`) → uploads manifest to 0G Storage, creates DB record, returns `{skillId, rootHash, skillUri, manifestOwner, skillNFTAddress}`
+2. wagmi `writeContractAsync` → `SkillNFT.registerSkill(manifestOwner, skillUri, rootHash32, to)`
+3. `waitForTransactionReceipt` → parse `SkillRegistered` or `Transfer` event for tokenId
+4. `PATCH /api/skills/:id/confirm-mint` (action: `user:confirm-mint`) → updates DB to `mintStatus=minted`
 
-## ERC-7857 Contract Architecture
-- Interfaces in `packages/contracts/contracts/interfaces/`: IERC7857Types, IERC7857DataVerifier, IERC7857Metadata, IERC7857
-- `intelligentDataOf(tokenId)` → returns IntelligentData[] with 0G Storage rootHash
-- `registerSkill(repoUrl, skillURI, rootHash)` — rootHash anchored at mint time
-- `iTransfer(to, tokenId, proofs)` — proof-verified transfer; stub verifier accepts any proof
-- `iClone(to, tokenId, proofs)` — mint new token from existing
-- `authorizeUsage / revokeAuthorization` — usage rights without ownership
-- `updateDataHash(tokenId, newHash, index)` — called after 0G proxy re-encryption
-- `setVerifier(addr)` — upgrade path to real TEE verifier (Step 4)
-- SkillFun extensions: `manifestOwner` (GitHub repo path), `claim()` (Oracle-based), `invokeSkill() payable`
+## Key Decisions
 
-## Backend
-- Go + PostgreSQL (BFF pattern, borrowing skillfun-apps schema)
-- Key DB tables: skills (sk_xxx), bundles (bd_xxx), bundle_skills, pending_claims
-- GitHub OAuth for verification
-- All RPC calls go through BFF — frontend never calls RPC directly
+- **wagmi v2 not v3** — RainbowKit 2.x requires `wagmi@2`; v3 causes "Invalid hook call / multiple React instances"
+- **`@workspace/abi` not available in Vite frontend** — inline ABI fragments directly in hooks instead of importing from workspace package
+- **EIP-712 for prepare + confirm** — stateless `verifyWalletSignature` (no session nonce); timestamp window ±5 min is the replay guard
+- **0G Storage fallback** — `uploadSkillManifest()` falls back to `keccak256(manifestJSON)` if upload fails; mint still proceeds
+- **`registerSkill` first arg is `repoUrl`/`manifestOwner` (string)** — stored on-chain as `manifestOwner`, used to identify GitHub repo for Oracle claim flow
+- **tokenId parsed from receipt** — decode `SkillRegistered` event first, fallback to `Transfer` event
 
-## Frontend
-- Vite + React + Tailwind + TanStack Query + wagmi + viem + RainbowKit
-- Lives in `artifacts/skill-market/`
-- Must use BFF for all chain reads
+## Roadmap State
 
-## MCP Architecture
-- Global: `api.skillfun.ai/mcp` — bundles.discover, bundles.get
-- Per-bundle: `api.skillfun.ai/:subdomain/mcp` — tools/list, tools/call (x402 gated)
-- Bundle = server-side DB record, has subdomain + bd_xxx ID
-
-## Tech Spec
-- Authoritative doc: `attached_assets/AGENT_TECH_SELECTION_1785145338278.md`
-- Cloudflare Workers for frontend deployment
-- Docker/server for Go gateway
+- ✅ Step 1: Contracts deployed (ERC-7857, Oracle, Verifier)
+- ✅ Step 2: Backend API (Express + Drizzle + PostgreSQL)
+- ✅ Step 3: Market frontend (React + wagmi v2 + RainbowKit)
+- ✅ Step 4: Self-mint flow (user calls contract directly, `to` param for ownership mode)
+- 🔲 Step 5: Claim flow (GitHub OAuth → Oracle batch → `claim()`)
+- 🔲 Step 6: Creator self-mint (already done in Step 4)
+- 🔲 Step 7: Bundle MCP server (ERC-8183)
+- 🔲 Step 8: x402 payments + revenue distribution on `invokeSkill()`

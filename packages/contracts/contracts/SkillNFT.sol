@@ -115,21 +115,28 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
     // SkillFun: Mint
     // ─────────────────────────────────────────────────────────────────
 
-    /// @notice Register a skill: mint to address(this) (self-custody until claimed).
+    /// @notice Register a skill — open to anyone.
+    ///
     /// @param repoUrl   GitHub repo path — becomes manifestOwner, locked forever.
     /// @param skillURI  Metadata URI (points to manifest on 0G Storage).
     /// @param rootHash  0G Storage root hash of the encrypted skill payload.
     ///                  Stored as the first IntelligentData entry.
+    /// @param to        Recipient of the minted NFT.
+    ///                  • Pass your own address  → you own the iNFT immediately ("My Repo").
+    ///                  • Pass address(this)     → NFT held by contract until the real
+    ///                                             GitHub owner calls claim() ("Not My Repo").
     /// @return tokenId  The minted token ID.
     function registerSkill(
         string  calldata repoUrl,
         string  calldata skillURI,
-        bytes32          rootHash
-    ) external onlyOwner returns (uint256 tokenId) {
+        bytes32          rootHash,
+        address          to
+    ) external returns (uint256 tokenId) {
+        require(to != address(0), "SkillNFT: to is zero address");
         tokenId = _nextTokenId++;
         manifestOwner[tokenId] = repoUrl;
 
-        _safeMint(address(this), tokenId);
+        _safeMint(to, tokenId);
         _setTokenURI(tokenId, skillURI);
 
         // Anchor the 0G Storage rootHash as ERC-7857 IntelligentData

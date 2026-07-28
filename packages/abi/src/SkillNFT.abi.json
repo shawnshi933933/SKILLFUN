@@ -981,6 +981,11 @@
         "internalType": "bytes32",
         "name": "rootHash",
         "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
       }
     ],
     "name": "registerSkill",

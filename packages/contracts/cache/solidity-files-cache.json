@@ -38,8 +38,8 @@
       ]
     },
     "/home/runner/workspace/packages/contracts/contracts/SkillNFT.sol": {
-      "lastModificationDate": 1785221471615,
-      "contentHash": "942040759cafba349187fdbb735a699e",
+      "lastModificationDate": 1785227238279,
+      "contentHash": "b433dd65b7efb1768879f35d468955e7",
       "sourceName": "contracts/SkillNFT.sol",
       "solcConfig": {
         "version": "0.8.24",

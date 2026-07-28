@@ -94,13 +94,18 @@ export async function getOnChainOwner(tokenId: number): Promise<string | null> {
 
 /**
  * Mint a new Skill NFT on-chain using the deployer wallet.
- * Calls SkillNFT.registerSkill(repoUrl, skillURI, rootHash).
- * Returns the new tokenId and transaction hash.
+ * Calls SkillNFT.registerSkill(repoUrl, skillURI, rootHash, to).
+ *
+ * @param to  Recipient address.
+ *            • User's wallet  → "My Repo" mode (user owns immediately).
+ *            • SkillNFT contract address → "Not My Repo" (platform custody until claim).
+ *            Defaults to the SkillNFT contract address (platform custody).
  */
 export async function mintSkillOnChain(
   repoUrl: string,
   skillUri: string,
-  rootHash: `0x${string}`
+  rootHash: `0x${string}`,
+  to?: `0x${string}`
 ): Promise<{ tokenId: number; txHash: string }> {
   return rpcCall("mintSkillOnChain", async () => {
     const walletClient = getWalletClient();
@@ -110,11 +115,14 @@ export async function mintSkillOnChain(
       ? (rootHash.padEnd(66, "0") as `0x${string}`)
       : (`0x${rootHash.padEnd(64, "0")}` as `0x${string}`);
 
+    // Default: platform custody (NFT held by SkillNFT contract until claim)
+    const recipient: `0x${string}` = to ?? (addresses.SkillNFT as `0x${string}`);
+
     const txHash = await walletClient.writeContract({
       address: addresses.SkillNFT as `0x${string}`,
       abi: SkillNFT_ABI,
       functionName: "registerSkill",
-      args: [repoUrl, skillUri, rootHashBytes32 as `0x${string}`],
+      args: [repoUrl, skillUri, rootHashBytes32 as `0x${string}`, recipient],
     });
 
     logger.info({ txHash, repoUrl }, "registerSkill tx submitted, waiting for receipt…");

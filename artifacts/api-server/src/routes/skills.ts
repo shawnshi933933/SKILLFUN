@@ -4,9 +4,14 @@ import { skillsTable } from "@workspace/db";
 import { eq, desc, and, SQL } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
-import { authMiddleware } from "../middleware/auth.js";
-import { getSkillOnChain } from "../services/chain.js";
+import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
+import { getSkillOnChain, mintSkillOnChain, getOnChainOwner } from "../services/chain.js";
+import { uploadSkillManifest } from "../services/storage.js";
+import { invalidatePrefix, cacheKey } from "../services/cache.js";
+import { getAddresses } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
+
+const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT.toLowerCase();
 
 const router = Router();
 
@@ -116,6 +121,185 @@ router.post("/skills", async (req, res) => {
 
   logger.info({ skillId, repoUrl, owner: resolvedOwner }, "skill registered (pending review)");
   res.status(201).json({ skill });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/skills/prepare-mint
+//
+// Step 1 of self-mint: any connected wallet can call this.
+// Validates EIP-712 sig, uploads manifest to 0G Storage, creates a DB record
+// in "pending" status, and returns the parameters the frontend needs to call
+// SkillNFT.registerSkill() directly from the user's wallet.
+//
+// The caller decides the `to` address:
+//   • Their own wallet  → "My Repo"  (NFT goes to them)
+//   • SkillNFT contract → "Not My Repo" (platform custody until GitHub claim)
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/skills/prepare-mint", async (req, res) => {
+  const sigHeader = req.headers["x-wallet-signature"] as string | undefined;
+  if (!sigHeader) {
+    apiError(res, ErrorCode.UNAUTHORIZED, "Missing X-Wallet-Signature header");
+    return;
+  }
+
+  let callerAddress: string;
+  try {
+    callerAddress = await verifyWalletSignature(sigHeader, "user:prepare-mint");
+  } catch (err) {
+    apiError(res, ErrorCode.UNAUTHORIZED, (err as Error).message);
+    return;
+  }
+
+  const { repoUrl, ownerMode, meta } = req.body as {
+    repoUrl:    string;
+    ownerMode:  "mine" | "community";
+    meta?:      Record<string, unknown>;
+  };
+
+  if (!repoUrl?.trim()) {
+    apiError(res, ErrorCode.INVALID_INPUT, "repoUrl is required");
+    return;
+  }
+  if (ownerMode !== "mine" && ownerMode !== "community") {
+    apiError(res, ErrorCode.INVALID_INPUT, "ownerMode must be 'mine' or 'community'");
+    return;
+  }
+
+  const skillId          = generateId("sk");
+  const resolvedMeta     = meta ?? {};
+  const resolvedOwner    = ownerMode === "mine" ? callerAddress : callerAddress; // always record submitter
+  const manifestOwnerVal = (repoUrl as string).trim();
+
+  // Build manifest for 0G Storage
+  const manifest: Record<string, unknown> = {
+    skillId,
+    repoUrl:       manifestOwnerVal,
+    manifestOwner: manifestOwnerVal,
+    ownerMode,
+    submittedBy:   callerAddress,
+    ...resolvedMeta,
+    mintedAt:  new Date().toISOString(),
+    chainId:   16661,
+  };
+
+  // Upload to 0G Storage (falls back to keccak256 if unavailable)
+  let uploadResult: { rootHash: string; skillUri: string; uploaded: boolean };
+  try {
+    uploadResult = await uploadSkillManifest(manifest);
+  } catch (err) {
+    logger.error({ err, skillId }, "0G Storage upload failed in prepare-mint");
+    apiError(res, ErrorCode.RPC_ERROR, "Failed to upload manifest");
+    return;
+  }
+
+  // Create DB record (pending — confirmed after user's tx lands)
+  const [skill] = await db
+    .insert(skillsTable)
+    .values({
+      skillId,
+      repoUrl:       manifestOwnerVal,
+      skillUri:      uploadResult.skillUri,
+      rootHash:      uploadResult.rootHash,
+      manifestOwner: manifestOwnerVal,
+      ownerAddress:  resolvedOwner,
+      meta:          { ...resolvedMeta, ownerMode } as Record<string, unknown>,
+    })
+    .returning();
+
+  logger.info({ skillId, repoUrl, ownerMode, caller: callerAddress }, "prepare-mint: manifest ready");
+
+  res.status(201).json({
+    skillId,
+    rootHash:         uploadResult.rootHash,
+    skillUri:         uploadResult.skillUri,
+    manifestOwner:    manifestOwnerVal,
+    skillNFTAddress:  SKILL_NFT_ADDRESS,
+    storage:          { uploaded: uploadResult.uploaded },
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /api/skills/:id/confirm-mint
+//
+// Step 2 of self-mint: called after the user's registerSkill() tx is confirmed.
+// Validates EIP-712 sig, reads on-chain tokenId owner, updates DB to minted.
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch("/skills/:id/confirm-mint", async (req, res) => {
+  const sigHeader = req.headers["x-wallet-signature"] as string | undefined;
+  if (!sigHeader) {
+    apiError(res, ErrorCode.UNAUTHORIZED, "Missing X-Wallet-Signature header");
+    return;
+  }
+
+  let callerAddress: string;
+  try {
+    callerAddress = await verifyWalletSignature(sigHeader, "user:confirm-mint");
+  } catch (err) {
+    apiError(res, ErrorCode.UNAUTHORIZED, (err as Error).message);
+    return;
+  }
+
+  const skillId = req.params.id as string;
+  const { tokenId, txHash } = req.body as { tokenId: number; txHash: string };
+
+  if (!tokenId || !txHash) {
+    apiError(res, ErrorCode.INVALID_INPUT, "tokenId and txHash are required");
+    return;
+  }
+
+  const [skill] = await db
+    .select()
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!skill) {
+    apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+    return;
+  }
+  if (skill.mintStatus === "minted" || skill.mintStatus === "claimed") {
+    apiError(res, ErrorCode.CONFLICT, `Skill already in '${skill.mintStatus}' state`);
+    return;
+  }
+
+  // Verify the caller actually submitted this skill
+  if (skill.ownerAddress?.toLowerCase() !== callerAddress.toLowerCase()) {
+    apiError(res, ErrorCode.FORBIDDEN, "Not the skill submitter");
+    return;
+  }
+
+  // Read on-chain owner to confirm the tx landed
+  const onChainOwner = await getOnChainOwner(tokenId).catch(() => null);
+  if (!onChainOwner) {
+    apiError(res, ErrorCode.RPC_ERROR, "Token not found on-chain — tx may still be pending");
+    return;
+  }
+
+  // Determine the final ownerAddress for this skill:
+  // "mine" → user's address; "community" → platform (SkillNFT contract)
+  const ownerMode = (skill.meta as Record<string, unknown>)?.ownerMode as string | undefined;
+  const finalOwner = ownerMode === "mine" ? callerAddress : SKILL_NFT_ADDRESS;
+
+  const [updated] = await db
+    .update(skillsTable)
+    .set({
+      mintStatus:   "minted",
+      tokenId,
+      ownerAddress: finalOwner,
+      meta: {
+        ...(skill.meta as Record<string, unknown>),
+        txHash,
+        mintedAt: new Date().toISOString(),
+      },
+      updatedAt: new Date(),
+    })
+    .where(eq(skillsTable.skillId, skillId))
+    .returning();
+
+  invalidatePrefix(cacheKey(16661, "getSkillOnChain", tokenId));
+  logger.info({ skillId, tokenId, txHash, ownerMode, finalOwner }, "confirm-mint: skill minted");
+
+  res.json({ skill: updated, onChainOwner });
 });
 
 // PATCH /api/skills/:id — update user-editable metadata (owner only)

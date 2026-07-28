@@ -208,7 +208,7 @@ export interface SkillNFTInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "registerSkill",
-    values: [string, string, BytesLike]
+    values: [string, string, BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -694,7 +694,7 @@ export interface SkillNFT extends BaseContract {
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
   registerSkill: TypedContractMethod<
-    [repoUrl: string, skillURI: string, rootHash: BytesLike],
+    [repoUrl: string, skillURI: string, rootHash: BytesLike, to: AddressLike],
     [bigint],
     "nonpayable"
   >;
@@ -866,7 +866,7 @@ export interface SkillNFT extends BaseContract {
   getFunction(
     nameOrSignature: "registerSkill"
   ): TypedContractMethod<
-    [repoUrl: string, skillURI: string, rootHash: BytesLike],
+    [repoUrl: string, skillURI: string, rootHash: BytesLike, to: AddressLike],
     [bigint],
     "nonpayable"
   >;
