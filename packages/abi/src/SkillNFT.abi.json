@@ -8,6 +8,11 @@
       },
       {
         "internalType": "address",
+        "name": "_verifier",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "_owner",
         "type": "address"
       }
@@ -125,6 +130,16 @@
   },
   {
     "inputs": [],
+    "name": "NotOwnerOrAuthorized",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotTokenOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "NotVerifiedClaimer",
     "type": "error"
   },
@@ -152,7 +167,7 @@
   },
   {
     "inputs": [],
-    "name": "TokenNotInCustody",
+    "name": "ProofLengthMismatch",
     "type": "error"
   },
   {
@@ -209,6 +224,56 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "Authorization",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "AuthorizationRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "_fromTokenId",
@@ -222,6 +287,31 @@
       }
     ],
     "name": "BatchMetadataUpdate",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "oldHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "newHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DataHashUpdated",
     "type": "event"
   },
   {
@@ -320,6 +410,12 @@
         "internalType": "string",
         "name": "skillURI",
         "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "rootHash",
+        "type": "bytes32"
       }
     ],
     "name": "SkillRegistered",
@@ -351,6 +447,31 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      }
+    ],
+    "name": "Transferred",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -364,6 +485,24 @@
       }
     ],
     "name": "approve",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "authorizeUsage",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -422,6 +561,241 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "oldDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "newDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes",
+                "name": "nonce",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "encryptedPubKey",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "proof",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct AccessProof",
+            "name": "accessProof",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "enum OracleType",
+                "name": "oracleType",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "oldDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "newDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes",
+                "name": "sealedKey",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "encryptedPubKey",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "nonce",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "proof",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct OwnershipProof",
+            "name": "ownershipProof",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct TransferValidityProof[]",
+        "name": "_proofs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "iClone",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "_newTokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "oldDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "newDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes",
+                "name": "nonce",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "encryptedPubKey",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "proof",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct AccessProof",
+            "name": "accessProof",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "enum OracleType",
+                "name": "oracleType",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "oldDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "newDataHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes",
+                "name": "sealedKey",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "encryptedPubKey",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "nonce",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "proof",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct OwnershipProof",
+            "name": "ownershipProof",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct TransferValidityProof[]",
+        "name": "_proofs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "iTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "intelligentDataOf",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "dataDescription",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct IntelligentData[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
@@ -446,6 +820,30 @@
       }
     ],
     "name": "isApprovedForAll",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "isAuthorized",
     "outputs": [
       {
         "internalType": "bool",
@@ -578,6 +976,11 @@
         "internalType": "string",
         "name": "skillURI",
         "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "rootHash",
+        "type": "bytes32"
       }
     ],
     "name": "registerSkill",
@@ -594,6 +997,24 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "revokeAuthorization",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -663,6 +1084,19 @@
       }
     ],
     "name": "setApprovalForAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_verifier",
+        "type": "address"
+      }
+    ],
+    "name": "setVerifier",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -752,6 +1186,42 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "newHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateDataHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "verifier",
+    "outputs": [
+      {
+        "internalType": "contract IERC7857DataVerifier",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

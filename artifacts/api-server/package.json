@@ -10,14 +10,19 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@types/express-session": "^1.19.0",
+    "@workspace/abi": "workspace:*",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
+    "express-session": "^1.19.0",
+    "nanoid": "^6.0.0",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "viem": "^2.55.8"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
