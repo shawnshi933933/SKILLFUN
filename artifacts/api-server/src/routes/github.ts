@@ -111,6 +111,65 @@ function normalise(raw: Record<string, unknown>) {
 }
 
 // ---------------------------------------------------------------------------
+// Parse a GitHub URL / slug into { owner, repo, branch, subpath }
+//
+// Handles all common formats:
+//   owner/repo
+//   owner/repo/tree/branch/path/to/dir
+//   https://github.com/owner/repo/tree/branch/path/to/dir
+// ---------------------------------------------------------------------------
+
+interface ParsedRepo {
+  owner:    string;
+  repo:     string;
+  branch:   string | null;   // explicit branch from URL, null = try main/master
+  subpath:  string | null;   // subdirectory path within the repo
+}
+
+function parseRepoInput(raw: string): ParsedRepo | null {
+  // Strip protocol + domain
+  const clean = raw
+    .trim()
+    .replace(/^(https?:\/\/)?(www\.)?github\.com\//, "")
+    .replace(/\/$/, "");
+
+  const parts = clean.split("/");
+  if (parts.length < 2) return null;
+
+  const owner    = parts[0];
+  const repoName = parts[1];
+  if (!owner || !repoName) return null;
+
+  // /tree/<branch>[/<subpath>]
+  if (parts[2] === "tree" && parts[3]) {
+    const branch  = parts[3];
+    const subpath = parts.slice(4).join("/") || null;
+    return { owner, repo: repoName, branch, subpath };
+  }
+
+  // /blob/<branch>[/<file>]  — strip file, keep directory
+  if (parts[2] === "blob" && parts[3]) {
+    const branch  = parts[3];
+    const fileParts = parts.slice(4);
+    // Drop last segment if it looks like a file (has an extension)
+    const dirParts = fileParts.length > 0 && fileParts[fileParts.length - 1].includes(".")
+      ? fileParts.slice(0, -1)
+      : fileParts;
+    const subpath = dirParts.join("/") || null;
+    return { owner, repo: repoName, branch, subpath };
+  }
+
+  return { owner, repo: repoName, branch: null, subpath: null };
+}
+
+// Fetch from a specific branch (no auto-fallback)
+async function fetchRawBranch(
+  owner: string, repo: string, branch: string, filepath: string
+): Promise<string | null> {
+  return fetchRaw(owner, repo, branch, filepath);
+}
+
+// ---------------------------------------------------------------------------
 // Route
 // ---------------------------------------------------------------------------
 
@@ -122,57 +181,85 @@ router.get("/github/skill-manifest", async (req, res) => {
     return;
   }
 
-  const clean    = repo.replace(/^(https?:\/\/)?(www\.)?github\.com\//, "");
-  const parts    = clean.split("/");
-  const owner    = parts[0];
-  const repoName = parts[1];
-
-  if (!owner || !repoName) {
-    apiError(res, ErrorCode.INVALID_INPUT, "Could not parse owner/repo");
+  const parsed = parseRepoInput(repo);
+  if (!parsed) {
+    apiError(res, ErrorCode.INVALID_INPUT, "Could not parse owner/repo from input");
     return;
   }
 
-  logger.debug({ owner, repo: repoName }, "fetching skill manifest from GitHub");
+  const { owner, repo: repoName, branch: explicitBranch, subpath } = parsed;
+
+  logger.debug({ owner, repo: repoName, subpath }, "fetching skill manifest from GitHub");
+
+  // Branches to try (explicit branch takes priority)
+  const branches = explicitBranch ? [explicitBranch] : ["main", "master"];
+
+  // Build search paths: subdir first, then root
+  // Case variants — GitHub raw is case-sensitive
+  const skillFiles = ["skillfun.json", "skill.md", "SKILL.md", "Skill.md"] as const;
+  const readmeFiles = ["README.md", "readme.md"] as const;
+
+  // Helper: try a filename across all candidate branches, optionally with subpath prefix
+  async function tryFile(
+    filename: string,
+    dirs: string[]
+  ): Promise<{ content: string; branch: string; dir: string } | null> {
+    for (const branch of branches) {
+      for (const dir of dirs) {
+        const filepath = dir ? `${dir}/${filename}` : filename;
+        const content = await fetchRawBranch(owner, repoName, branch, filepath);
+        if (content !== null) return { content, branch, dir };
+      }
+    }
+    return null;
+  }
+
+  const dirs = subpath ? [subpath, ""] : [""];
 
   // 1. skillfun.json
-  let hit = await fetchFile(owner, repoName, "skillfun.json");
+  let hit = await tryFile("skillfun.json", dirs);
   if (hit) {
-    const parsed = parseSkillFunJson(hit.content);
-    if (parsed) {
+    const parsedJson = parseSkillFunJson(hit.content);
+    if (parsedJson) {
+      const filepath = hit.dir ? `${hit.dir}/skillfun.json` : "skillfun.json";
       res.json({
         found:      true,
         fileType:   "skillfun.json",
         rawContent: hit.content,
-        parsed:     normalise(parsed),
-        githubUrl:  `https://github.com/${owner}/${repoName}/blob/${hit.branch}/skillfun.json`,
+        parsed:     normalise(parsedJson),
+        githubUrl:  `https://github.com/${owner}/${repoName}/blob/${hit.branch}/${filepath}`,
       });
       return;
     }
   }
 
-  // 2. skill.md
-  hit = await fetchFile(owner, repoName, "skill.md");
-  if (hit) {
-    res.json({
-      found:      true,
-      fileType:   "skill.md",
-      rawContent: hit.content,
-      parsed:     normalise(parseSkillMd(hit.content)),
-      githubUrl:  `https://github.com/${owner}/${repoName}/blob/${hit.branch}/skill.md`,
-    });
-    return;
+  // 2. skill.md / SKILL.md (case variants)
+  for (const fname of ["skill.md", "SKILL.md", "Skill.md"] as const) {
+    hit = await tryFile(fname, dirs);
+    if (hit) {
+      const filepath = hit.dir ? `${hit.dir}/${fname}` : fname;
+      res.json({
+        found:      true,
+        fileType:   fname,
+        rawContent: hit.content,
+        parsed:     normalise(parseSkillMd(hit.content)),
+        githubUrl:  `https://github.com/${owner}/${repoName}/blob/${hit.branch}/${filepath}`,
+      });
+      return;
+    }
   }
 
-  // 3. README.md (partial)
-  hit = await fetchFile(owner, repoName, "README.md");
+  // 3. README.md (subdir first, then root)
+  hit = await tryFile("README.md", dirs);
   if (hit) {
-    const snippet = hit.content.slice(0, 3000);
+    const snippet  = hit.content.slice(0, 3000);
+    const filepath = hit.dir ? `${hit.dir}/README.md` : "README.md";
     res.json({
       found:      true,
       fileType:   "README.md",
       rawContent: snippet,
       parsed:     normalise(parseSkillMd(snippet)),
-      githubUrl:  `https://github.com/${owner}/${repoName}/blob/${hit.branch}/README.md`,
+      githubUrl:  `https://github.com/${owner}/${repoName}/blob/${hit.branch}/${filepath}`,
       warning:    "No skillfun.json or skill.md found — using README.md. Add a skillfun.json for best results.",
     });
     return;
