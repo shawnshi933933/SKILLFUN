@@ -1,1 +1,2 @@
 - [SkillFun Architecture](skillfun-arch.md) — core design decisions: ERC-7857 on 0G Chain, Oracle-based claim, two-step flow
+- [0G Storage Mainnet Config](0g-storage-mainnet.md) — indexer DNS is NXDOMAIN; use 4 direct boot node IPs on port 5678 instead
