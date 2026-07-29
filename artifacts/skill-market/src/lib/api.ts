@@ -96,6 +96,8 @@ export interface PrepareMintInput {
   skillFileContent?:  string;
   /** "skillfun.json" | "skill.md" | "README.md" */
   fileType?:          string;
+  /** W0G price per invocation in wei (bigint as decimal string). e.g. "10000000000000000" = 0.01 W0G */
+  basePriceWei?:      string;
   meta?: {
     name?:         string;
     description?:  string;
@@ -131,6 +133,8 @@ export interface PrepareMintResponse {
   skillUri:        string;
   manifestOwner:   string;
   skillNFTAddress: string;
+  /** W0G ERC-20 contract address — needed for approve before invokeSkill */
+  w0gAddress:      string;
   storage:         { uploaded: boolean };
 }
 

@@ -15,10 +15,12 @@ async function main() {
   console.log(`Balance:   ${ethers.formatEther(balance)} 0G`);
   console.log("-".repeat(60));
 
-  const coldWallet  = process.env.COLD_WALLET_ADDRESS  || deployer.address;
+  const coldWallet   = process.env.COLD_WALLET_ADDRESS || deployer.address;
   const ownerAddress = process.env.OWNER_ADDRESS       || deployer.address;
+  const w0gAddress   = process.env.W0G_ADDRESS         || "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
   console.log(`Cold wallet:   ${coldWallet}`);
   console.log(`Owner address: ${ownerAddress}`);
+  console.log(`W0G address:   ${w0gAddress}`);
   console.log("-".repeat(60));
 
   // ------------------------------------------------------------------
@@ -43,7 +45,7 @@ async function main() {
   // 3. Deploy SkillNFT (ERC-7857 compliant)
   // ------------------------------------------------------------------
   const NFTFactory = await ethers.getContractFactory("SkillNFT");
-  const skillNFT = await NFTFactory.deploy(oracleAddress, verifierAddress, ownerAddress);
+  const skillNFT = await NFTFactory.deploy(oracleAddress, verifierAddress, ownerAddress, w0gAddress);
   await skillNFT.waitForDeployment();
   const skillNFTAddress = await skillNFT.getAddress();
   console.log(`✅ SkillNFT deployed:              ${skillNFTAddress}`);

@@ -105,7 +105,8 @@ export async function mintSkillOnChain(
   repoUrl: string,
   skillUri: string,
   rootHash: `0x${string}`,
-  to?: `0x${string}`
+  to?: `0x${string}`,
+  basePriceWei: bigint = 0n
 ): Promise<{ tokenId: number; txHash: string }> {
   return rpcCall("mintSkillOnChain", async () => {
     const walletClient = getWalletClient();
@@ -122,7 +123,7 @@ export async function mintSkillOnChain(
       address: addresses.SkillNFT as `0x${string}`,
       abi: SkillNFT_ABI,
       functionName: "registerSkill",
-      args: [repoUrl, skillUri, rootHashBytes32 as `0x${string}`, recipient],
+      args: [repoUrl, skillUri, rootHashBytes32 as `0x${string}`, recipient, basePriceWei],
     });
 
     logger.info({ txHash, repoUrl }, "registerSkill tx submitted, waiting for receipt…");

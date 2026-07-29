@@ -56,3 +56,8 @@ export const ZEROG_MAINNET = {
 
 // Keep legacy export name for backwards compatibility
 export const ZEROG_TESTNET = ZEROG_MAINNET;
+
+// ---------------------------------------------------------------------------
+// W0G — Wrapped 0G ERC-20 token address (0G Mainnet)
+// ---------------------------------------------------------------------------
+export const W0G_ADDRESS = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c" as const;

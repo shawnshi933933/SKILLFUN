@@ -38,8 +38,8 @@
       ]
     },
     "/home/runner/workspace/packages/contracts/contracts/SkillNFT.sol": {
-      "lastModificationDate": 1785227238279,
-      "contentHash": "b433dd65b7efb1768879f35d468955e7",
+      "lastModificationDate": 1785293219796,
+      "contentHash": "a53c5a12f7c7eb448b49f0811ee5584f",
       "sourceName": "contracts/SkillNFT.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -68,6 +68,7 @@
       "imports": [
         "@openzeppelin/contracts/token/ERC721/ERC721.sol",
         "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "@openzeppelin/contracts/access/Ownable.sol",
         "./interfaces/IERC7857.sol",
         "./interfaces/IERC7857DataVerifier.sol",
@@ -1029,6 +1030,42 @@
       ],
       "artifacts": [
         "SkillFunVerifierStub"
+      ]
+    },
+    "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+      "lastModificationDate": 1785220166067,
+      "contentHash": "9261adf6457863de3e9892f51317ec89",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.16"
+      ],
+      "artifacts": [
+        "IERC20"
       ]
     }
   }

@@ -163,11 +163,20 @@ export default function CreateSkill() {
     const tags         = form.tags.split(",").map((s) => s.trim()).filter(Boolean);
 
     try {
+      // Convert human-readable 0G price → W0G wei (bigint as string)
+      const basePriceWei = (() => {
+        const v = parseFloat(form.basePrice);
+        if (!v || v <= 0) return "0";
+        // parseEther expects a string in ether units
+        return (BigInt(Math.round(v * 1e18))).toString();
+      })();
+
       await mint({
         repoUrl:           form.repoUrl.trim(),
         ownerMode:         form.ownerMode,
         skillFileContent:  gh.rawContent ?? undefined,
         fileType:          gh.fileType   ?? undefined,
+        basePriceWei,
         meta: {
           name:         form.name.trim(),
           description:  form.description.trim(),

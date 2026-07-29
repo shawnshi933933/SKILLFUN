@@ -221,6 +221,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
     skillUri:         uploadResult.skillUri,
     manifestOwner:    manifestOwnerVal,
     skillNFTAddress:  SKILL_NFT_ADDRESS,
+    w0gAddress:       "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c",
     storage:          { uploaded: uploadResult.uploaded },
   });
 });

@@ -102,6 +102,7 @@ export interface SkillNFTInterface extends Interface {
       | "approve"
       | "authorizeUsage"
       | "balanceOf"
+      | "basePrice"
       | "claim"
       | "getApproved"
       | "iClone"
@@ -130,7 +131,7 @@ export interface SkillNFTInterface extends Interface {
       | "transferOwnership"
       | "updateDataHash"
       | "verifier"
-      | "withdraw"
+      | "w0g"
   ): FunctionFragment;
 
   getEvent(
@@ -161,6 +162,10 @@ export interface SkillNFTInterface extends Interface {
   encodeFunctionData(
     functionFragment: "balanceOf",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "basePrice",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "claim", values: [BigNumberish]): string;
   encodeFunctionData(
@@ -208,7 +213,7 @@ export interface SkillNFTInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "registerSkill",
-    values: [string, string, BytesLike, AddressLike]
+    values: [string, string, BytesLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -256,7 +261,7 @@ export interface SkillNFTInterface extends Interface {
     values: [BigNumberish, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "verifier", values?: undefined): string;
-  encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
+  encodeFunctionData(functionFragment: "w0g", values?: undefined): string;
 
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(
@@ -264,6 +269,7 @@ export interface SkillNFTInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "basePrice", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getApproved",
@@ -346,7 +352,7 @@ export interface SkillNFTInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "verifier", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "w0g", data: BytesLike): Result;
 }
 
 export namespace ApprovalEvent {
@@ -633,6 +639,8 @@ export interface SkillNFT extends BaseContract {
 
   balanceOf: TypedContractMethod<[owner: AddressLike], [bigint], "view">;
 
+  basePrice: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
+
   claim: TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
 
   getApproved: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
@@ -663,7 +671,11 @@ export interface SkillNFT extends BaseContract {
     "view"
   >;
 
-  invokeSkill: TypedContractMethod<[tokenId: BigNumberish], [void], "payable">;
+  invokeSkill: TypedContractMethod<
+    [tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
   isApprovedForAll: TypedContractMethod<
     [owner: AddressLike, operator: AddressLike],
@@ -694,7 +706,13 @@ export interface SkillNFT extends BaseContract {
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
   registerSkill: TypedContractMethod<
-    [repoUrl: string, skillURI: string, rootHash: BytesLike, to: AddressLike],
+    [
+      repoUrl: string,
+      skillURI: string,
+      rootHash: BytesLike,
+      to: AddressLike,
+      _basePrice: BigNumberish
+    ],
     [bigint],
     "nonpayable"
   >;
@@ -766,7 +784,7 @@ export interface SkillNFT extends BaseContract {
 
   verifier: TypedContractMethod<[], [string], "view">;
 
-  withdraw: TypedContractMethod<[], [void], "nonpayable">;
+  w0g: TypedContractMethod<[], [string], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -789,6 +807,9 @@ export interface SkillNFT extends BaseContract {
   getFunction(
     nameOrSignature: "balanceOf"
   ): TypedContractMethod<[owner: AddressLike], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "basePrice"
+  ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "claim"
   ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
@@ -826,7 +847,7 @@ export interface SkillNFT extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "invokeSkill"
-  ): TypedContractMethod<[tokenId: BigNumberish], [void], "payable">;
+  ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "isApprovedForAll"
   ): TypedContractMethod<
@@ -866,7 +887,13 @@ export interface SkillNFT extends BaseContract {
   getFunction(
     nameOrSignature: "registerSkill"
   ): TypedContractMethod<
-    [repoUrl: string, skillURI: string, rootHash: BytesLike, to: AddressLike],
+    [
+      repoUrl: string,
+      skillURI: string,
+      rootHash: BytesLike,
+      to: AddressLike,
+      _basePrice: BigNumberish
+    ],
     [bigint],
     "nonpayable"
   >;
@@ -939,8 +966,8 @@ export interface SkillNFT extends BaseContract {
     nameOrSignature: "verifier"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "withdraw"
-  ): TypedContractMethod<[], [void], "nonpayable">;
+    nameOrSignature: "w0g"
+  ): TypedContractMethod<[], [string], "view">;
 
   getEvent(
     key: "Approval"

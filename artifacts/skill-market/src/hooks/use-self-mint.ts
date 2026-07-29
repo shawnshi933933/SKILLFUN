@@ -17,7 +17,7 @@
 import { useCallback, useState } from "react";
 import { useWriteContract, useAccount } from "wagmi";
 import { waitForTransactionReceipt } from "@wagmi/core";
-import { parseEventLogs } from "viem";
+import { parseEventLogs, parseEther } from "viem";
 import { wagmiConfig } from "@/lib/wagmi";
 import { useEip712Sign } from "./use-eip712";
 import { skillsApi, type PrepareMintInput } from "@/lib/api";
@@ -30,10 +30,11 @@ const SKILL_NFT_ABI_FRAGMENT = [
     type: "function",
     stateMutability: "nonpayable",
     inputs: [
-      { name: "repoUrl",  type: "string"  },
-      { name: "skillURI", type: "string"  },
-      { name: "rootHash", type: "bytes32" },
-      { name: "to",       type: "address" },
+      { name: "repoUrl",    type: "string"  },
+      { name: "skillURI",   type: "string"  },
+      { name: "rootHash",   type: "bytes32" },
+      { name: "to",         type: "address" },
+      { name: "_basePrice", type: "uint256" },
     ],
     outputs: [{ name: "tokenId", type: "uint256" }],
   },
@@ -121,11 +122,22 @@ export function useSelfMint() {
           ? address
           : (prep.skillNFTAddress as `0x${string}`);
 
+      // Parse basePrice from input (decimal 0G units → W0G wei bigint)
+      const basePriceBigInt: bigint = (() => {
+        if (input.basePriceWei) return BigInt(input.basePriceWei);
+        // fallback: convert from human-readable 0G units in meta
+        const humanPrice = input.meta?.basePrice;
+        if (humanPrice && humanPrice > 0) {
+          return parseEther(String(humanPrice));
+        }
+        return 0n;
+      })();
+
       const txHash = await writeContractAsync({
         address: prep.skillNFTAddress as `0x${string}`,
         abi: SKILL_NFT_ABI_FRAGMENT,
         functionName: "registerSkill",
-        args: [prep.manifestOwner, prep.skillUri, rootHashBytes32, recipient],
+        args: [prep.manifestOwner, prep.skillUri, rootHashBytes32, recipient, basePriceBigInt],
       });
       setState((s) => ({ ...s, txHash, phase: "confirming" }));
 

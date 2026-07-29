@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IERC7857.sol";
@@ -24,14 +25,16 @@ import "./SkillFunOracle.sol";
 /// │                                                                 │
 /// │  SkillFun extensions (on top of ERC-7857)                      │
 /// │  • manifestOwner        → GitHub repo path, locked at mint      │
+/// │  • basePrice            → W0G price per invocation (set at mint)│
 /// │  • claim()              → Oracle-verified GitHub→wallet claim   │
-/// │  • invokeSkill()        → payable invocation (x402, Step 8)    │
+/// │  • invokeSkill()        → ERC-20 W0G payment, direct to owner  │
 /// └─────────────────────────────────────────────────────────────────┘
 ///
 /// POC notes:
 ///  - TransferValidityProof verification is handled by a stub verifier.
 ///    Swap verifier address for a real 0G Compute TEE verifier in Step 4.
-///  - invokeSkill() payment distribution is a stub; implemented in Step 8.
+///  - invokeSkill() pulls W0G from caller via transferFrom — caller must
+///    approve SkillNFT for at least basePrice[tokenId] before calling.
 ///  - iClone() mints a new token but does not duplicate 0G Storage data;
 ///    the caller must supply a fresh rootHash for the clone.
 contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
@@ -46,11 +49,18 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
     /// @notice The ERC-7857 data verifier (stub in POC; real TEE in Step 4).
     IERC7857DataVerifier public verifier;
 
+    /// @notice W0G ERC-20 token — used for skill invocation payments.
+    IERC20 public immutable w0g;
+
     uint256 private _nextTokenId;
 
     /// @notice tokenId → GitHub repo path (e.g. "alice/weather-skill").
     ///         Locked at mint. Used by backend to verify claim eligibility.
     mapping(uint256 => string) public manifestOwner;
+
+    /// @notice tokenId → invocation price in W0G wei. Set at mint, paid to
+    ///         current NFT owner on each invokeSkill() call.
+    mapping(uint256 => uint256) public basePrice;
 
     /// @notice ERC-7857: tokenId → array of intelligent data records.
     ///         Each record's dataHash is the current 0G Storage rootHash.
@@ -103,12 +113,14 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
     /// @param _oracle    Address of the deployed SkillFunOracle.
     /// @param _verifier  Address of the ERC-7857 data verifier (stub for POC).
     /// @param _owner     Platform deployer — receives Ownable ownership.
-    constructor(address _oracle, address _verifier, address _owner)
+    /// @param _w0g       Address of the W0G ERC-20 token (Wrapped 0G).
+    constructor(address _oracle, address _verifier, address _owner, address _w0g)
         ERC721("SkillFun Skill", "SKILL")
         Ownable(_owner)
     {
         oracle   = SkillFunOracle(_oracle);
         verifier = IERC7857DataVerifier(_verifier);
+        w0g      = IERC20(_w0g);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -117,24 +129,28 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
 
     /// @notice Register a skill — open to anyone.
     ///
-    /// @param repoUrl   GitHub repo path — becomes manifestOwner, locked forever.
-    /// @param skillURI  Metadata URI (points to manifest on 0G Storage).
-    /// @param rootHash  0G Storage root hash of the encrypted skill payload.
-    ///                  Stored as the first IntelligentData entry.
-    /// @param to        Recipient of the minted NFT.
-    ///                  • Pass your own address  → you own the iNFT immediately ("My Repo").
-    ///                  • Pass address(this)     → NFT held by contract until the real
-    ///                                             GitHub owner calls claim() ("Not My Repo").
-    /// @return tokenId  The minted token ID.
+    /// @param repoUrl    GitHub repo path — becomes manifestOwner, locked forever.
+    /// @param skillURI   Metadata URI (points to manifest on 0G Storage).
+    /// @param rootHash   0G Storage root hash of the encrypted skill payload.
+    ///                   Stored as the first IntelligentData entry.
+    /// @param to         Recipient of the minted NFT.
+    ///                   • Pass your own address  → you own the iNFT immediately ("My Repo").
+    ///                   • Pass address(this)     → NFT held by contract until the real
+    ///                                              GitHub owner calls claim() ("Not My Repo").
+    /// @param _basePrice W0G amount (in wei) agents must pay per invokeSkill() call.
+    ///                   Pass 0 for a free skill.
+    /// @return tokenId   The minted token ID.
     function registerSkill(
         string  calldata repoUrl,
         string  calldata skillURI,
         bytes32          rootHash,
-        address          to
+        address          to,
+        uint256          _basePrice
     ) external returns (uint256 tokenId) {
         require(to != address(0), "SkillNFT: to is zero address");
         tokenId = _nextTokenId++;
         manifestOwner[tokenId] = repoUrl;
+        basePrice[tokenId]     = _basePrice;
 
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, skillURI);
@@ -175,21 +191,25 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
     // SkillFun: Invoke (x402 stub)
     // ─────────────────────────────────────────────────────────────────
 
-    /// @notice Invoke a skill. Payable — value reserved for x402 distribution (Step 8).
+    /// @notice Invoke a skill. Pulls W0G from caller directly to the current
+    ///         NFT owner. Caller must have approved this contract for at least
+    ///         basePrice[tokenId] W0G before calling.
     ///         Owner or any address authorized via authorizeUsage() may call this.
     /// @param tokenId  The skill NFT to invoke.
-    function invokeSkill(uint256 tokenId) external payable {
+    function invokeSkill(uint256 tokenId) external {
         address owner_ = ownerOf(tokenId); // reverts if not minted
         if (owner_ != msg.sender && !_authorized[tokenId][msg.sender]) {
             revert NotOwnerOrAuthorized();
         }
-        emit SkillInvoked(tokenId, msg.sender, msg.value);
-    }
-
-    /// @notice Withdraw accumulated invokeSkill payments. Stub until Step 8.
-    function withdraw() external onlyOwner {
-        (bool ok, ) = owner().call{value: address(this).balance}("");
-        require(ok, "Transfer failed");
+        uint256 price = basePrice[tokenId];
+        if (price > 0) {
+            // Transfer W0G from caller → NFT owner (direct, no platform cut in POC)
+            require(
+                w0g.transferFrom(msg.sender, owner_, price),
+                "SkillNFT: W0G transfer failed"
+            );
+        }
+        emit SkillInvoked(tokenId, msg.sender, price);
     }
 
     // ─────────────────────────────────────────────────────────────────
