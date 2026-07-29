@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bot, Lock, Shield, Clock, ArrowLeft, Hash,
   ExternalLink, Layers, Loader2, AlertCircle, CheckCircle2,
+  Github, Database, FileCode2,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -138,7 +139,7 @@ export default function SkillDetail() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Base Price", value: basePrice > 0 ? `${basePrice} 0G` : "—" },
+                { label: "Base Price", value: basePrice > 0 ? `${basePrice} W0G` : "—" },
                 { label: "Invocations", value: invocations.toLocaleString() },
                 { label: "Creator Share", value: `${creatorShare}%` },
                 { label: "Royalty", value: `${royaltyRate}%` },
@@ -206,10 +207,53 @@ export default function SkillDetail() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="meta" className="mt-4">
-                <pre className="bg-card border border-white/10 rounded-xl p-4 text-xs font-mono text-muted-foreground overflow-auto max-h-60">
-                  {JSON.stringify({ skillId: skill.skillId, repoUrl: skill.repoUrl, rootHash: skill.rootHash, mintStatus: skill.mintStatus, reviewStatus: skill.reviewStatus, ...meta }, null, 2)}
-                </pre>
+              <TabsContent value="meta" className="mt-4 space-y-3 text-xs">
+                {/* GitHub */}
+                <div className="bg-card border border-white/10 rounded-xl px-4 py-3 space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1">
+                    <Github className="w-3.5 h-3.5" /> GitHub
+                  </div>
+                  <LinkRow label="Repository" href={`https://github.com/${skill.repoUrl}`} text={skill.repoUrl} />
+                  <CopyRow  label="Manifest Owner" value={skill.manifestOwner} mono />
+                </div>
+
+                {/* 0G Storage */}
+                <div className="bg-card border border-white/10 rounded-xl px-4 py-3 space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1">
+                    <Database className="w-3.5 h-3.5" /> 0G Storage
+                  </div>
+                  {skill.skillUri
+                    ? <LinkRow label="Skill URI" href={skill.skillUri} text={skill.skillUri.slice(0, 52) + (skill.skillUri.length > 52 ? "…" : "")} />
+                    : <div className="text-muted-foreground italic">Not yet uploaded to 0G Storage</div>
+                  }
+                  {skill.rootHash && <CopyRow label="Root Hash" value={skill.rootHash} mono />}
+                </div>
+
+                {/* Capabilities & Tags */}
+                {(meta.capabilities || meta.tags) && (
+                  <div className="bg-card border border-white/10 rounded-xl px-4 py-3 space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1">
+                      <FileCode2 className="w-3.5 h-3.5" /> Skill Details
+                    </div>
+                    {meta.capabilities && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {(meta.capabilities as string[]).map((c) => (
+                          <span key={c} className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary font-mono">{c}</span>
+                        ))}
+                      </div>
+                    )}
+                    {meta.tags && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {(meta.tags as string[]).map((t) => (
+                          <span key={t} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-muted-foreground">{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    {meta.instructions && (
+                      <p className="text-muted-foreground pt-2 border-t border-white/10 leading-relaxed">{meta.instructions as string}</p>
+                    )}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -222,7 +266,7 @@ export default function SkillDetail() {
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Base Price</div>
                   <div className="text-2xl font-bold font-mono">
-                    {basePrice > 0 ? `${basePrice} 0G` : "—"}
+                    {basePrice > 0 ? `${basePrice} W0G` : "—"}
                   </div>
                 </div>
                 <Badge className={`${isMinted ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-white/5 text-muted-foreground border-white/10"} border`}>
@@ -285,6 +329,32 @@ export default function SkillDetail() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LinkRow({ label, href, text }: { label: string; href: string; text: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <a href={href} target="_blank" rel="noreferrer"
+         className="text-primary hover:underline font-mono break-all flex items-center gap-1 text-right">
+        {text}<ExternalLink className="w-3 h-3 shrink-0" />
+      </a>
+    </div>
+  );
+}
+
+function CopyRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  const { toast } = useToast();
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <button
+        className={`text-right break-all hover:text-foreground transition-colors ${mono ? "font-mono" : ""}`}
+        onClick={() => { navigator.clipboard.writeText(value); toast({ title: "Copied" }); }}
+        title="Click to copy"
+      >{value}</button>
     </div>
   );
 }
