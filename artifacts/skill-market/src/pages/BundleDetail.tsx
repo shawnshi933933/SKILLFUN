@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Bot, Layers, Coins, Shield, Lock,
   ExternalLink, Zap, Loader2, AlertCircle, Package,
+  Copy, CheckCircle2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,12 +23,27 @@ function getMeta<T>(obj: DbBundle | DbSkill, key: string, fallback: T): T {
   return ((obj.meta as Record<string, unknown>)[key] as T) ?? fallback;
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button onClick={copy} className="ml-2 text-muted-foreground hover:text-foreground transition-colors">
+      {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
+
 export default function BundleDetail() {
   const [, params] = useRoute("/app/bundle/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [staking, setStaking]       = useState(false);
-  const [stakeAmount, setStakeAmount] = useState("500");
+  const [staking, setStaking]         = useState(false);
+  const [stakeAmount, setStakeAmount]  = useState("500");
+  const [snippetOpen, setSnippetOpen]  = useState(false);
 
   const { data, isLoading, error } = useBundle(params?.id);
 
@@ -61,6 +77,59 @@ export default function BundleDetail() {
 
   const totalBasePrice = skills.reduce((s, k) => s + getMeta<number>(k, "basePrice", 0), 0);
   const bundleTotal    = totalBasePrice * (1 + curatorMarkup / 100);
+
+  // MCP endpoint — derived from the bundle subdomain
+  const devDomain  = (import.meta.env.DEV_DOMAIN as string | undefined) ?? window.location.host;
+  const mcpBaseUrl = `https://${devDomain}/mcp/${bundle.bundleId}`;
+  const mcpUrl     = `${mcpBaseUrl}/mcp`;
+  const toolsUrl   = `${mcpBaseUrl}/tools`;
+
+  // x402 flow code snippet
+  const snippet = `// 1. Initialize — get bundle info + payment details
+const init = await fetch("${mcpUrl}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} })
+}).then(r => r.json());
+// init.result._skillfun.paymentInfo has the settlement details
+
+// 2. List tools (no payment required)
+const tools = await fetch("${toolsUrl}").then(r => r.json());
+
+// 3. Call a tool — expect 402 first
+const attempt = await fetch("${mcpUrl}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: tools.tools[0]?.name } })
+});
+
+if (attempt.status === 402) {
+  const { accepts, proveEndpoint } = await attempt.json();
+  const { tokenId, amount } = accepts[0];
+
+  // 4. Pay on-chain: w0g.approve() + skillNFT.invokeSkill(tokenId)
+  const txHash = await wallet.sendInvokeSkillTx(tokenId, amount);
+
+  // 5. Get proof token
+  const { proof } = await fetch("/api/mcp/payment/prove", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ txHash, tokenId, agentWallet: wallet.address })
+  }).then(r => r.json());
+
+  // 6. Retry with proof — receive decrypted skill content
+  const result = await fetch("${mcpUrl}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-402-Payment-Proof": proof,
+      "X-402-Agent-Wallet": wallet.address,   // required: binds proof to paying wallet
+    },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: tools.tools[0]?.name } })
+  }).then(r => r.json());
+
+  console.log(result.result.content[0].text); // decrypted skill content
+}`;
 
   const handleStake = () => {
     setStaking(true);
@@ -100,7 +169,7 @@ export default function BundleDetail() {
                   </Badge>
                 )}
                 <Badge variant="outline" className="border-primary/30 text-primary">
-                  ERC-8183 MCP
+                  MCP + x402
                 </Badge>
                 <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -128,6 +197,50 @@ export default function BundleDetail() {
               )}
             </div>
 
+            {/* MCP Endpoint */}
+            <div className="bg-card border border-accent/20 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Bot className="w-4 h-4 text-accent" />
+                MCP Endpoint
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 font-mono text-xs bg-background border border-white/10 rounded-lg px-3 py-2 text-muted-foreground truncate">
+                    {mcpUrl}
+                  </div>
+                  <CopyButton text={mcpUrl} />
+                  <Badge variant="outline" className="border-primary/30 text-primary text-[10px] shrink-0">JSON-RPC 2.0</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 font-mono text-xs bg-background border border-white/10 rounded-lg px-3 py-2 text-muted-foreground truncate">
+                    {toolsUrl}
+                  </div>
+                  <CopyButton text={toolsUrl} />
+                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-[10px] shrink-0">GET · free</Badge>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Payment: <span className="text-accent font-mono">W0G</span> via{" "}
+                <span className="font-mono">invokeSkill(tokenId)</span> → prove at{" "}
+                <span className="font-mono">/api/mcp/payment/prove</span>
+              </div>
+              <button
+                onClick={() => setSnippetOpen(o => !o)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {snippetOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                {snippetOpen ? "Hide" : "Show"} agent code snippet
+              </button>
+              {snippetOpen && (
+                <div className="relative">
+                  <pre className="bg-background border border-white/10 rounded-xl p-4 text-[11px] text-muted-foreground overflow-x-auto font-mono leading-relaxed max-h-80">
+                    {snippet}
+                  </pre>
+                  <CopyButton text={snippet} />
+                </div>
+              )}
+            </div>
+
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
@@ -147,6 +260,7 @@ export default function BundleDetail() {
             <Tabs defaultValue="skills">
               <TabsList className="bg-card border border-white/10">
                 <TabsTrigger value="skills">Skills ({skills.length})</TabsTrigger>
+                {(bundle as any).workflow && <TabsTrigger value="workflow">Workflow</TabsTrigger>}
                 <TabsTrigger value="activity">Activity</TabsTrigger>
               </TabsList>
 
@@ -173,7 +287,7 @@ export default function BundleDetail() {
                             </div>
                             <div className="text-right shrink-0">
                               {basePrice > 0 && (
-                                <div className="text-xs font-mono text-primary">{basePrice} 0G</div>
+                                <div className="text-xs font-mono text-primary">{basePrice} W0G</div>
                               )}
                               <Badge className="text-[10px] border mt-0.5" variant="outline">
                                 {skill.mintStatus}
@@ -188,6 +302,20 @@ export default function BundleDetail() {
                 )}
               </TabsContent>
 
+              {(bundle as any).workflow && (
+                <TabsContent value="workflow" className="mt-4">
+                  <div className="bg-card border border-white/10 rounded-xl p-5">
+                    <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+                      <Bot className="w-3.5 h-3.5" />
+                      Orchestration playbook — shown to agents on MCP initialize
+                    </div>
+                    <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed font-mono">
+                      {(bundle as any).workflow}
+                    </pre>
+                  </div>
+                </TabsContent>
+              )}
+
               <TabsContent value="activity" className="mt-4">
                 <div className="space-y-2">
                   {mockAgentActivity.map((a, i) => (
@@ -199,7 +327,7 @@ export default function BundleDetail() {
                     </div>
                   ))}
                   <p className="text-xs text-muted-foreground text-center pt-2">
-                    Live x402 activity will appear here after MCP integration (Step 8)
+                    Live x402 agent activity will appear here
                   </p>
                 </div>
               </TabsContent>
@@ -208,9 +336,9 @@ export default function BundleDetail() {
             {/* Security */}
             <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
               <div className="text-xs text-muted-foreground">Bundle Security</div>
-              <div className="flex items-center gap-2 text-sm"><Lock className="w-4 h-4 text-primary" /> All Skill hashes locked</div>
-              <div className="flex items-center gap-2 text-sm"><Shield className="w-4 h-4 text-emerald-400" /> Staker slashing enabled</div>
-              <div className="flex items-center gap-2 text-sm"><Bot className="w-4 h-4 text-accent" /> A2A x402 payments active</div>
+              <div className="flex items-center gap-2 text-sm"><Lock className="w-4 h-4 text-primary" /> Skill content hashes locked on-chain (ERC-7857)</div>
+              <div className="flex items-center gap-2 text-sm"><Shield className="w-4 h-4 text-emerald-400" /> Content version-gated proofs — creator update invalidates agent cache</div>
+              <div className="flex items-center gap-2 text-sm"><Bot className="w-4 h-4 text-accent" /> x402 W0G payment — autonomous agent-to-agent commerce</div>
             </div>
           </div>
 
@@ -221,7 +349,7 @@ export default function BundleDetail() {
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Bundle Price</div>
                   <div className="text-2xl font-bold font-mono">
-                    {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} 0G` : "—"}
+                    {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} W0G` : "—"}
                   </div>
                 </div>
                 {apy > 0 && (

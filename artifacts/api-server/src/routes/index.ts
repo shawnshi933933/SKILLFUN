@@ -7,6 +7,7 @@ import bundlesRouter from "./bundles.js";
 import claimsRouter  from "./claims.js";
 import adminRouter   from "./admin.js";
 import githubRouter  from "./github.js";
+import mcpRouter     from "./mcp.js";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(bundlesRouter);
 router.use(claimsRouter);
 router.use(adminRouter);
 router.use(githubRouter);
+router.use(mcpRouter);
 
 export default router;

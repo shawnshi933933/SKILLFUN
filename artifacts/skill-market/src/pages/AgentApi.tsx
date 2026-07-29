@@ -3,113 +3,192 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Bot, CheckCircle, Code2, Zap, Layers, Shield, Lock, Coins } from "lucide-react";
-
-const SKILL_ENDPOINTS = [
-  { method: "GET", path: "/api/skills", desc: "List all Skills with metadata and MCP tool names", params: "?category=Trading&encrypted=true&limit=20" },
-  { method: "GET", path: "/api/skills/:id", desc: "Get full Skill details including content hash, versions, base price, and royalty splits", params: "" },
-  { method: "GET", path: "/mcp/:tool_name", desc: "ERC-8183 MCP endpoint — returns 402 Payment Required with x402 payment details", params: "" },
-  { method: "GET", path: "/api/bundles", desc: "List all curated Bundles with single-endpoint MCP URLs and APY data", params: "?minApy=5&limit=20" },
-  { method: "GET", path: "/api/bundles/:id", desc: "Get Bundle details including all constituent Skills, curator markup, and staker pool", params: "" },
-  { method: "GET", path: "/mcp/bundle/:id", desc: "ERC-8183 MCP Bundle endpoint — single call executes all skills, one x402 payment", params: "" },
-];
-
-const TS_EXAMPLE = `import { SkillFunAgent } from "@skillfun/agent-sdk";
-
-// Agent identity via ERC-8004
-const agent = new SkillFunAgent({
-  identity: process.env.ERC8004_IDENTITY,
-  network: "0g-chain",
-});
-
-// 1. Discover Skills or Bundles
-const bundles = await agent.bundles.list({
-  minApy: 5,
-  limit: 10,
-});
-
-// 2. Call a Bundle's single MCP endpoint
-//    Agent receives HTTP 402, pays autonomously via x402
-const result = await agent.mcp.invoke(bundles[0].mcpUrl, {
-  // x402 payment happens automatically — no human approval
-  // Fee splits on-chain: 10% platform, Creator 10%, Owner 90% of base,
-  // Curator 50% of markup, Staker Pool 50% of markup
-});
-
-// result.output contains the aggregated response from all skills
-console.log(result.output);
-
-// Or invoke a single Skill directly:
-const skills = await agent.skills.discover({
-  category: "Trading",
-  maxBasePrice: "0.1 ETH",
-});
-const skillResult = await agent.mcp.invoke(skills[0].mcpUrl);`;
-
-const PY_EXAMPLE = `from skillfun import SkillFunAgent
-import os
-
-# ERC-8004 agent identity
-agent = SkillFunAgent(
-    identity_key=os.environ["ERC8004_KEY"],
-    network="0g-chain",
-)
-
-# Discover and invoke a Bundle (single MCP endpoint)
-bundles = agent.bundles.list(min_apy=5, limit=5)
-best_bundle = bundles[0]
-
-# Single call, one x402 payment, all skills execute
-# Platform auto-splits: Creator 10%, Owner 90% of base,
-# Curator 50% of markup, Staker Pool 50% of markup
-result = agent.mcp.invoke(
-    url=best_bundle.mcp_url,
-    params={"query": "analyze ETH whale movements"},
-)
-print(result.output)
-
-# Or discover and invoke individual Skills
-skill = agent.skills.find(
-    category="Analysis",
-    max_base_price=0.05
-)
-result = agent.mcp.invoke(skill.mcp_url)`;
+import { Bot, CheckCircle, Code2, Zap, Layers, Shield, Coins } from "lucide-react";
+import { useBundles } from "@/hooks/use-skills";
 
 const FLOW_STEPS = [
-  { step: "01", title: "Discover", desc: "Agent queries GET /api/bundles or /api/skills to find relevant capabilities. Bundles expose all constituent skills via a single MCP URL — minimizing invocation overhead.", color: "text-primary bg-primary/10 border-primary/30" },
-  { step: "02", title: "GET MCP Endpoint", desc: "Agent sends GET to the ERC-8183 MCP endpoint (e.g. /mcp/bundle/:id). Server responds with HTTP 402 Payment Required plus the x402 payment descriptor — amount, recipient, and method.", color: "text-accent bg-accent/10 border-accent/30" },
-  { step: "03", title: "Pay via x402", desc: "Agent sends USDC payment via the x402 protocol — fully autonomous, no human sign-off. Agent identity authenticated via ERC-8004. Payment is on-chain and atomic.", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
-  { step: "04", title: "Fee Split On-Chain", desc: "Platform takes 10% off the top. Base Price: Creator 10%, Owner 90%. Curator Markup: Curator 50%, Staker Pool 50%. All splits execute atomically in one transaction.", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" },
-  { step: "05", title: "Execute + ZK Proof", desc: "Skill executes — optionally inside a TEE (ERC-8220) for verifiable computation. Execution proof stored as a blob (EIP-4844). Agent receives the result and a signed receipt.", color: "text-purple-400 bg-purple-500/10 border-purple-500/30" },
+  {
+    step: "01", title: "Discover",
+    desc: "Agent queries GET /api/bundles to find relevant Bundles. Each Bundle exposes all its Skills via a single MCP endpoint — minimizing discovery overhead.",
+    color: "text-primary bg-primary/10 border-primary/30",
+  },
+  {
+    step: "02", title: "Initialize",
+    desc: "Agent sends initialize to POST /mcp/{bundleId}/mcp. Server responds with bundle info, workflow playbook, and x402 payment details (W0G contract, invokeSkill method, proveEndpoint).",
+    color: "text-accent bg-accent/10 border-accent/30",
+  },
+  {
+    step: "03", title: "tools/list (free)",
+    desc: "Agent calls tools/list to enumerate all Skills in the Bundle. No payment required. Returns tool names in {bundleSlug}:{tokenId} format with input schemas.",
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+  },
+  {
+    step: "04", title: "tools/call → HTTP 402",
+    desc: "Agent calls tools/call. Server returns HTTP 402 with settlement details: W0G token address, SkillNFT contract, invokeSkill(tokenId), and the /api/mcp/payment/prove endpoint.",
+    color: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+  },
+  {
+    step: "05", title: "Pay on-chain",
+    desc: "Agent calls w0g.approve(skillNFT, amount) then skillNFT.invokeSkill(tokenId) on 0G Chain (chainId 16661). W0G transfers directly to the Skill NFT owner.",
+    color: "text-orange-400 bg-orange-500/10 border-orange-500/30",
+  },
+  {
+    step: "06", title: "Get proof token",
+    desc: "Agent POSTs { txHash, tokenId, agentWallet } to /api/mcp/payment/prove. Server verifies the on-chain tx, issues a long-lived proof token bound to (skillId, contentVersion).",
+    color: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+  },
+  {
+    step: "07", title: "Retry with proof",
+    desc: "Agent retries tools/call with X-402-Payment-Proof: <token> header. Server validates proof, fetches + decrypts content from 0G Storage, returns skill content as MCP TextContent.",
+    color: "text-primary bg-primary/10 border-primary/30",
+  },
+  {
+    step: "08", title: "Run locally",
+    desc: "Agent receives decrypted Skill content (instructions/config) and executes it locally. Proof is valid indefinitely — no repeat payment until creator updates the Skill content (version bump).",
+    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+  },
 ];
+
+const TS_EXAMPLE = `import { createPublicClient, createWalletClient, http, parseAbi } from "viem";
+
+const SKILL_NFT = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF";
+const W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
+const MCP_BASE  = "https://<your-domain>/mcp/<bundleId>";
+
+// 1. Initialize — get bundle workflow + payment info
+const init = await fetch(\`\${MCP_BASE}/mcp\`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }),
+}).then(r => r.json());
+console.log(init.result._skillfun.workflow); // orchestration playbook
+
+// 2. List tools (free)
+const { tools } = await fetch(\`\${MCP_BASE}/tools\`).then(r => r.json());
+// tools[0].name → "defi-alpha:3"  tools[0]._skillfun.tokenId → 3
+
+// 3. Call a tool — expect 402
+const toolCall = { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: tools[0].name } };
+const attempt  = await fetch(\`\${MCP_BASE}/mcp\`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(toolCall),
+});
+
+if (attempt.status === 402) {
+  const { accepts, proveEndpoint } = await attempt.json();
+  const { tokenId, amount } = accepts[0];
+
+  // 4. Pay on-chain: approve W0G + invokeSkill
+  const tokenIdBig = BigInt(tokenId);
+  await walletClient.writeContract({
+    address: W0G, abi: parseAbi(["function approve(address,uint256)"]),
+    functionName: "approve", args: [SKILL_NFT, BigInt(amount)],
+  });
+  const txHash = await walletClient.writeContract({
+    address: SKILL_NFT, abi: parseAbi(["function invokeSkill(uint256)"]),
+    functionName: "invokeSkill", args: [tokenIdBig],
+  });
+
+  // 5. Get proof token
+  const { proof } = await fetch("/api/mcp/payment/prove", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ txHash, tokenId, agentWallet: walletClient.account.address }),
+  }).then(r => r.json());
+
+  // 6. Retry with proof — receive decrypted Skill content
+  const result = await fetch(\`\${MCP_BASE}/mcp\`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-402-Payment-Proof": proof,
+      "X-402-Agent-Wallet": walletClient.account.address, // required: must match paying wallet
+    },
+    body: JSON.stringify(toolCall),
+  }).then(r => r.json());
+
+  // result.result.content[0].text = decrypted Skill content (run locally)
+  // Proof is cached — no payment needed again until creator updates the Skill
+  console.log(result.result.content[0].text);
+}`;
+
+const PY_EXAMPLE = `import requests
+from web3 import Web3
+
+SKILL_NFT = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF"
+W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c"
+MCP_BASE  = "https://<your-domain>/mcp/<bundleId>"
+
+w3 = Web3(Web3.HTTPProvider("https://evmrpc.0g.ai"))
+
+# 1. Initialize
+init = requests.post(f"{MCP_BASE}/mcp",
+  json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}).json()
+print(init["result"]["_skillfun"]["workflow"])
+
+# 2. List tools (free)
+tools = requests.get(f"{MCP_BASE}/tools").json()["tools"]
+tool_name = tools[0]["name"]   # e.g. "defi-alpha:3"
+token_id  = tools[0]["_skillfun"]["tokenId"]
+
+# 3. Call tool — expect 402
+tool_call = {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": tool_name}}
+resp = requests.post(f"{MCP_BASE}/mcp", json=tool_call)
+
+if resp.status_code == 402:
+    payment = resp.json()
+    amount  = int(payment["accepts"][0]["amount"])
+
+    # 4. Pay on-chain
+    w0g_contract   = w3.eth.contract(address=W0G, abi=ERC20_ABI)
+    skill_contract = w3.eth.contract(address=SKILL_NFT, abi=SKILL_NFT_ABI)
+    w0g_contract.functions.approve(SKILL_NFT, amount).transact({"from": agent_wallet})
+    tx_hash = skill_contract.functions.invokeSkill(token_id).transact({"from": agent_wallet})
+
+    # 5. Get proof
+    proof_resp = requests.post("/api/mcp/payment/prove",
+        json={"txHash": tx_hash.hex(), "tokenId": token_id, "agentWallet": agent_wallet}).json()
+    proof = proof_resp["proof"]
+
+    # 6. Retry with proof
+    result = requests.post(f"{MCP_BASE}/mcp", json=tool_call,
+        headers={"X-402-Payment-Proof": proof}).json()
+    print(result["result"]["content"][0]["text"])
+    # Proof persists — no payment until creator updates Skill content`;
 
 export default function AgentApi() {
   const [activeTab, setActiveTab] = useState<"ts" | "py">("ts");
-  const [simTarget, setSimTarget] = useState("bundle-1");
-  const [simType, setSimType] = useState<"skill" | "bundle">("bundle");
-  const [simState, setSimState] = useState<"idle" | "running" | "done">("idle");
-  const [simLog, setSimLog] = useState<string[]>([]);
+  const [simState, setSimState]   = useState<"idle" | "running" | "done">("idle");
+  const [simLog, setSimLog]       = useState<string[]>([]);
+  const [simBundleId, setSimBundleId] = useState("bd_example");
+
+  const { data: bundlesData } = useBundles();
+  const bundles = bundlesData?.bundles ?? [];
 
   const simulate = async () => {
     setSimState("running");
     setSimLog([]);
-    const path = simType === "bundle" ? `/mcp/bundle/${simTarget}` : `/mcp/${simTarget}`;
-    const price = simType === "bundle" ? "0.115" : "0.05";
+    const mcpUrl = `/mcp/${simBundleId}/mcp`;
     const steps = [
-      `→ GET ${path}`,
+      `→ POST ${mcpUrl}  { method: "initialize" }`,
+      `← 200 OK — bundle info + workflow + payment details`,
+      `   _skillfun.paymentInfo.method: "invokeSkill"`,
+      `→ GET /mcp/${simBundleId}/tools`,
+      `← 200 OK — [{ name: "defi-alpha:3", _skillfun.tokenId: 3 }]`,
+      `→ POST ${mcpUrl}  { method: "tools/call", params: { name: "defi-alpha:3" } }`,
       `← HTTP 402 Payment Required`,
-      `   { amount: "${price} ETH", token: "USDC", payTo: "0x742d...eEe", method: "x402" }`,
-      `→ x402-Payment: token=USDC,amount=${price},sig=0xa1b2...c3d4`,
-      `← HTTP 200 OK — Payment verified`,
-      `   Platform fee: ${(parseFloat(price) * 0.1).toFixed(4)} ETH (10%)`,
-      simType === "bundle"
-        ? `   Creator 10% + Owner 90% per skill; Curator 50% + Staker Pool 50% of markup`
-        : `   Creator: ${(parseFloat(price) * 0.1).toFixed(4)} ETH · Owner: ${(parseFloat(price) * 0.9 * 0.9).toFixed(4)} ETH`,
-      `→ Executing Skill(s) — ZK proof via ERC-8220`,
-      `✓ Done. Result returned. Signed receipt issued.`,
+      `   accepts[0]: { currency: "W0G", method: "invokeSkill", tokenId: 3 }`,
+      `→ w0g.approve(skillNFT, amount)  [on-chain 0G Mainnet]`,
+      `→ skillNFT.invokeSkill(3)  → txHash: 0xa1b2…c3d4`,
+      `→ POST /api/mcp/payment/prove  { txHash, tokenId: 3, agentWallet }`,
+      `← 201 { proof: "f8e7d6…", skillId: "sk_xxx", contentVersion: 1 }`,
+      `→ POST ${mcpUrl}  { method: "tools/call" }  X-402-Payment-Proof: f8e7d6…`,
+      `← 200 OK — content: [{ type: "text", text: "<decrypted skill content>" }]`,
+      `✓ Skill content received. Agent runs locally. Proof cached (valid until content update).`,
     ];
     for (const s of steps) {
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
       setSimLog((l) => [...l, s]);
     }
     setSimState("done");
@@ -125,22 +204,22 @@ export default function AgentApi() {
           </div>
           <div>
             <h1 className="text-3xl font-bold">Agent API</h1>
-            <p className="text-muted-foreground text-sm">Autonomous Skill and Bundle discovery for AI Agents via ERC-8183 MCP + x402</p>
+            <p className="text-muted-foreground text-sm">MCP JSON-RPC 2.0 + x402 W0G autonomous payments on 0G Chain</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-4 mb-12">
-          <Badge variant="outline" className="border-accent/30 text-accent">ERC-8004 Agent Identity</Badge>
-          <Badge variant="outline" className="border-primary/30 text-primary">ERC-8183 MCP Endpoints</Badge>
-          <Badge variant="outline" className="border-emerald-500/30 text-emerald-400">x402 Autonomous Payments</Badge>
-          <Badge variant="outline" className="border-purple-500/30 text-purple-400">ERC-8220 ZK Execution</Badge>
+          <Badge variant="outline" className="border-accent/30 text-accent">MCP JSON-RPC 2.0</Badge>
+          <Badge variant="outline" className="border-primary/30 text-primary">x402 W0G Payment</Badge>
+          <Badge variant="outline" className="border-emerald-500/30 text-emerald-400">0G Chain (chainId 16661)</Badge>
+          <Badge variant="outline" className="border-purple-500/30 text-purple-400">ERC-7857 iNFT</Badge>
         </div>
 
-        {/* Why MCP + x402 */}
+        {/* Value props */}
         <div className="grid md:grid-cols-3 gap-5 mb-10">
           {[
-            { icon: <Layers className="w-5 h-5 text-accent" />, title: "Single MCP URL per Bundle", desc: "An agent calls one ERC-8183 endpoint and gets access to all constituent Skills. One HTTP call, one x402 payment, all capabilities." },
-            { icon: <Coins className="w-5 h-5 text-emerald-400" />, title: "Autonomous x402 Payments", desc: "No human approval, no pre-authorization. Agent gets 402, sends USDC, fee splits atomically on-chain. Creator 10%, Owner 90%, Curator 50% markup, Staker Pool 50% markup." },
-            { icon: <Shield className="w-5 h-5 text-primary" />, title: "Verifiable Execution", desc: "Skill content hash locked. ZK proof of execution via ERC-8220. Agent can verify what code ran before trusting the result." },
+            { icon: <Layers className="w-5 h-5 text-accent" />, title: "One endpoint per Bundle", desc: "POST /mcp/{bundleId}/mcp exposes all Skills in the Bundle via MCP tools/list + tools/call. Agents discover, initialize, and pay in one flow." },
+            { icon: <Coins className="w-5 h-5 text-emerald-400" />, title: "Version-gated proofs", desc: "Pay once per Skill version. Proof token is valid until the creator updates the Skill content. Creator update = contentVersion bump = agents repay. No expiry timers." },
+            { icon: <Shield className="w-5 h-5 text-primary" />, title: "Creator IP protected", desc: "Skill content (system prompt / workflow config) stays encrypted on 0G Storage. Agents receive decrypted content only after on-chain invokeSkill payment is verified." },
           ].map((c) => (
             <div key={c.title} className="bg-card border border-white/10 rounded-xl p-5">
               <div className="mb-3">{c.icon}</div>
@@ -152,7 +231,7 @@ export default function AgentApi() {
 
         {/* Flow */}
         <div className="bg-card border border-white/10 rounded-2xl p-8 mb-8">
-          <h2 className="font-semibold text-lg mb-6">Autonomous Invocation Flow</h2>
+          <h2 className="font-semibold text-lg mb-6">x402 Invocation Flow</h2>
           <div className="space-y-3">
             {FLOW_STEPS.map((step, i) => (
               <div key={step.step} className="flex items-start gap-4">
@@ -171,22 +250,27 @@ export default function AgentApi() {
           </div>
         </div>
 
-        {/* Endpoints */}
+        {/* API Endpoints */}
         <div className="bg-card border border-white/10 rounded-2xl p-8 mb-8">
-          <h2 className="font-semibold text-lg mb-5">API Endpoints</h2>
+          <h2 className="font-semibold text-lg mb-5">Endpoints</h2>
           <div className="space-y-2">
-            {SKILL_ENDPOINTS.map((ep) => (
-              <div key={ep.path} className="flex items-start gap-4 p-4 bg-background rounded-xl border border-white/10" data-testid={`endpoint-${ep.path.replace(/\//g, "-")}`}>
+            {[
+              { method: "POST", path: "/mcp/{bundleId}/mcp", desc: "MCP JSON-RPC 2.0 — initialize, tools/list, tools/call, resources/list, resources/read", badge: "JSON-RPC" },
+              { method: "GET",  path: "/mcp/{bundleId}/tools", desc: "Shortcut: returns tools list for the Bundle (no auth)", badge: "free" },
+              { method: "POST", path: "/api/mcp/payment/prove", desc: "Verify on-chain invokeSkill tx → issue proof token", badge: "x402" },
+              { method: "GET",  path: "/api/bundles", desc: "List Bundles with MCP endpoint URLs", badge: "" },
+              { method: "GET",  path: "/api/bundles/{id}", desc: "Bundle details + skill list + workflow playbook", badge: "" },
+              { method: "GET",  path: "/api/skills", desc: "List Skills with contentVersion and rootHash", badge: "" },
+            ].map((ep) => (
+              <div key={ep.path} className="flex items-start gap-4 p-4 bg-background rounded-xl border border-white/10">
                 <Badge variant="outline" className={`shrink-0 font-mono text-xs ${ep.method === "GET" ? "border-emerald-500/30 text-emerald-400" : "border-primary/30 text-primary"}`}>
                   {ep.method}
                 </Badge>
                 <div className="flex-1">
-                  <div className="font-mono text-sm mb-0.5">
-                    {ep.path}
-                    {ep.params && <span className="text-muted-foreground text-xs">{ep.params}</span>}
-                  </div>
+                  <div className="font-mono text-sm mb-0.5">{ep.path}</div>
                   <div className="text-xs text-muted-foreground">{ep.desc}</div>
                 </div>
+                {ep.badge && <Badge variant="outline" className="text-[10px] border-white/10 text-muted-foreground shrink-0">{ep.badge}</Badge>}
               </div>
             ))}
           </div>
@@ -213,17 +297,18 @@ export default function AgentApi() {
         {/* Simulator */}
         <div className="bg-card border border-white/10 rounded-2xl p-8">
           <h2 className="font-semibold text-lg mb-2">Simulate Agent Invocation</h2>
-          <p className="text-muted-foreground text-sm mb-6">Watch the MCP + x402 exchange happen in real-time — Skill or Bundle.</p>
-          <div className="flex gap-3 mb-5 flex-wrap">
-            <div className="flex border border-white/10 rounded-lg overflow-hidden">
-              <button onClick={() => setSimType("skill")} className={`px-4 py-2 text-sm transition-colors ${simType === "skill" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`} data-testid="sim-type-skill">
-                Single Skill
-              </button>
-              <button onClick={() => setSimType("bundle")} className={`px-4 py-2 text-sm transition-colors ${simType === "bundle" ? "bg-accent/20 text-accent" : "text-muted-foreground hover:text-foreground"}`} data-testid="sim-type-bundle">
-                Bundle
-              </button>
-            </div>
-            <Input value={simTarget} onChange={(e) => setSimTarget(e.target.value)} placeholder={simType === "bundle" ? "bundle-id" : "tool-name"} className="bg-background border-white/10 font-mono max-w-xs" data-testid="input-sim-skill-id" />
+          <p className="text-muted-foreground text-sm mb-6">Watch the full MCP + x402 W0G exchange — from initialize to proof-gated tools/call.</p>
+          <div className="flex gap-3 mb-5 flex-wrap items-center">
+            <select
+              value={simBundleId}
+              onChange={(e) => setSimBundleId(e.target.value)}
+              className="bg-background border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-foreground"
+            >
+              <option value="bd_example">bd_example (demo)</option>
+              {bundles.map(b => (
+                <option key={b.bundleId} value={b.bundleId}>{b.name} ({b.bundleId.slice(0, 12)}…)</option>
+              ))}
+            </select>
             <Button className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2" onClick={simulate} disabled={simState === "running"} data-testid="button-simulate-purchase">
               <Zap className="w-4 h-4" />
               {simState === "running" ? "Simulating..." : "Simulate"}
@@ -233,7 +318,12 @@ export default function AgentApi() {
           {simLog.length > 0 && (
             <div className="bg-background rounded-xl p-5 border border-white/10 font-mono text-xs space-y-1.5">
               {simLog.map((line, i) => (
-                <div key={i} className={line.startsWith("✓") ? "text-emerald-400" : line.startsWith("←") ? "text-accent" : line.startsWith("→") ? "text-primary" : "text-muted-foreground"} data-testid={`sim-log-${i}`}>
+                <div key={i} className={
+                  line.startsWith("✓") ? "text-emerald-400" :
+                  line.startsWith("←") ? "text-accent" :
+                  line.startsWith("→") ? "text-primary" :
+                  "text-muted-foreground"
+                } data-testid={`sim-log-${i}`}>
                   {line}
                 </div>
               ))}
@@ -249,7 +339,7 @@ export default function AgentApi() {
           {simState === "done" && (
             <div className="mt-4 flex items-center gap-2 text-sm text-emerald-400">
               <CheckCircle className="w-4 h-4" />
-              {simType === "bundle" ? "Bundle invoked — all skills executed. Fee split on-chain atomically. No human approval required." : "Skill invoked autonomously via x402 — no human approval required."}
+              Skill content decrypted and returned. Proof token cached — no repeat payment until creator updates Skill content.
             </div>
           )}
         </div>

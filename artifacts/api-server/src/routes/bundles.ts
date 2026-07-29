@@ -85,6 +85,47 @@ router.post("/bundles", authMiddleware("create-bundle"), async (req, res) => {
   }
 });
 
+// PUT /api/bundles/:id — update bundle metadata (owner only)
+router.put("/bundles/:id", authMiddleware("update-bundle"), async (req, res) => {
+  const bundleId = req.params.id as string;
+  const [bundle] = await db
+    .select()
+    .from(bundlesTable)
+    .where(eq(bundlesTable.bundleId, bundleId))
+    .limit(1);
+
+  if (!bundle) {
+    apiError(res, ErrorCode.NOT_FOUND, "Bundle not found");
+    return;
+  }
+  if (bundle.ownerAddress.toLowerCase() !== req.walletAddress?.toLowerCase()) {
+    apiError(res, ErrorCode.FORBIDDEN, "Not the bundle owner");
+    return;
+  }
+
+  const { name, description, workflow, meta } = req.body as {
+    name?:        string;
+    description?: string;
+    workflow?:    string;
+    meta?:        Record<string, unknown>;
+  };
+
+  const [updated] = await db
+    .update(bundlesTable)
+    .set({
+      ...(name        !== undefined && { name }),
+      ...(description !== undefined && { description }),
+      ...(workflow    !== undefined && { workflow }),
+      ...(meta        !== undefined && { meta }),
+      updatedAt: new Date(),
+    })
+    .where(eq(bundlesTable.bundleId, bundleId))
+    .returning();
+
+  logger.info({ bundleId, updatedFields: Object.keys(req.body) }, "bundle updated");
+  res.json({ bundle: updated });
+});
+
 // PUT /api/bundles/:id/skills — replace skill list with ordered array (owner only)
 router.put("/bundles/:id/skills", authMiddleware("update-bundle-skills"), async (req, res) => {
   const bundleId = req.params.id as string;

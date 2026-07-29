@@ -5,15 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, Zap, TrendingUp, Coins, X } from "lucide-react";
+import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, Zap, Coins, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { mockSkills, Skill } from "@/data/mockSkills";
 
-const STEPS = ["Bundle Info", "Select Skills", "Set Economics", "Review & Deploy"];
+const STEPS = ["Bundle Info", "Workflow", "Select Skills", "Review & Deploy"];
 
 interface FormData {
   name: string;
   description: string;
+  workflow: string;
   tags: string;
   markup: number;
   selectedSkillIds: string[];
@@ -26,6 +27,7 @@ export default function CreateBundle() {
   const [form, setForm] = useState<FormData>({
     name: "",
     description: "",
+    workflow: "",
     tags: "",
     markup: 15,
     selectedSkillIds: [],
@@ -47,7 +49,6 @@ export default function CreateBundle() {
   const totalBasePrice = selectedSkills.reduce((sum, s) => sum + s.basePrice, 0);
   const markupAmount = totalBasePrice * form.markup / 100;
   const curatorEarning = markupAmount * 0.5 * 0.9;
-  const stakerPoolShare = markupAmount * 0.5 * 0.9;
 
   const handleDeploy = async () => {
     setDeployState("deploying");
@@ -55,12 +56,12 @@ export default function CreateBundle() {
     setDeployState("registering");
     await new Promise((r) => setTimeout(r, 1200));
     setDeployState("done");
-    toast({ title: "Bundle Deployed!", description: `${form.name} is now live with a single MCP endpoint (mock — 0G Chain)` });
+    toast({ title: "Bundle Deployed!", description: `${form.name} is now live with an MCP endpoint and x402 W0G payment` });
   };
 
   const deploySteps = [
-    { key: "deploying", label: "Deploying Bundle contract" },
-    { key: "registering", label: "Registering MCP endpoint (ERC-8183)" },
+    { key: "deploying", label: "Deploying Bundle" },
+    { key: "registering", label: "Registering MCP endpoint" },
   ];
   const deployOrder = ["deploying", "registering", "done"];
   const deployIdx = deployOrder.indexOf(deployState);
@@ -75,7 +76,7 @@ export default function CreateBundle() {
           </div>
           <h1 className="text-3xl font-bold">Create a Bundle</h1>
         </div>
-        <p className="text-muted-foreground mb-8 mt-1">Curate Skills into a themed product with a single MCP endpoint. Set your markup and earn 50% of markup fees.</p>
+        <p className="text-muted-foreground mb-8 mt-1">Curate Skills into a themed product with a single MCP endpoint. Add a workflow playbook so agents know how to use your Bundle.</p>
 
         {/* Progress */}
         <div className="mb-8">
@@ -102,7 +103,7 @@ export default function CreateBundle() {
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Description</label>
-                <Textarea value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="What does this Bundle do? What type of agents will use it?" className="bg-background border-white/10 min-h-[100px]" data-testid="input-bundle-description" />
+                <Textarea value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="What does this Bundle do? What type of agents will use it?" className="bg-background border-white/10 min-h-[80px]" data-testid="input-bundle-description" />
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Tags (comma-separated)</label>
@@ -111,11 +112,40 @@ export default function CreateBundle() {
             </div>
           )}
 
-          {/* Step 1: Select Skills */}
+          {/* Step 1: Workflow */}
           {step === 1 && (
             <div className="space-y-5">
+              <h2 className="text-xl font-semibold mb-2">Agent Workflow Playbook</h2>
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
+                <Bot className="w-3 h-3 inline mr-1 text-accent" />
+                This workflow is shown to AI agents when they call <span className="font-mono">initialize</span> on your MCP endpoint. Describe how to sequence your Skills to accomplish the Bundle's goal.
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">Workflow Description <span className="text-muted-foreground/50">(optional)</span></label>
+                <Textarea
+                  value={form.workflow}
+                  onChange={(e) => update("workflow", e.target.value)}
+                  placeholder={`Example:
+1. Call market-scanner:5 with { query: "ETH whale movements" } → get whale wallet list
+2. Call risk-analyzer:7 with { wallets: <result from step 1> } → get risk scores
+3. Call portfolio-optimizer:12 with { risk_scores: <result from step 2> } → get recommendations
+
+Each skill returns decrypted content you execute locally. Proof tokens are long-lived — no repeat payment needed until creator updates the skill.`}
+                  className="bg-background border-white/10 min-h-[200px] font-mono text-sm"
+                  data-testid="input-bundle-workflow"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Leave blank to skip. You can always add or update the workflow later from the bundle settings.
+              </p>
+            </div>
+          )}
+
+          {/* Step 2: Select Skills */}
+          {step === 2 && (
+            <div className="space-y-5">
               <h2 className="text-xl font-semibold mb-2">Select Skills</h2>
-              <p className="text-sm text-muted-foreground mb-5">Choose 2 or more Skills to include. You don't need to own them — Curators can bundle any listed Skill.</p>
+              <p className="text-sm text-muted-foreground mb-5">Choose 2 or more Skills to include. Agents will pay W0G per Skill via invokeSkill + x402.</p>
 
               {form.selectedSkillIds.length > 0 && (
                 <div className="bg-accent/5 border border-accent/20 rounded-xl p-3 mb-4 flex flex-wrap gap-2">
@@ -146,58 +176,11 @@ export default function CreateBundle() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-mono text-sm text-foreground">{skill.basePrice} ETH</div>
-                      <div className="text-xs text-muted-foreground">per call</div>
+                      <div className="font-mono text-sm text-foreground">{skill.basePrice} W0G</div>
+                      <div className="text-xs text-muted-foreground">per invoke</div>
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Economics */}
-          {step === 2 && (
-            <div className="space-y-5">
-              <h2 className="text-xl font-semibold mb-5">Set Economics</h2>
-
-              <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Curator Markup ({form.markup}%)</label>
-                <input type="range" min={5} max={50} value={form.markup} onChange={(e) => update("markup", Number(e.target.value))} className="w-full accent-accent" data-testid="slider-markup" />
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>5% (low friction)</span>
-                  <span>50% (premium curation)</span>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-                <div className="text-sm font-semibold mb-2">Revenue Preview (per invocation)</div>
-                {[
-                  { label: "Total Base Price", value: `${totalBasePrice.toFixed(4)} ETH`, note: `sum of ${selectedSkills.length} skills` },
-                  { label: "Your Markup (+)", value: `${markupAmount.toFixed(4)} ETH`, note: `${form.markup}% of base` },
-                  { label: "Total Invoice", value: `${(totalBasePrice + markupAmount).toFixed(4)} ETH`, note: "Agent pays this" },
-                ].map((r) => (
-                  <div key={r.label} className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{r.label} <span className="text-xs opacity-50">({r.note})</span></span>
-                    <span className="font-mono">{r.value}</span>
-                  </div>
-                ))}
-                <div className="border-t border-white/10 pt-3 space-y-2">
-                  <div className="text-xs text-muted-foreground mb-2">After 10% platform fee:</div>
-                  {[
-                    { label: "You earn (50% of markup)", value: `${curatorEarning.toFixed(5)} ETH`, color: "text-accent" },
-                    { label: "Staker pool (50% of markup)", value: `${stakerPoolShare.toFixed(5)} ETH`, color: "text-emerald-400" },
-                  ].map((r) => (
-                    <div key={r.label} className={`flex items-center justify-between text-sm ${r.color}`}>
-                      <span>{r.label}</span>
-                      <span className="font-mono font-semibold">{r.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
-                <Coins className="w-3 h-3 inline mr-1 text-accent" />
-                Stakers backing your bundle earn from the staker pool. Higher staking signals curator quality and attracts more agents.
               </div>
             </div>
           )}
@@ -212,22 +195,21 @@ export default function CreateBundle() {
                     {[
                       { label: "Bundle Name", value: form.name || "—" },
                       { label: "Skills", value: `${selectedSkills.length} selected` },
-                      { label: "Total Base Price", value: `${totalBasePrice.toFixed(4)} ETH/call` },
-                      { label: "Curator Markup", value: `+${form.markup}%` },
-                      { label: "Your Earning/call", value: `~${curatorEarning.toFixed(5)} ETH` },
+                      { label: "Workflow", value: form.workflow ? `${form.workflow.slice(0, 60)}…` : "None" },
+                      { label: "Total Base Price", value: `${totalBasePrice.toFixed(4)} W0G/invoke` },
                     ].map((r) => (
                       <div key={r.label} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{r.label}</span>
-                        <span className="font-medium font-mono">{r.value}</span>
+                        <span className="font-medium font-mono text-right max-w-[200px] truncate">{r.value}</span>
                       </div>
                     ))}
                   </div>
                   <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
                     <Bot className="w-3 h-3 inline mr-1 text-accent" />
-                    Deploying creates an on-chain Bundle with a single ERC-8183 MCP endpoint. Agents can invoke all {selectedSkills.length} skills with one HTTP call and one x402 payment.
+                    Deploying creates a Bundle with a single MCP endpoint. Agents discover Skills via <span className="font-mono">tools/list</span>, pay W0G via <span className="font-mono">invokeSkill</span>, and receive decrypted Skill content to run locally. Proof tokens are valid until you update the Skill content.
                   </div>
                   <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground gap-2" onClick={handleDeploy} data-testid="button-deploy-bundle">
-                    <Layers className="w-4 h-4" /> Deploy Bundle to 0G Chain
+                    <Layers className="w-4 h-4" /> Deploy Bundle
                   </Button>
                 </>
               )}
@@ -247,13 +229,10 @@ export default function CreateBundle() {
                   {deployState === "done" && (
                     <div className="text-center pt-4">
                       <div className="text-2xl font-bold text-emerald-400 mb-2">Bundle Deployed!</div>
-                      <p className="text-muted-foreground text-sm mb-2">Your Bundle is now live with a single MCP endpoint</p>
-                      <div className="font-mono text-xs bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-muted-foreground mb-4">
-                        https://mcp.skillfun.xyz/bundle/new-{Math.random().toString(36).slice(2, 8)}
-                      </div>
+                      <p className="text-muted-foreground text-sm mb-4">Your Bundle is live. Agents can now discover and invoke Skills via x402 W0G payment.</p>
                       <div className="flex gap-3 justify-center">
                         <Button variant="outline" className="border-white/20" onClick={() => window.location.href = "/app/market"} data-testid="button-view-in-market">View in Market</Button>
-                        <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => { setStep(0); setDeployState("idle"); setForm({ name: "", description: "", tags: "", markup: 15, selectedSkillIds: [] }); }} data-testid="button-create-another">Create Another</Button>
+                        <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => { setStep(0); setDeployState("idle"); setForm({ name: "", description: "", workflow: "", tags: "", markup: 15, selectedSkillIds: [] }); }} data-testid="button-create-another">Create Another</Button>
                       </div>
                     </div>
                   )}

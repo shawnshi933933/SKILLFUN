@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import pinoHttp from "pino-http";
 import router from "./routes/index.js";
+import mcpHandlerRouter from "./routes/mcp-handler.js";
 import { logger } from "./lib/logger.js";
 
 const app: Express = express();
@@ -47,5 +48,8 @@ app.use(session({
 }));
 
 app.use("/api", router);
+
+// MCP JSON-RPC 2.0 gateway — path-based multi-tenant, no session required
+app.use("/mcp", mcpHandlerRouter);
 
 export default app;

@@ -5,6 +5,7 @@ import {
   timestamp,
   pgEnum,
   jsonb,
+  boolean,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
@@ -44,7 +45,8 @@ export const skillsTable = pgTable(
     tokenId:       integer("token_id"),                       // null until minted on-chain
     repoUrl:       text("repo_url").notNull(),                // e.g. "alice/weather-skill"
     skillUri:      text("skill_uri"),                         // 0G Storage metadata URI
-    rootHash:      text("root_hash"),                         // 0G Storage root hash (bytes32 hex)
+    rootHash:       text("root_hash"),                         // 0G Storage root hash (bytes32 hex)
+    contentVersion: integer("content_version").notNull().default(1), // increments on each rootHash update
     manifestOwner: text("manifest_owner").notNull(),          // GitHub repo path (locked at mint)
     mintStatus:    mintStatusEnum("mint_status").notNull().default("pending"),
     reviewStatus:  reviewStatusEnum("review_status").notNull().default("pending"),
@@ -78,6 +80,7 @@ export const bundlesTable = pgTable(
     subdomain:   text("subdomain").notNull(),                // e.g. "defi-tools"
     name:        text("name").notNull(),
     description: text("description"),
+    workflow:    text("workflow"),                            // MCP orchestration playbook shown to agents on initialize
     ownerAddress: text("owner_address").notNull(),           // EVM address of bundle creator
     meta:        jsonb("meta").$type<Record<string, unknown>>().default({}),
     createdAt:   timestamp("created_at").notNull().defaultNow(),
@@ -160,3 +163,27 @@ export const githubVerificationsTable = pgTable(
 );
 
 export type GithubVerification = typeof githubVerificationsTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// payment_proofs  (MCP x402 — one proof per agent per skill version)
+// ---------------------------------------------------------------------------
+export const paymentProofsTable = pgTable(
+  "payment_proofs",
+  {
+    token:          text("token").primaryKey(),                   // opaque 32-byte hex
+    skillId:        text("skill_id").notNull().references(() => skillsTable.skillId, { onDelete: "cascade" }),
+    contentVersion: integer("content_version").notNull(),         // skill.contentVersion at issuance
+    agentWallet:    text("agent_wallet").notNull(),               // wallet that called invokeSkill on-chain
+    txHash:         text("tx_hash").notNull(),                    // on-chain invokeSkill tx; globally unique — prevents replay across versions
+    issuedAt:       timestamp("issued_at").notNull().defaultNow(),
+    expiresAt:      timestamp("expires_at"),                     // null = version-gated only
+  },
+  (t) => [
+    index("payment_proofs_skill_idx").on(t.skillId),
+    index("payment_proofs_wallet_idx").on(t.agentWallet),
+    // One txHash can ever produce one proof (prevents replaying an old payment for a newer contentVersion)
+    uniqueIndex("payment_proofs_tx_hash_unique").on(t.txHash),
+  ]
+);
+
+export type PaymentProof = typeof paymentProofsTable.$inferSelect;

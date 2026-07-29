@@ -190,7 +190,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
   // Encrypt + upload to 0G Storage (falls back to keccak256 if unavailable).
   // When skillFileContent is provided (fetched from GitHub) that real file
   // is what gets encrypted and stored — the rootHash anchors the actual skill.
-  let uploadResult: { rootHash: string; skillUri: string; uploaded: boolean };
+  let uploadResult: { rootHash: string; skillUri: string; uploaded: boolean; txSeq?: number | null };
   try {
     uploadResult = await uploadSkillManifest(
       skillId,
@@ -284,6 +284,18 @@ router.patch("/skills/:id/confirm-mint", async (req, res) => {
   const finalOwner = ownerMode === "mine" ? onChainOwner : SKILL_NFT_ADDRESS;
   const callerAddress = onChainOwner; // used below for logging
 
+  // Auto-generate MCP tool schema now that we have tokenId
+  const existingMeta = skill.meta as Record<string, unknown>;
+  const mcpToolSchema = {
+    description: (existingMeta.description as string) || (existingMeta.name as string) || skill.repoUrl,
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Your query or input for this skill" },
+      },
+    },
+  };
+
   const [updated] = await db
     .update(skillsTable)
     .set({
@@ -291,9 +303,10 @@ router.patch("/skills/:id/confirm-mint", async (req, res) => {
       tokenId,
       ownerAddress: finalOwner,
       meta: {
-        ...(skill.meta as Record<string, unknown>),
+        ...existingMeta,
         txHash,
         mintedAt: new Date().toISOString(),
+        mcpToolSchema,
       },
       updatedAt: new Date(),
     })
@@ -483,16 +496,24 @@ router.patch("/skills/:id", authMiddleware("update-skill"), async (req, res) => 
     meta?: Record<string, unknown>;
   };
 
+  // Increment contentVersion whenever rootHash changes — invalidates all agent proofs
+  const rootHashChanged = rootHash !== undefined && rootHash !== existing.rootHash;
+
   const [updated] = await db
     .update(skillsTable)
     .set({
       ...(skillUri !== undefined && { skillUri }),
       ...(rootHash !== undefined && { rootHash }),
       ...(meta     !== undefined && { meta }),
+      ...(rootHashChanged && { contentVersion: (existing.contentVersion ?? 1) + 1 }),
       updatedAt: new Date(),
     })
     .where(eq(skillsTable.skillId, skillId))
     .returning();
+
+  if (rootHashChanged) {
+    logger.info({ skillId, newContentVersion: updated.contentVersion }, "skill rootHash updated — contentVersion incremented, agent proofs invalidated");
+  }
 
   res.json({ skill: updated });
 });
