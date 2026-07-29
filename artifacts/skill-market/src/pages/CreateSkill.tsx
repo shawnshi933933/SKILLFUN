@@ -482,6 +482,22 @@ export default function CreateSkill() {
                   className="w-32"
                 />
               </Field>
+
+              <Field label="Capabilities (comma-separated)" hint="MCP tool names this skill exposes" aiActive={aiFields.has("capabilities")}>
+                <Input
+                  placeholder="answer_question, process_data, generate_report"
+                  value={form.capabilities}
+                  onChange={(e) => update("capabilities", e.target.value)}
+                />
+              </Field>
+
+              <Field label="Tags (optional)" aiActive={aiFields.has("tags")}>
+                <Input
+                  placeholder="llm, python, finance"
+                  value={form.tags}
+                  onChange={(e) => update("tags", e.target.value)}
+                />
+              </Field>
             </div>
           )}
 
@@ -516,22 +532,6 @@ export default function CreateSkill() {
                   </div>
                 ))}
               </div>
-
-              <Field label="Capabilities (comma-separated)" hint="MCP tool names this skill exposes" aiActive={aiFields.has("capabilities")}>
-                <Input
-                  placeholder="answer_question, process_data, generate_report"
-                  value={form.capabilities}
-                  onChange={(e) => update("capabilities", e.target.value)}
-                />
-              </Field>
-
-              <Field label="Tags (optional)" aiActive={aiFields.has("tags")}>
-                <Input
-                  placeholder="llm, python, finance"
-                  value={form.tags}
-                  onChange={(e) => update("tags", e.target.value)}
-                />
-              </Field>
             </div>
           )}
 
