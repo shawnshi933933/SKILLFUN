@@ -142,9 +142,11 @@ export function useSelfMint() {
       setState((s) => ({ ...s, txHash, phase: "confirming" }));
 
       // ── Step 3: wait for receipt, parse tokenId ──────────────────────────
+      // 0G Chain can be slow — wait up to 5 minutes, poll every 3 s.
       const receipt = await waitForTransactionReceipt(wagmiConfig, {
         hash: txHash,
-        timeout: 90_000,
+        timeout:         300_000,
+        pollingInterval: 3_000,
       });
 
       if (receipt.status !== "success") {

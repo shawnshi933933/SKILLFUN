@@ -9,7 +9,7 @@ export const zerogMainnet = defineChain({
   name: "0G Mainnet",
   nativeCurrency: { name: "0G", symbol: "0G", decimals: 18 },
   rpcUrls: {
-    default: { http: ["https://evmrpc.0g.ai"] },
+    default: { http: ["https://evmrpc.0g.ai", "https://rpc.0g.ai", "https://0g.rpc.thirdweb.com"] },
   },
   blockExplorers: {
     default: { name: "0G Scan", url: "https://chainscan.0g.ai" },
