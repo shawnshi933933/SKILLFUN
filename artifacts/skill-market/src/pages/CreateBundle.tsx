@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, Zap, Coins, X } from "lucide-react";
+import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, Zap, Coins, X, Loader2, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { mockSkills, Skill } from "@/data/mockSkills";
+import { useSkills } from "@/hooks/use-skills";
+import type { DbSkill } from "@/lib/api";
 
 const STEPS = ["Bundle Info", "Workflow", "Select Skills", "Review & Deploy"];
 
@@ -18,6 +19,14 @@ interface FormData {
   tags: string;
   markup: number;
   selectedSkillIds: string[];
+}
+
+function getMeta<T>(skill: DbSkill, key: string, fallback: T): T {
+  return (skill.meta[key] as T) ?? fallback;
+}
+
+function skillDisplayName(skill: DbSkill): string {
+  return getMeta<string>(skill, "name", skill.repoUrl.split("/").pop() ?? skill.skillId);
 }
 
 export default function CreateBundle() {
@@ -33,6 +42,10 @@ export default function CreateBundle() {
     selectedSkillIds: [],
   });
 
+  // Load real minted skills from the API
+  const { data: skillsData, isLoading: skillsLoading } = useSkills({ status: "minted" });
+  const availableSkills = skillsData?.skills ?? [];
+
   const update = (key: keyof FormData, value: string | number | string[]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
@@ -45,8 +58,8 @@ export default function CreateBundle() {
     }));
   };
 
-  const selectedSkills = mockSkills.filter((s) => form.selectedSkillIds.includes(s.id));
-  const totalBasePrice = selectedSkills.reduce((sum, s) => sum + s.basePrice, 0);
+  const selectedSkills = availableSkills.filter((s) => form.selectedSkillIds.includes(s.skillId));
+  const totalBasePrice = selectedSkills.reduce((sum, s) => sum + getMeta<number>(s, "basePrice", 0), 0);
   const markupAmount = totalBasePrice * form.markup / 100;
   const curatorEarning = markupAmount * 0.5 * 0.9;
 
@@ -150,38 +163,67 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
               {form.selectedSkillIds.length > 0 && (
                 <div className="bg-accent/5 border border-accent/20 rounded-xl p-3 mb-4 flex flex-wrap gap-2">
                   {selectedSkills.map((s) => (
-                    <div key={s.id} className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2 py-1 text-xs text-accent">
-                      {s.name}
-                      <button onClick={() => toggleSkill(s.id)} className="hover:text-white"><X className="w-3 h-3" /></button>
+                    <div key={s.skillId} className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2 py-1 text-xs text-accent">
+                      {skillDisplayName(s)}
+                      <button onClick={() => toggleSkill(s.skillId)} className="hover:text-white"><X className="w-3 h-3" /></button>
                     </div>
                   ))}
                   <div className="text-xs text-muted-foreground self-center ml-auto">{form.selectedSkillIds.length} selected</div>
                 </div>
               )}
 
-              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                {mockSkills.map((skill) => (
-                  <div key={skill.id}
-                    onClick={() => toggleSkill(skill.id)}
-                    data-testid={`select-skill-${skill.id}`}
-                    className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${form.selectedSkillIds.includes(skill.id) ? "border-accent/40 bg-accent/10" : "border-white/10 hover:border-white/20 hover:bg-white/5"}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center ${form.selectedSkillIds.includes(skill.id) ? "bg-accent border-accent" : "border-white/20"}`}>
-                        {form.selectedSkillIds.includes(skill.id) && <CheckCircle className="w-3 h-3 text-white" />}
+              {skillsLoading ? (
+                <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading skills…
+                </div>
+              ) : availableSkills.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+                  <Package className="w-8 h-8" />
+                  <span className="text-sm">No minted Skills found. Mint a Skill first before creating a Bundle.</span>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                  {availableSkills.map((skill) => {
+                    const name      = skillDisplayName(skill);
+                    const category  = getMeta<string>(skill, "category", "");
+                    const basePrice = getMeta<number>(skill, "basePrice", 0);
+                    const invocations = getMeta<number>(skill, "invocations", 0);
+                    const isSelected = form.selectedSkillIds.includes(skill.skillId);
+                    return (
+                      <div key={skill.skillId}
+                        onClick={() => toggleSkill(skill.skillId)}
+                        data-testid={`select-skill-${skill.skillId}`}
+                        className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${isSelected ? "border-accent/40 bg-accent/10" : "border-white/10 hover:border-white/20 hover:bg-white/5"}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-white/20"}`}>
+                            {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {category}{category && " · "}{invocations > 0 && `${invocations.toLocaleString()} invocations`}
+                              {!category && !invocations && <span className="font-mono">{skill.repoUrl}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          {basePrice > 0 ? (
+                            <>
+                              <div className="font-mono text-sm text-foreground">{basePrice} W0G</div>
+                              <div className="text-xs text-muted-foreground">per invoke</div>
+                            </>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] border-white/10 text-muted-foreground">
+                              {skill.mintStatus}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-sm">{skill.name}</div>
-                        <div className="text-xs text-muted-foreground">{skill.category} · {skill.invocations.toLocaleString()} invocations</div>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-mono text-sm text-foreground">{skill.basePrice} W0G</div>
-                      <div className="text-xs text-muted-foreground">per invoke</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
