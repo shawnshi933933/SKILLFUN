@@ -136,9 +136,9 @@ export default function SkillDetail() {
         msg.includes("own this Skill NFT") ||
         msg.includes("Missing X-Wallet-Signature");
       toast({
-        title: isOwnershipError ? "🔒 非 NFT 持有者，无法解密" : "Fetch failed",
+        title: isOwnershipError ? "🔒 Not the NFT owner — access denied" : "Fetch failed",
         description: isOwnershipError
-          ? "只有持有该 Skill NFT 的钱包才能解密内容。请确认已连接正确的钱包地址。"
+          ? "Only the wallet holding this Skill NFT can decrypt its content. Make sure you're connected with the correct address."
           : msg,
         variant: "destructive",
       });
