@@ -178,12 +178,27 @@ export const skillsApi = {
 // ---------------------------------------------------------------------------
 // GitHub
 // ---------------------------------------------------------------------------
+
+export interface AiAnalyzeResult {
+  description:  string;
+  capabilities: string[];
+  tags:         string[];
+  instructions: string;
+}
+
 export const githubApi = {
   /** Fetch skill manifest from a public GitHub repo (no auth required). */
   fetchSkillManifest: (repo: string) =>
     apiFetch<GitHubManifestResult>(
       `/github/skill-manifest?repo=${encodeURIComponent(repo)}`
     ),
+
+  /** Analyze raw skill.md content with AI to extract structured metadata. */
+  aiAnalyze: (body: { rawContent: string; fileType: string; repoUrl: string }) =>
+    apiFetch<AiAnalyzeResult>("/github/ai-analyze", {
+      method: "POST",
+      body:   JSON.stringify(body),
+    }),
 };
 
 // ---------------------------------------------------------------------------
