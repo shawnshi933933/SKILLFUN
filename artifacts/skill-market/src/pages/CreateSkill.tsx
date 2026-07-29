@@ -506,7 +506,7 @@ export default function CreateSkill() {
             <div className="space-y-5">
               <h2 className="text-lg font-semibold">Economics</h2>
 
-              <Field label="Base Price (0G per invocation)" hint="Amount agents pay to invoke your skill via x402">
+              <Field label="Base Price (W0G per invocation)" hint="Amount agents pay to invoke your skill via x402">
                 <div className="flex items-center gap-2">
                   <Input
                     type="number" min="0" step="0.001" placeholder="0.01"
@@ -514,7 +514,7 @@ export default function CreateSkill() {
                     onChange={(e) => update("basePrice", e.target.value)}
                     className="w-40"
                   />
-                  <span className="text-sm text-muted-foreground">0G</span>
+                  <span className="text-sm text-muted-foreground">W0G</span>
                 </div>
               </Field>
 
@@ -625,7 +625,7 @@ export default function CreateSkill() {
                 <ReviewRow label="Name"         value={form.name} />
                 <ReviewRow label="Category"     value={form.category} />
                 <ReviewRow label="Version"      value={form.version} />
-                <ReviewRow label="Base Price"   value={`${form.basePrice} 0G`} />
+                <ReviewRow label="Base Price"   value={`${form.basePrice} W0G`} />
                 <ReviewRow label="Capabilities" value={form.capabilities || "—"} />
                 {form.tags && <ReviewRow label="Tags" value={form.tags} />}
                 {form.instructions && <ReviewRow label="Instructions" value={form.instructions.slice(0, 80) + (form.instructions.length > 80 ? "…" : "")} />}
