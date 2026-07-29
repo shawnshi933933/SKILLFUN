@@ -240,23 +240,14 @@ router.post("/skills/prepare-mint", async (req, res) => {
 // PATCH /api/skills/:id/confirm-mint
 //
 // Step 2 of self-mint: called after the user's registerSkill() tx is confirmed.
-// Validates EIP-712 sig, reads on-chain tokenId owner, updates DB to minted.
+// Reads on-chain tokenId owner, updates DB to minted.
+//
+// No EIP-712 signature required here — the skillId itself is an unguessable
+// server-generated token (only returned to the original prepare-mint caller),
+// which serves as proof of identity. The on-chain ownerOf(tokenId) is the
+// ground truth for ownership; the DB is updated to match it.
 // ─────────────────────────────────────────────────────────────────────────────
 router.patch("/skills/:id/confirm-mint", async (req, res) => {
-  const sigHeader = req.headers["x-wallet-signature"] as string | undefined;
-  if (!sigHeader) {
-    apiError(res, ErrorCode.UNAUTHORIZED, "Missing X-Wallet-Signature header");
-    return;
-  }
-
-  let callerAddress: string;
-  try {
-    callerAddress = await verifyWalletSignature(sigHeader, "user:confirm-mint");
-  } catch (err) {
-    apiError(res, ErrorCode.UNAUTHORIZED, (err as Error).message);
-    return;
-  }
-
   const skillId = req.params.id as string;
   const { tokenId, txHash } = req.body as { tokenId: number; txHash: string };
 
@@ -280,12 +271,6 @@ router.patch("/skills/:id/confirm-mint", async (req, res) => {
     return;
   }
 
-  // Verify the caller actually submitted this skill
-  if (skill.ownerAddress?.toLowerCase() !== callerAddress.toLowerCase()) {
-    apiError(res, ErrorCode.FORBIDDEN, "Not the skill submitter");
-    return;
-  }
-
   // Read on-chain owner to confirm the tx landed
   const onChainOwner = await getOnChainOwner(tokenId).catch(() => null);
   if (!onChainOwner) {
@@ -294,9 +279,10 @@ router.patch("/skills/:id/confirm-mint", async (req, res) => {
   }
 
   // Determine the final ownerAddress for this skill:
-  // "mine" → user's address; "community" → platform (SkillNFT contract)
+  // "mine" → actual on-chain NFT owner; "community" → platform (SkillNFT contract)
   const ownerMode = (skill.meta as Record<string, unknown>)?.ownerMode as string | undefined;
-  const finalOwner = ownerMode === "mine" ? callerAddress : SKILL_NFT_ADDRESS;
+  const finalOwner = ownerMode === "mine" ? onChainOwner : SKILL_NFT_ADDRESS;
+  const callerAddress = onChainOwner; // used below for logging
 
   const [updated] = await db
     .update(skillsTable)

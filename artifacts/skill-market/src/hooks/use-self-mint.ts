@@ -194,8 +194,9 @@ export function useSelfMint() {
       setState((s) => ({ ...s, tokenId, phase: "finalizing" }));
 
       // ── Step 4: confirm with backend → DB mintStatus=minted ─────────────
-      const confirmSig = await sign("user:confirm-mint");
-      await skillsApi.confirmMint(prep.skillId, { tokenId, txHash }, confirmSig);
+      // No extra wallet signature needed — skillId is an unguessable server token,
+      // and the backend verifies ownership directly via on-chain ownerOf(tokenId).
+      await skillsApi.confirmMint(prep.skillId, { tokenId, txHash });
 
       setState({ phase: "done", skillId: prep.skillId, tokenId, txHash, error: null });
     } catch (err) {

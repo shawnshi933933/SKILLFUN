@@ -168,11 +168,12 @@ export const skillsApi = {
       body: JSON.stringify(input),
     }),
 
-  /** Step 2 of self-mint: confirm tx landed, update DB to minted */
-  confirmMint: (skillId: string, body: { tokenId: number; txHash: string }, sigHeader: string) =>
+  /** Step 2 of self-mint: confirm tx landed, update DB to minted.
+   *  No wallet signature required — skillId is unguessable, backend verifies
+   *  ownership via on-chain ownerOf(tokenId). */
+  confirmMint: (skillId: string, body: { tokenId: number; txHash: string }) =>
     apiFetch<ConfirmMintResponse>(`/skills/${skillId}/confirm-mint`, {
       method: "PATCH",
-      headers: { "X-Wallet-Signature": sigHeader },
       body: JSON.stringify(body),
     }),
 };
