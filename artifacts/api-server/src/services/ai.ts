@@ -28,6 +28,33 @@ export interface SkillAnalysis {
   instructions: string;
 }
 
+// Canonical tag vocabulary — AI must prefer these over inventing new ones.
+// Add new canonical tags here as the marketplace grows.
+const CANONICAL_TAGS = [
+  // Languages & runtimes
+  "python", "javascript", "typescript", "rust", "go", "java", "bash", "sql",
+  // AI / ML
+  "llm", "nlp", "computer-vision", "embeddings", "rag", "fine-tuning", "image-gen",
+  // Data
+  "data-analysis", "data-extraction", "web-scraping", "csv", "json", "database",
+  // Web & APIs
+  "api-integration", "rest", "graphql", "webhook", "browser-automation",
+  // Finance & trading
+  "finance", "trading", "defi", "crypto", "blockchain", "web3", "nft",
+  // Creative & media
+  "creative-coding", "generative-art", "image-processing", "audio", "video",
+  "writing", "summarization", "translation",
+  // Dev tools
+  "code-generation", "code-review", "testing", "devops", "git",
+  // Productivity & knowledge
+  "research", "search", "document-processing", "calendar", "email", "crm",
+  // Platforms / ecosystems
+  "openai", "anthropic", "huggingface", "github", "slack", "notion",
+  "p5js", "threejs", "react", "nodejs",
+  // 0G ecosystem
+  "0g-storage", "0g-chain", "mcp",
+] as const;
+
 const SYSTEM_PROMPT = `You are an MCP skill analyst. Given the raw content of a skill definition file, extract structured metadata for a skill marketplace listing.
 
 Return ONLY valid JSON with exactly these fields:
@@ -41,7 +68,7 @@ Return ONLY valid JSON with exactly these fields:
 Rules:
 - description: max 1 sentence, plain language, no marketing fluff
 - capabilities: actual MCP tool / function names this skill exposes; use snake_case; infer from context if not explicit (e.g. "get_weather", "search_web")
-- tags: 3–6 lowercase tags, specific (e.g. "python", "finance", "data-analysis"); avoid generic terms like "tool" or "ai"
+- tags: pick 3–6 tags. ALWAYS prefer tags from this canonical list: ${CANONICAL_TAGS.join(", ")}. Only invent a new tag if none of the canonical tags fit — keep invented tags lowercase, hyphenated, and specific.
 - instructions: 2–4 sentences, agent-facing, action-oriented; describe when to invoke this skill and any required parameters`;
 
 /**
