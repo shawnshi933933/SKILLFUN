@@ -44,6 +44,36 @@ Rules:
 - tags: 3–6 lowercase tags, specific (e.g. "python", "finance", "data-analysis"); avoid generic terms like "tool" or "ai"
 - instructions: 2–4 sentences, agent-facing, action-oriented; describe when to invoke this skill and any required parameters`;
 
+/**
+ * Extract the first syntactically complete JSON object from a string.
+ * More robust than a greedy regex when the model appends prose after the JSON block.
+ */
+function extractFirstJson(text: string): Record<string, unknown> | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape)              { escape = false; continue; }
+    if (ch === "\\" && inString) { escape = true;  continue; }
+    if (ch === '"')          { inString = !inString; continue; }
+    if (inString)            continue;
+    if (ch === "{")          depth++;
+    if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        try { return JSON.parse(text.slice(start, i + 1)) as Record<string, unknown>; }
+        catch { return null; }
+      }
+    }
+  }
+  return null;
+}
+
 export async function analyzeSkillContent(
   rawContent: string,
   fileType: string,
@@ -72,14 +102,14 @@ export async function analyzeSkillContent(
 
   const text = completion.choices[0]?.message?.content ?? "";
 
-  // Extract JSON — may be wrapped in ```json``` fences
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    logger.warn({ text }, "ai: failed to extract JSON from response");
+  // Extract the first balanced JSON object from the response.
+  // Simple regex is unreliable: greedy [\s\S]* grabs trailing text after the
+  // closing brace when the model appends prose after the JSON block.
+  const parsed = extractFirstJson(text);
+  if (!parsed) {
+    logger.warn({ text: text.slice(0, 500) }, "ai: failed to extract JSON from response");
     throw new Error(`AI returned unparseable response: ${text.slice(0, 200)}`);
   }
-
-  const parsed = JSON.parse(jsonMatch[0]);
   return {
     description:  typeof parsed.description  === "string" ? parsed.description.trim()  : "",
     capabilities: Array.isArray(parsed.capabilities) ? (parsed.capabilities as string[]).filter(Boolean) : [],
