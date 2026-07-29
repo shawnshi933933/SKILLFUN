@@ -46,8 +46,8 @@ export function useBundleAnalytics(id: string | undefined) {
     queryKey: ["bundle-analytics", id],
     queryFn: () => bundlesApi.analytics(id!),
     enabled: !!id,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 20_000,
+    refetchInterval: 30_000,
   });
 }
 
@@ -59,8 +59,8 @@ export function useSkillStats(id: string | undefined) {
     queryKey: ["skill-stats", id],
     queryFn: () => proofsApi.stats(id!),
     enabled: !!id,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 20_000,
+    refetchInterval: 30_000,
   });
 }
 

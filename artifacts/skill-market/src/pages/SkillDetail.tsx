@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bot, Lock, Shield, Clock, ArrowLeft, Hash,
   ExternalLink, Loader2, AlertCircle, CheckCircle2,
-  Github, Database, FileCode2, Download, KeyRound,
+  Github, Database, FileCode2, Download, KeyRound, RefreshCw,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +45,12 @@ export default function SkillDetail() {
   const { data: oracleData } = useChainOracle(tokenId);
 
   // Live proof stats (public — invocations count + W0G earned)
-  const { data: statsData } = useSkillStats(params?.id);
+  const {
+    data: statsData,
+    refetch: refetchStats,
+    isFetching: statsRefetching,
+    dataUpdatedAt: statsUpdatedAt,
+  } = useSkillStats(params?.id);
 
   if (isLoading) {
     return (
@@ -78,8 +83,8 @@ export default function SkillDetail() {
   const creatorShare = (meta.creatorShare as number | undefined) ?? 80;
   const ownerShare   = (meta.ownerShare as number | undefined) ?? 10;
   const royaltyRate  = (meta.royaltyRate as number | undefined) ?? 5;
-  // Live stats take priority over stale meta.invocations
-  const invocations  = statsData?.invocations ?? (meta.invocations as number | undefined) ?? 0;
+  // Live stats are the sole source of truth — no static meta fallback
+  const invocations  = statsData?.invocations ?? 0;
   const revenueW0G   = statsData?.revenueW0G ?? 0;
 
   const isMinted  = skill.mintStatus === "minted" || skill.mintStatus === "claimed";
@@ -209,18 +214,36 @@ export default function SkillDetail() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Base Price",   value: basePrice > 0 ? `${basePrice} W0G` : "—" },
-                { label: "Invocations",  value: invocations.toLocaleString() },
-                { label: "W0G Earned",   value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—" },
-                { label: "Royalty",      value: `${royaltyRate}%` },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
-                  <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
-                  <div className="font-mono font-semibold text-sm">{stat.value}</div>
-                </div>
-              ))}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {statsUpdatedAt > 0
+                    ? <>Updated <span className="tabular-nums">{new Date(statsUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span></>
+                    : "Live stats"}
+                </span>
+                <button
+                  onClick={() => refetchStats()}
+                  disabled={statsRefetching}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  title="Refresh stats"
+                >
+                  <RefreshCw className={`w-3 h-3 ${statsRefetching ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "Base Price",   value: basePrice > 0 ? `${basePrice} W0G` : "—" },
+                  { label: "Invocations",  value: invocations.toLocaleString() },
+                  { label: "W0G Earned",   value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—" },
+                  { label: "Royalty",      value: `${royaltyRate}%` },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
+                    <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
+                    <div className="font-mono font-semibold text-sm">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Tabs */}

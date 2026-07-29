@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Bot, Layers, Coins, Shield, Lock,
   ExternalLink, Zap, Loader2, AlertCircle, Package,
-  Copy, CheckCircle2, ChevronDown, ChevronUp, TrendingUp,
+  Copy, CheckCircle2, ChevronDown, ChevronUp, TrendingUp, RefreshCw,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -41,7 +41,12 @@ export default function BundleDetail() {
   const [snippetOpen, setSnippetOpen]  = useState(false);
 
   const { data, isLoading, error } = useBundle(params?.id);
-  const { data: analyticsData } = useBundleAnalytics(params?.id);
+  const {
+    data: analyticsData,
+    refetch: refetchAnalytics,
+    isFetching: analyticsRefetching,
+    dataUpdatedAt: analyticsUpdatedAt,
+  } = useBundleAnalytics(params?.id);
 
   if (isLoading) {
     return (
@@ -67,7 +72,7 @@ export default function BundleDetail() {
 
   const apy           = getMeta<number>(bundle, "apy", 0);
   const stakerPool    = getMeta<number>(bundle, "stakerPool", 0);
-  const invocations   = analyticsData?.invocations ?? getMeta<number>(bundle, "invocations", 0);
+  const invocations   = analyticsData?.invocations ?? 0;
   const revenueW0G    = analyticsData?.revenueW0G ?? 0;
   const curatorMarkup = getMeta<number>(bundle, "curatorMarkup", 10);
   const tags          = getMeta<string[]>(bundle, "tags", []);
@@ -239,18 +244,36 @@ if (attempt.status === 402) {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Skills", value: String(skills.length) },
-                { label: "Invocations", value: invocations.toLocaleString() },
-                { label: "W0G Earned", value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)} W0G` : "—" },
-                { label: "Curator Markup", value: `${curatorMarkup}%` },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
-                  <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
-                  <div className="font-mono font-semibold text-sm">{stat.value}</div>
-                </div>
-              ))}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {analyticsUpdatedAt > 0
+                    ? <>Updated <span className="tabular-nums">{new Date(analyticsUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span></>
+                    : "Live stats"}
+                </span>
+                <button
+                  onClick={() => refetchAnalytics()}
+                  disabled={analyticsRefetching}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  title="Refresh stats"
+                >
+                  <RefreshCw className={`w-3 h-3 ${analyticsRefetching ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "Skills", value: String(skills.length) },
+                  { label: "Invocations", value: invocations.toLocaleString() },
+                  { label: "W0G Earned", value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)} W0G` : "—" },
+                  { label: "Curator Markup", value: `${curatorMarkup}%` },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
+                    <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
+                    <div className="font-mono font-semibold text-sm">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Tabs */}
