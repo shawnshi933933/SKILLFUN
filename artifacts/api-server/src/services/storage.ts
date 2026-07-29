@@ -71,7 +71,7 @@ export async function uploadSkillManifest(
     fs.writeFileSync(tmpFile, jsonBytes);
 
     // Dynamic import to avoid top-level ESM issues
-    const { ZgFile, Indexer } = await import("@0glabs/0g-ts-sdk");
+    const { ZgFile, Indexer } = await import("@0gfoundation/0g-storage-ts-sdk");
     const { ethers }           = await import("ethers");
 
     const zgFile = await ZgFile.fromFilePath(tmpFile);
@@ -88,7 +88,9 @@ export async function uploadSkillManifest(
       ? (rawRootHash as `0x${string}`)
       : `0x${rawRootHash}`;
 
-    const skillUri = `${INDEXER_RPC}/file?cid=${rootHash}`;
+    // StorageScan is the official 0G Storage explorer — users can paste the
+    // rootHash there to inspect the uploaded file contents.
+    const skillUri = `https://storagescan.0g.ai/?search=${rootHash}`;
 
     // Upload
     const provider = new ethers.JsonRpcProvider(EVM_RPC);

@@ -222,11 +222,17 @@ export default function SkillDetail() {
                   <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1">
                     <Database className="w-3.5 h-3.5" /> 0G Storage
                   </div>
-                  {skill.skillUri
-                    ? <LinkRow label="Skill URI" href={skill.skillUri} text={skill.skillUri.slice(0, 52) + (skill.skillUri.length > 52 ? "…" : "")} />
+                  {skill.rootHash && (
+                    <LinkRow
+                      label="StorageScan"
+                      href={`https://storagescan.0g.ai/?search=${skill.rootHash}`}
+                      text="View on StorageScan ↗"
+                    />
+                  )}
+                  {skill.rootHash
+                    ? <CopyRow label="Root Hash" value={skill.rootHash} mono />
                     : <div className="text-muted-foreground italic">Not yet uploaded to 0G Storage</div>
                   }
-                  {skill.rootHash && <CopyRow label="Root Hash" value={skill.rootHash} mono />}
                 </div>
 
                 {/* Capabilities & Tags */}
