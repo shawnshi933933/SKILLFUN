@@ -19,7 +19,7 @@ function buildClient(): OpenAI {
   return new OpenAI({ baseURL, apiKey });
 }
 
-const DEFAULT_MODEL = "0gm-1.0-35b-a3b";
+const DEFAULT_MODEL = "0gm-1.0-35b-a3b-sia";
 
 export interface SkillAnalysis {
   description:  string;
