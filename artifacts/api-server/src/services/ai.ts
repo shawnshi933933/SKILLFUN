@@ -55,9 +55,12 @@ export async function analyzeSkillContent(
 
   logger.info({ repoUrl, fileType, chars: truncated.length, model }, "ai: analyzing skill content via 0G Router");
 
+  // 0gm-1.0-35b-a3b is a reasoning model: it spends tokens on internal "thinking"
+  // before producing output. 1024 is exhausted by reasoning alone → content: null.
+  // Use a large budget so the JSON output actually gets generated.
   const completion = await client.chat.completions.create({
     model,
-    max_tokens: 1024,
+    max_tokens: 8192,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       {
