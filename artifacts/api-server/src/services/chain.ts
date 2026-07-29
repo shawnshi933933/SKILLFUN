@@ -67,7 +67,7 @@ export async function getBalance(address: string) {
   return cached(key, TTL.BALANCE, () =>
     rpcCall("getBalance", async () => {
       const wei = await client.getBalance({ address: address as `0x${string}` });
-      return { address, balanceWei: wei.toString(), balanceA0GI: formatEther(wei) };
+      return { address, balanceWei: wei.toString(), balance0G: formatEther(wei) };
     })
   );
 }

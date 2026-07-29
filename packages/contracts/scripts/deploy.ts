@@ -12,7 +12,7 @@ async function main() {
   console.log(`Deployer:  ${deployer.address}`);
 
   const balance = await ethers.provider.getBalance(deployer.address);
-  console.log(`Balance:   ${ethers.formatEther(balance)} A0GI`);
+  console.log(`Balance:   ${ethers.formatEther(balance)} 0G`);
   console.log("-".repeat(60));
 
   const coldWallet  = process.env.COLD_WALLET_ADDRESS  || deployer.address;

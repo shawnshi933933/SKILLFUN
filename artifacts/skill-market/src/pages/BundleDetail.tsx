@@ -173,7 +173,7 @@ export default function BundleDetail() {
                             </div>
                             <div className="text-right shrink-0">
                               {basePrice > 0 && (
-                                <div className="text-xs font-mono text-primary">{basePrice} A0GI</div>
+                                <div className="text-xs font-mono text-primary">{basePrice} 0G</div>
                               )}
                               <Badge className="text-[10px] border mt-0.5" variant="outline">
                                 {skill.mintStatus}
@@ -221,7 +221,7 @@ export default function BundleDetail() {
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Bundle Price</div>
                   <div className="text-2xl font-bold font-mono">
-                    {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} A0GI` : "—"}
+                    {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} 0G` : "—"}
                   </div>
                 </div>
                 {apy > 0 && (

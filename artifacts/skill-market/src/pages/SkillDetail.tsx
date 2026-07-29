@@ -137,7 +137,7 @@ export default function SkillDetail() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Base Price", value: basePrice > 0 ? `${basePrice} A0GI` : "—" },
+                { label: "Base Price", value: basePrice > 0 ? `${basePrice} 0G` : "—" },
                 { label: "Invocations", value: invocations.toLocaleString() },
                 { label: "Creator Share", value: `${creatorShare}%` },
                 { label: "Royalty", value: `${royaltyRate}%` },
@@ -221,7 +221,7 @@ export default function SkillDetail() {
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Base Price</div>
                   <div className="text-2xl font-bold font-mono">
-                    {basePrice > 0 ? `${basePrice} A0GI` : "—"}
+                    {basePrice > 0 ? `${basePrice} 0G` : "—"}
                   </div>
                 </div>
                 <Badge className={`${isMinted ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-white/5 text-muted-foreground border-white/10"} border`}>

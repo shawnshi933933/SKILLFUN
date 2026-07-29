@@ -67,7 +67,7 @@ export interface OnChainSkillData {
 export interface ChainBalance {
   address:     string;
   balanceWei:  string;
-  balanceA0GI: string;
+  balance0G: string;
 }
 
 // ---------------------------------------------------------------------------
