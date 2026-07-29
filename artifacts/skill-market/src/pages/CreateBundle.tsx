@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, Zap, Coins, X, Loader2, Package } from "lucide-react";
+import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, X, Loader2, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSkills } from "@/hooks/use-skills";
+import { useEip712Sign } from "@/hooks/use-eip712";
+import { bundlesApi } from "@/lib/api";
 import type { DbSkill } from "@/lib/api";
 
 const STEPS = ["Bundle Info", "Workflow", "Select Skills", "Review & Deploy"];
@@ -29,10 +32,27 @@ function skillDisplayName(skill: DbSkill): string {
   return getMeta<string>(skill, "name", skill.repoUrl.split("/").pop() ?? skill.skillId);
 }
 
+/** Convert a bundle name into a URL-safe subdomain slug. */
+function toSubdomain(name: string): string {
+  const base = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "bundle";
+  // Append a short random suffix to reduce collision risk.
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${base}-${suffix}`;
+}
+
 export default function CreateBundle() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const sign = useEip712Sign();
+
   const [step, setStep] = useState(0);
-  const [deployState, setDeployState] = useState<"idle" | "deploying" | "registering" | "done">("idle");
+  const [deployState, setDeployState] = useState<"idle" | "creating" | "linking" | "done">("idle");
+  const [deployError, setDeployError] = useState<string | null>(null);
+  const [createdBundleId, setCreatedBundleId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
     name: "",
     description: "",
@@ -64,19 +84,55 @@ export default function CreateBundle() {
   const curatorEarning = markupAmount * 0.5 * 0.9;
 
   const handleDeploy = async () => {
-    setDeployState("deploying");
-    await new Promise((r) => setTimeout(r, 1400));
-    setDeployState("registering");
-    await new Promise((r) => setTimeout(r, 1200));
-    setDeployState("done");
-    toast({ title: "Bundle Deployed!", description: `${form.name} is now live with an MCP endpoint and x402 W0G payment` });
+    setDeployError(null);
+    try {
+      // ── Step 1: Create the bundle ──────────────────────────────────────────
+      setDeployState("creating");
+      const createSig = await sign("create-bundle");
+      const subdomain = toSubdomain(form.name);
+      const { bundle } = await bundlesApi.create(
+        {
+          subdomain,
+          name: form.name,
+          description: form.description || undefined,
+          meta: {
+            workflow: form.workflow || undefined,
+            tags: form.tags
+              ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
+              : undefined,
+            markup: form.markup,
+          },
+        },
+        createSig,
+      );
+
+      // ── Step 2: Link the selected skills ──────────────────────────────────
+      setDeployState("linking");
+      if (form.selectedSkillIds.length > 0) {
+        const skillsSig = await sign("update-bundle-skills");
+        await bundlesApi.updateSkills(bundle.bundleId, form.selectedSkillIds, skillsSig);
+      }
+
+      // ── Done ──────────────────────────────────────────────────────────────
+      setCreatedBundleId(bundle.bundleId);
+      setDeployState("done");
+      toast({
+        title: "Bundle Deployed!",
+        description: `${form.name} is now live with an MCP endpoint and x402 W0G payment`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDeployError(msg);
+      setDeployState("idle");
+      toast({ title: "Deploy failed", description: msg, variant: "destructive" });
+    }
   };
 
   const deploySteps = [
-    { key: "deploying", label: "Deploying Bundle" },
-    { key: "registering", label: "Registering MCP endpoint" },
+    { key: "creating",  label: "Creating Bundle" },
+    { key: "linking",   label: "Linking Skills to MCP endpoint" },
   ];
-  const deployOrder = ["deploying", "registering", "done"];
+  const deployOrder = ["creating", "linking", "done"];
   const deployIdx = deployOrder.indexOf(deployState);
 
   return (
@@ -239,6 +295,7 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                       { label: "Skills", value: `${selectedSkills.length} selected` },
                       { label: "Workflow", value: form.workflow ? `${form.workflow.slice(0, 60)}…` : "None" },
                       { label: "Total Base Price", value: `${totalBasePrice.toFixed(4)} W0G/invoke` },
+                      { label: "Curator Earning (est.)", value: curatorEarning > 0 ? `~${curatorEarning.toFixed(4)} W0G/invoke` : "—" },
                     ].map((r) => (
                       <div key={r.label} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{r.label}</span>
@@ -250,7 +307,17 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                     <Bot className="w-3 h-3 inline mr-1 text-accent" />
                     Deploying creates a Bundle with a single MCP endpoint. Agents discover Skills via <span className="font-mono">tools/list</span>, pay W0G via <span className="font-mono">invokeSkill</span>, and receive decrypted Skill content to run locally. Proof tokens are valid until you update the Skill content.
                   </div>
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground gap-2" onClick={handleDeploy} data-testid="button-deploy-bundle">
+                  {deployError && (
+                    <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                      {deployError}
+                    </div>
+                  )}
+                  <Button
+                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+                    onClick={handleDeploy}
+                    disabled={!form.name.trim()}
+                    data-testid="button-deploy-bundle"
+                  >
                     <Layers className="w-4 h-4" /> Deploy Bundle
                   </Button>
                 </>
@@ -273,8 +340,29 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                       <div className="text-2xl font-bold text-emerald-400 mb-2">Bundle Deployed!</div>
                       <p className="text-muted-foreground text-sm mb-4">Your Bundle is live. Agents can now discover and invoke Skills via x402 W0G payment.</p>
                       <div className="flex gap-3 justify-center">
-                        <Button variant="outline" className="border-white/20" onClick={() => window.location.href = "/app/market"} data-testid="button-view-in-market">View in Market</Button>
-                        <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => { setStep(0); setDeployState("idle"); setForm({ name: "", description: "", workflow: "", tags: "", markup: 15, selectedSkillIds: [] }); }} data-testid="button-create-another">Create Another</Button>
+                        {createdBundleId && (
+                          <Button
+                            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                            onClick={() => setLocation(`/app/bundles/${createdBundleId}`)}
+                            data-testid="button-view-bundle"
+                          >
+                            View Bundle
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          className="border-white/20"
+                          onClick={() => {
+                            setStep(0);
+                            setDeployState("idle");
+                            setDeployError(null);
+                            setCreatedBundleId(null);
+                            setForm({ name: "", description: "", workflow: "", tags: "", markup: 15, selectedSkillIds: [] });
+                          }}
+                          data-testid="button-create-another"
+                        >
+                          Create Another
+                        </Button>
                       </div>
                     </div>
                   )}

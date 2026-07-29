@@ -263,6 +263,23 @@ export const bundlesApi = {
 
   analytics: (id: string) =>
     apiFetch<BundleAnalyticsResponse>(`/bundles/${id}/analytics`),
+
+  create: (
+    body: { subdomain: string; name: string; description?: string; meta?: Record<string, unknown> },
+    sigHeader: string,
+  ) =>
+    apiFetch<{ bundle: DbBundle }>("/bundles", {
+      method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify(body),
+    }),
+
+  updateSkills: (bundleId: string, skillIds: string[], sigHeader: string) =>
+    apiFetch<{ success: boolean; count: number }>(`/bundles/${bundleId}/skills`, {
+      method: "PUT",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify({ skillIds }),
+    }),
 };
 
 export interface SkillStatsResponse {
