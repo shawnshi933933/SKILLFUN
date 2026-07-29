@@ -12,7 +12,8 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { type DbSkill } from "@/lib/api";
 
-const EXPLORER = "https://chainscan.0g.ai";
+const EXPLORER      = "https://chainscan.0g.ai";
+const SKILL_NFT_ADDR = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF";
 
 const mockActivity = [
   { type: "agent", label: "GPT-Agent-7f2a", action: "invoked via x402 MCP", time: "2m ago" },
@@ -122,7 +123,7 @@ export default function SkillDetail() {
                     <span className="text-white/20">·</span>
                     <span>Token #{skill.tokenId}</span>
                     <a
-                      href={`${EXPLORER}/token/${skill.tokenId}`}
+                      href={`${EXPLORER}/nft/${SKILL_NFT_ADDR}/${skill.tokenId}`}
                       target="_blank"
                       rel="noreferrer"
                       className="text-primary hover:underline"

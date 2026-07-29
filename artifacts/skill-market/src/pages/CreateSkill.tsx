@@ -20,7 +20,8 @@ import { githubApi, type GitHubManifestResult } from "@/lib/api";
 
 const STEPS = ["Basic Info", "Economics", "Ownership", "Review & Mint"] as const;
 const CATEGORIES = ["Code", "Analysis", "Writing", "Trading", "Research", "Social"] as const;
-const ZEROG_SCAN = "https://chainscan.0g.ai";
+const ZEROG_SCAN     = "https://chainscan.0g.ai";
+const SKILL_NFT_ADDR = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF";
 
 // ─── Form state ───────────────────────────────────────────────────────────────
 
@@ -308,7 +309,7 @@ export default function CreateSkill() {
             <Button
               variant="outline"
               className="border-white/10 gap-2"
-              onClick={() => window.open(`${ZEROG_SCAN}/token/${mintState.tokenId}`, "_blank")}
+              onClick={() => window.open(`${ZEROG_SCAN}/nft/${SKILL_NFT_ADDR}/${mintState.tokenId}`, "_blank")}
             >
               <ExternalLink className="w-4 h-4" /> View on 0G Scan
             </Button>
