@@ -1,18 +1,25 @@
 /**
- * AI analysis service — uses 0G AI (OpenAI-compatible API).
+ * AI analysis service — uses 0G Router API (OpenAI-compatible).
  * Analyzes raw skill.md / README.md content and returns structured metadata.
  *
- * Base URL is read from ZEROG_AI_BASE_URL (default: https://0g.ai/v1).
- * API key is read from ZEROG_AI_API_KEY.
+ * Base URL : ZEROG_AI_BASE_URL   (default: https://router-api.0g.ai/v1)
+ * API key  : ZEROG_AI_API_KEY
+ * Model    : ZEROG_AI_MODEL      (default: 0gm-1.0-35b-a3b)
+ *
+ * Docs: https://docs.0g.ai/developer-hub/building-on-0g/compute-network/router/quickstart
  */
 import OpenAI from "openai";
 import { logger } from "../lib/logger.js";
 
 function buildClient(): OpenAI {
-  const baseURL = process.env.ZEROG_AI_BASE_URL ?? "https://0g.ai/v1";
+  // Normalise: strip trailing slash, then ensure the path ends with /v1
+  const raw     = (process.env.ZEROG_AI_BASE_URL ?? "https://router-api.0g.ai/v1").replace(/\/+$/, "");
+  const baseURL = raw.endsWith("/v1") ? raw : `${raw}/v1`;
   const apiKey  = process.env.ZEROG_AI_API_KEY  ?? "missing";
   return new OpenAI({ baseURL, apiKey });
 }
+
+const DEFAULT_MODEL = "0gm-1.0-35b-a3b";
 
 export interface SkillAnalysis {
   description:  string;
@@ -42,13 +49,14 @@ export async function analyzeSkillContent(
   fileType: string,
   repoUrl: string
 ): Promise<SkillAnalysis> {
-  const client   = buildClient();
+  const client = buildClient();
+  const model  = process.env.ZEROG_AI_MODEL ?? DEFAULT_MODEL;
   const truncated = rawContent.slice(0, 8_000);
 
-  logger.info({ repoUrl, fileType, chars: truncated.length }, "ai: analyzing skill content");
+  logger.info({ repoUrl, fileType, chars: truncated.length, model }, "ai: analyzing skill content via 0G Router");
 
   const completion = await client.chat.completions.create({
-    model:      "auto",
+    model,
     max_tokens: 1024,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
