@@ -6,7 +6,7 @@ import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
 import { getSkillOnChain, mintSkillOnChain, getOnChainOwner } from "../services/chain.js";
-import { uploadSkillManifest } from "../services/storage.js";
+import { uploadSkillManifest, downloadSkillContent } from "../services/storage.js";
 import { invalidatePrefix, cacheKey } from "../services/cache.js";
 import { getAddresses } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
@@ -187,12 +187,17 @@ router.post("/skills/prepare-mint", async (req, res) => {
     chainId:   16661,
   };
 
-  // Upload to 0G Storage (falls back to keccak256 if unavailable).
+  // Encrypt + upload to 0G Storage (falls back to keccak256 if unavailable).
   // When skillFileContent is provided (fetched from GitHub) that real file
-  // is what gets stored — the rootHash anchors the actual skill definition.
+  // is what gets encrypted and stored — the rootHash anchors the actual skill.
   let uploadResult: { rootHash: string; skillUri: string; uploaded: boolean };
   try {
-    uploadResult = await uploadSkillManifest(manifest, skillFileContent ?? undefined);
+    uploadResult = await uploadSkillManifest(
+      skillId,
+      manifestOwnerVal,
+      manifest,
+      skillFileContent ?? undefined
+    );
   } catch (err) {
     logger.error({ err, skillId }, "0G Storage upload failed in prepare-mint");
     apiError(res, ErrorCode.RPC_ERROR, "Failed to upload manifest");
@@ -308,6 +313,57 @@ router.patch("/skills/:id/confirm-mint", async (req, res) => {
   logger.info({ skillId, tokenId, txHash, ownerMode, finalOwner }, "confirm-mint: skill minted");
 
   res.json({ skill: updated, onChainOwner });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/skills/:id/content
+//
+// Downloads and decrypts the encrypted skill content from 0G Storage.
+// Used by AI agents to fetch the actual skill payload (system prompt, config)
+// after calling intelligentDataOf(tokenId) on-chain to get the rootHash.
+//
+// Authorization: owner (wallet sig) OR anyone if skill is public (basePrice=0).
+// For now: public read — agents can always fetch (auth can be tightened later).
+// ─────────────────────────────────────────────────────────────────────────────
+router.get("/skills/:id/content", async (req, res) => {
+  const skillId = req.params.id as string;
+  const [skill] = await db
+    .select()
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!skill) {
+    apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+    return;
+  }
+
+  if (!skill.rootHash) {
+    apiError(res, ErrorCode.NOT_FOUND, "No 0G Storage rootHash for this skill — not yet uploaded");
+    return;
+  }
+
+  // If rootHash looks like a keccak256 fallback (not a real 0G upload), return info
+  // Real 0G rootHash: 32 bytes, looks like keccak256 but IS a Merkle root
+  // We can't distinguish — just try to download and fall back to error message.
+
+  try {
+    const content = await downloadSkillContent(skill.rootHash);
+    logger.info({ skillId, rootHash: skill.rootHash }, "skill content fetched from 0G");
+    res.json({
+      skillId,
+      rootHash:       skill.rootHash,
+      storagePointer: `0g://${skill.rootHash}`,
+      content,
+      fetchedAt:      new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.warn({ err, skillId, rootHash: skill.rootHash }, "0G content fetch failed");
+    apiError(res, ErrorCode.RPC_ERROR,
+      `Failed to fetch content from 0G Storage (rootHash: ${skill.rootHash}). ` +
+      "The content may not yet be finalized on storage nodes."
+    );
+  }
 });
 
 // PATCH /api/skills/:id — update user-editable metadata (owner only)

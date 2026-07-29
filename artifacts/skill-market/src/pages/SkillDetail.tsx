@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bot, Lock, Shield, Clock, ArrowLeft, Hash,
-  ExternalLink, Layers, Loader2, AlertCircle, CheckCircle2,
-  Github, Database, FileCode2,
+  ExternalLink, Loader2, AlertCircle, CheckCircle2,
+  Github, Database, FileCode2, Download, KeyRound,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,9 @@ export default function SkillDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [purchasing, setPurchasing] = useState(false);
+
+  const [fetchingContent, setFetchingContent] = useState(false);
+  const [skillContent, setSkillContent] = useState<string | null>(null);
 
   const { data, isLoading, error } = useSkill(params?.id);
 
@@ -73,6 +76,23 @@ export default function SkillDetail() {
 
   const isMinted  = skill.mintStatus === "minted" || skill.mintStatus === "claimed";
   const isClaimed = skill.mintStatus === "claimed";
+
+  const handleFetchContent = async () => {
+    if (!data?.skill?.skillId) return;
+    setFetchingContent(true);
+    setSkillContent(null);
+    try {
+      const res = await fetch(`/api/skills/${data.skill.skillId}/content`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed");
+      setSkillContent(json.content as string);
+      toast({ title: "Content decrypted", description: "Skill content fetched from 0G Storage" });
+    } catch (err) {
+      toast({ title: "Fetch failed", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setFetchingContent(false);
+    }
+  };
 
   const handleBuy = () => {
     setPurchasing(true);
@@ -219,20 +239,58 @@ export default function SkillDetail() {
 
                 {/* 0G Storage */}
                 <div className="bg-card border border-white/10 rounded-xl px-4 py-3 space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1">
-                    <Database className="w-3.5 h-3.5" /> 0G Storage
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                      <Database className="w-3.5 h-3.5" /> 0G Storage
+                    </div>
+                    {skill.rootHash && (
+                      <div className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5">
+                        <KeyRound className="w-2.5 h-2.5" /> AES-256-GCM
+                      </div>
+                    )}
                   </div>
-                  {skill.rootHash && (
-                    <LinkRow
-                      label="StorageScan"
-                      href={`https://storagescan.0g.ai/?search=${skill.rootHash}`}
-                      text="View on StorageScan ↗"
-                    />
+
+                  {skill.rootHash ? (
+                    <>
+                      {/* Storage pointer — what the NFT actually stores */}
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="text-muted-foreground shrink-0">Storage Pointer</span>
+                        <span className="font-mono text-primary text-right break-all">
+                          0g://{skill.rootHash.slice(0, 18)}…
+                        </span>
+                      </div>
+                      <CopyRow label="Root Hash" value={skill.rootHash} mono />
+                      <LinkRow
+                        label="StorageScan"
+                        href={`https://storagescan.0g.ai/?search=${skill.rootHash}`}
+                        text="View on StorageScan ↗"
+                      />
+
+                      {/* Fetch + decrypt button */}
+                      <div className="pt-2 border-t border-white/10">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2 border-white/20 text-xs h-8"
+                          onClick={handleFetchContent}
+                          disabled={fetchingContent}
+                        >
+                          {fetchingContent
+                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                            : <Download className="w-3 h-3" />}
+                          {fetchingContent ? "Decrypting…" : "Fetch & Decrypt Content"}
+                        </Button>
+                        {skillContent && (
+                          <pre className="mt-2 p-3 rounded-lg bg-black/40 text-xs font-mono overflow-auto max-h-64 text-muted-foreground whitespace-pre-wrap break-all border border-white/10">
+                            {skillContent.slice(0, 2000)}
+                            {skillContent.length > 2000 && "\n…(truncated)"}
+                          </pre>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-muted-foreground italic">Not yet uploaded to 0G Storage</div>
                   )}
-                  {skill.rootHash
-                    ? <CopyRow label="Root Hash" value={skill.rootHash} mono />
-                    : <div className="text-muted-foreground italic">Not yet uploaded to 0G Storage</div>
-                  }
                 </div>
 
                 {/* Capabilities & Tags */}
