@@ -1,23 +1,18 @@
 import { useRoute, useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
-import { useBundle } from "@/hooks/use-skills";
+import { useBundle, useBundleAnalytics } from "@/hooks/use-skills";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Bot, Layers, Coins, Shield, Lock,
   ExternalLink, Zap, Loader2, AlertCircle, Package,
-  Copy, CheckCircle2, ChevronDown, ChevronUp,
+  Copy, CheckCircle2, ChevronDown, ChevronUp, TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { type DbSkill, type DbBundle } from "@/lib/api";
-
-const mockAgentActivity = [
-  { agent: "GPT-Agent-7f2a", skill: "—", time: "45s ago" },
-  { agent: "Claude-opus-3x9", skill: "—", time: "2m ago" },
-];
 
 function getMeta<T>(obj: DbBundle | DbSkill, key: string, fallback: T): T {
   return ((obj.meta as Record<string, unknown>)[key] as T) ?? fallback;
@@ -46,6 +41,7 @@ export default function BundleDetail() {
   const [snippetOpen, setSnippetOpen]  = useState(false);
 
   const { data, isLoading, error } = useBundle(params?.id);
+  const { data: analyticsData } = useBundleAnalytics(params?.id);
 
   if (isLoading) {
     return (
@@ -71,7 +67,8 @@ export default function BundleDetail() {
 
   const apy           = getMeta<number>(bundle, "apy", 0);
   const stakerPool    = getMeta<number>(bundle, "stakerPool", 0);
-  const invocations   = getMeta<number>(bundle, "invocations", 0);
+  const invocations   = analyticsData?.invocations ?? getMeta<number>(bundle, "invocations", 0);
+  const revenueW0G    = analyticsData?.revenueW0G ?? 0;
   const curatorMarkup = getMeta<number>(bundle, "curatorMarkup", 10);
   const tags          = getMeta<string[]>(bundle, "tags", []);
 
@@ -246,7 +243,7 @@ if (attempt.status === 402) {
               {[
                 { label: "Skills", value: String(skills.length) },
                 { label: "Invocations", value: invocations.toLocaleString() },
-                { label: "Staker Pool", value: stakerPool > 0 ? `${stakerPool.toLocaleString()} SKILL` : "—" },
+                { label: "W0G Earned", value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)} W0G` : "—" },
                 { label: "Curator Markup", value: `${curatorMarkup}%` },
               ].map((stat) => (
                 <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
@@ -318,17 +315,53 @@ if (attempt.status === 402) {
 
               <TabsContent value="activity" className="mt-4">
                 <div className="space-y-2">
-                  {mockAgentActivity.map((a, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 text-sm">
-                      <Bot className="w-4 h-4 text-primary shrink-0" />
-                      <span className="font-mono text-xs text-muted-foreground">{a.agent}</span>
-                      <span className="text-muted-foreground text-xs flex-1">invoked via x402 MCP</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
+                  {analyticsData && analyticsData.recentActivity.length > 0 ? (
+                    <>
+                      {analyticsData.recentActivity.map((event, idx) => {
+                        const issuedAt = new Date(event.issuedAt);
+                        const secondsAgo = Math.floor((Date.now() - issuedAt.getTime()) / 1000);
+                        const relTime = secondsAgo < 60
+                          ? `${secondsAgo}s ago`
+                          : secondsAgo < 3600
+                          ? `${Math.floor(secondsAgo / 60)}m ago`
+                          : secondsAgo < 86400
+                          ? `${Math.floor(secondsAgo / 3600)}h ago`
+                          : issuedAt.toLocaleDateString();
+                        return (
+                          <div key={`${event.skillId}-${event.issuedAt}-${idx}`} className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 text-sm">
+                            <Bot className="w-4 h-4 text-primary shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs text-foreground truncate">
+                                  {event.agentWalletMasked}
+                                </span>
+                                <Badge variant="outline" className="border-primary/20 text-primary text-[10px] shrink-0">v{event.contentVersion}</Badge>
+                              </div>
+                              <div className="text-[11px] text-muted-foreground truncate mt-0.5">{event.skillName}</div>
+                            </div>
+                            <span className="text-xs text-muted-foreground shrink-0">{relTime}</span>
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+                        <span>{analyticsData.invocations.toLocaleString()} total invocations</span>
+                        {analyticsData.revenueW0G > 0 && (
+                          <span className="flex items-center gap-1 text-emerald-400">
+                            <TrendingUp className="w-3 h-3" />
+                            {analyticsData.revenueW0G.toFixed(4)} W0G earned
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 space-y-2">
+                      <Bot className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                      <p className="text-sm text-muted-foreground">No agent invocations yet</p>
+                      <p className="text-xs text-muted-foreground/60">
+                        Live x402 proof issuances will appear here once agents start using this bundle
+                      </p>
                     </div>
-                  ))}
-                  <p className="text-xs text-muted-foreground text-center pt-2">
-                    Live x402 agent activity will appear here
-                  </p>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>

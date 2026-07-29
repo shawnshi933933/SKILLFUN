@@ -1,6 +1,6 @@
 import { useRoute, useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
-import { useSkill, useChainOracle } from "@/hooks/use-skills";
+import { useSkill, useChainOracle, useSkillStats } from "@/hooks/use-skills";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,12 +17,6 @@ import { type DbSkill } from "@/lib/api";
 
 const EXPLORER      = "https://chainscan.0g.ai";
 const SKILL_NFT_ADDR = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF";
-
-const mockActivity = [
-  { type: "agent", label: "GPT-Agent-7f2a", action: "invoked via x402 MCP", time: "2m ago" },
-  { type: "agent", label: "Claude-Agent-3x9", action: "invoked via x402 MCP", time: "11m ago" },
-  { type: "human", label: "0x8f3a...b4c5", action: "purchased Skill NFT", time: "18m ago" },
-];
 
 function getMeta(skill: DbSkill, key: string, fallback: unknown) {
   return (skill.meta as Record<string, unknown>)[key] ?? fallback;
@@ -49,6 +43,9 @@ export default function SkillDetail() {
   // Also fetch on-chain oracle status if we have a tokenId
   const tokenId = data?.skill?.tokenId ?? null;
   const { data: oracleData } = useChainOracle(tokenId);
+
+  // Live proof stats (public — invocations count + W0G earned)
+  const { data: statsData } = useSkillStats(params?.id);
 
   if (isLoading) {
     return (
@@ -81,7 +78,9 @@ export default function SkillDetail() {
   const creatorShare = (meta.creatorShare as number | undefined) ?? 80;
   const ownerShare   = (meta.ownerShare as number | undefined) ?? 10;
   const royaltyRate  = (meta.royaltyRate as number | undefined) ?? 5;
-  const invocations  = (meta.invocations as number | undefined) ?? 0;
+  // Live stats take priority over stale meta.invocations
+  const invocations  = statsData?.invocations ?? (meta.invocations as number | undefined) ?? 0;
+  const revenueW0G   = statsData?.revenueW0G ?? 0;
 
   const isMinted  = skill.mintStatus === "minted" || skill.mintStatus === "claimed";
   const isClaimed = skill.mintStatus === "claimed";
@@ -212,10 +211,10 @@ export default function SkillDetail() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Base Price", value: basePrice > 0 ? `${basePrice} W0G` : "—" },
-                { label: "Invocations", value: invocations.toLocaleString() },
-                { label: "Creator Share", value: `${creatorShare}%` },
-                { label: "Royalty", value: `${royaltyRate}%` },
+                { label: "Base Price",   value: basePrice > 0 ? `${basePrice} W0G` : "—" },
+                { label: "Invocations",  value: invocations.toLocaleString() },
+                { label: "W0G Earned",   value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—" },
+                { label: "Royalty",      value: `${royaltyRate}%` },
               ].map((stat) => (
                 <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
                   <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
@@ -233,22 +232,34 @@ export default function SkillDetail() {
               </TabsList>
 
               <TabsContent value="activity" className="mt-4">
-                <div className="space-y-2">
-                  {mockActivity.map((a, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 text-sm">
-                      {a.type === "agent" ? (
-                        <Bot className="w-4 h-4 text-primary shrink-0" />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full bg-accent/20 border border-accent/30 shrink-0" />
-                      )}
-                      <span className="font-mono text-xs text-muted-foreground truncate">{a.label}</span>
-                      <span className="text-muted-foreground text-xs flex-1">{a.action}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
+                <div className="space-y-3">
+                  {/* Live aggregate stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-card border border-white/10 rounded-xl p-3">
+                      <div className="text-xs text-muted-foreground mb-0.5">Total Invocations</div>
+                      <div className="font-mono font-semibold text-lg">{invocations.toLocaleString()}</div>
                     </div>
-                  ))}
-                  <p className="text-xs text-muted-foreground text-center pt-2">
-                    Live x402 activity will appear here after MCP integration (Step 8)
-                  </p>
+                    <div className="bg-card border border-white/10 rounded-xl p-3">
+                      <div className="text-xs text-muted-foreground mb-0.5">W0G Earned</div>
+                      <div className="font-mono font-semibold text-lg text-emerald-400">
+                        {revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {invocations === 0 ? (
+                    <div className="text-center py-6 space-y-2">
+                      <Bot className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                      <p className="text-sm text-muted-foreground">No agent invocations yet</p>
+                      <p className="text-xs text-muted-foreground/60">
+                        Live x402 proof issuances will appear here once agents start invoking this skill
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center pt-1">
+                      Counts reflect on-chain verified proof issuances via x402 MCP
+                    </p>
+                  )}
                 </div>
               </TabsContent>
 

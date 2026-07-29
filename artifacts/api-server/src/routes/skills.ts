@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { skillsTable } from "@workspace/db";
-import { eq, desc, and, SQL } from "drizzle-orm";
+import { skillsTable, paymentProofsTable } from "@workspace/db";
+import { eq, desc, and, SQL, count } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
@@ -465,6 +465,99 @@ router.get(
         "The content may not yet be finalized on storage nodes."
       );
     }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/skills/:id/stats  (public)
+//
+// Returns aggregate invocation count and W0G revenue for a skill.
+// No auth required — only totals are exposed, never proof tokens.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get("/skills/:id/stats", async (req, res) => {
+  const skillId = req.params.id as string;
+
+  const [skill] = await db
+    .select()
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!skill) {
+    apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+    return;
+  }
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(paymentProofsTable)
+    .where(eq(paymentProofsTable.skillId, skillId));
+
+  const basePrice = ((skill.meta as Record<string, unknown>)?.basePrice as number | undefined) ?? 0;
+
+  res.json({
+    skillId,
+    invocations: total,
+    revenueW0G:  total * basePrice,
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/skills/:id/proofs
+//
+// Paginated list of payment proof issuances for a skill.
+// Owner-only: caller must have signed with the skill's ownerAddress.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get(
+  "/skills/:id/proofs",
+  authMiddleware("fetch-skill-proofs"),
+  async (req, res) => {
+    const skillId       = req.params.id as string;
+    const callerAddress = req.walletAddress!.toLowerCase();
+
+    const page  = Math.max(1, parseInt((req.query.page  as string) || "1",  10));
+    const limit = Math.min(50, Math.max(1, parseInt((req.query.limit as string) || "20", 10)));
+    const offset = (page - 1) * limit;
+
+    const [skill] = await db
+      .select()
+      .from(skillsTable)
+      .where(eq(skillsTable.skillId, skillId))
+      .limit(1);
+
+    if (!skill) {
+      apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+      return;
+    }
+    if (skill.ownerAddress?.toLowerCase() !== callerAddress) {
+      apiError(res, ErrorCode.FORBIDDEN, "Only the skill owner can view proof history");
+      return;
+    }
+
+    const [proofs, [{ total }]] = await Promise.all([
+      db
+        .select()
+        .from(paymentProofsTable)
+        .where(eq(paymentProofsTable.skillId, skillId))
+        .orderBy(desc(paymentProofsTable.issuedAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ total: count() })
+        .from(paymentProofsTable)
+        .where(eq(paymentProofsTable.skillId, skillId)),
+    ]);
+
+    const basePrice = ((skill.meta as Record<string, unknown>)?.basePrice as number | undefined) ?? 0;
+
+    res.json({
+      proofs,
+      total,
+      page,
+      limit,
+      invocations: total,
+      revenueW0G:  total * basePrice,
+    });
   }
 );
 

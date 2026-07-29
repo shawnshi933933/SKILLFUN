@@ -205,6 +205,54 @@ export const githubApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Payment proofs
+// ---------------------------------------------------------------------------
+/** Sensitive proof fields (token, txHash, full agentWallet) are never returned
+ *  on public endpoints. This type represents only what analytics exposes. */
+export interface ActivityEvent {
+  skillId:           string;
+  skillName:         string;
+  /** Masked: 0x1234…5678 — full wallet is never exposed publicly */
+  agentWalletMasked: string;
+  contentVersion:    number;
+  issuedAt:          string;
+}
+
+/** Full proof record — only returned to authenticated skill owners via /api/skills/:id/proofs */
+export interface PaymentProof {
+  token:          string;
+  skillId:        string;
+  contentVersion: number;
+  agentWallet:    string;
+  txHash:         string;
+  issuedAt:       string;
+  expiresAt:      string | null;
+}
+
+export interface SkillProofsResponse {
+  proofs:      PaymentProof[];
+  total:       number;
+  page:        number;
+  limit:       number;
+  invocations: number;
+  revenueW0G:  number;
+}
+
+export interface BundleSkillBreakdown {
+  skillId:     string;
+  skillName:   string;
+  invocations: number;
+  revenueW0G:  number;
+}
+
+export interface BundleAnalyticsResponse {
+  invocations:    number;
+  revenueW0G:     number;
+  recentActivity: ActivityEvent[];
+  skillBreakdown: BundleSkillBreakdown[];
+}
+
+// ---------------------------------------------------------------------------
 // Bundles
 // ---------------------------------------------------------------------------
 export const bundlesApi = {
@@ -212,6 +260,28 @@ export const bundlesApi = {
 
   get: (id: string) =>
     apiFetch<{ bundle: DbBundle; skills: (DbSkill & { position: number })[] }>(`/bundles/${id}`),
+
+  analytics: (id: string) =>
+    apiFetch<BundleAnalyticsResponse>(`/bundles/${id}/analytics`),
+};
+
+export interface SkillStatsResponse {
+  skillId:     string;
+  invocations: number;
+  revenueW0G:  number;
+}
+
+// ---------------------------------------------------------------------------
+// Skills (proofs — owner-only)
+// ---------------------------------------------------------------------------
+export const proofsApi = {
+  list: (skillId: string, sigHeader: string, page = 1, limit = 20) =>
+    apiFetch<SkillProofsResponse>(`/skills/${skillId}/proofs?page=${page}&limit=${limit}`, {
+      headers: { "X-Wallet-Signature": sigHeader },
+    }),
+
+  stats: (skillId: string) =>
+    apiFetch<SkillStatsResponse>(`/skills/${skillId}/stats`),
 };
 
 // ---------------------------------------------------------------------------

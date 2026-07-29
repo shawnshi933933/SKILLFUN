@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { skillsApi, bundlesApi, chainApi, authApi } from "@/lib/api";
+import { skillsApi, bundlesApi, chainApi, authApi, proofsApi } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Skills
@@ -38,6 +38,29 @@ export function useBundle(id: string | undefined) {
     queryFn: () => bundlesApi.get(id!),
     enabled: !!id,
     staleTime: 30_000,
+  });
+}
+
+export function useBundleAnalytics(id: string | undefined) {
+  return useQuery({
+    queryKey: ["bundle-analytics", id],
+    queryFn: () => bundlesApi.analytics(id!),
+    enabled: !!id,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Skill stats (public — invocation count + W0G earned)
+// ---------------------------------------------------------------------------
+export function useSkillStats(id: string | undefined) {
+  return useQuery({
+    queryKey: ["skill-stats", id],
+    queryFn: () => proofsApi.stats(id!),
+    enabled: !!id,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 }
 

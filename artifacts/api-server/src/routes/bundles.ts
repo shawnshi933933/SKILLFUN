@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { bundlesTable, bundleSkillsTable, skillsTable } from "@workspace/db";
-import { eq, desc, asc, inArray } from "drizzle-orm";
+import { bundlesTable, bundleSkillsTable, skillsTable, paymentProofsTable } from "@workspace/db";
+import { eq, desc, asc, inArray, count } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -41,6 +41,108 @@ router.get("/bundles/:id", async (req, res) => {
     .orderBy(asc(bundleSkillsTable.position));
 
   res.json({ bundle, skills: bundleSkills.map(r => ({ ...r.skill, position: r.position })) });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/bundles/:id/analytics
+//
+// Aggregate invocations + W0G revenue across all skills in a bundle.
+// Public endpoint — activity events are SANITIZED: no proof tokens, no txHashes,
+// no full agent wallet. Leaking proof tokens would allow replay attacks that
+// bypass x402 payment (token + agentWallet together satisfy MCP proof validation).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Mask a wallet address: 0x1234…5678 */
+function maskWallet(wallet: string): string {
+  if (wallet.length < 12) return wallet;
+  return `${wallet.slice(0, 6)}…${wallet.slice(-4)}`;
+}
+
+router.get("/bundles/:id/analytics", async (req, res) => {
+  const bundleId = req.params.id as string;
+
+  const [bundle] = await db
+    .select()
+    .from(bundlesTable)
+    .where(eq(bundlesTable.bundleId, bundleId))
+    .limit(1);
+
+  if (!bundle) {
+    apiError(res, ErrorCode.NOT_FOUND, "Bundle not found");
+    return;
+  }
+
+  const bundleSkills = await db
+    .select({ skill: skillsTable })
+    .from(bundleSkillsTable)
+    .innerJoin(skillsTable, eq(bundleSkillsTable.skillId, skillsTable.skillId))
+    .where(eq(bundleSkillsTable.bundleId, bundleId));
+
+  const skillIds = bundleSkills.map((r) => r.skill.skillId);
+
+  if (skillIds.length === 0) {
+    res.json({ invocations: 0, revenueW0G: 0, recentActivity: [], skillBreakdown: [] });
+    return;
+  }
+
+  const [rawActivity, countsBySkill] = await Promise.all([
+    // Only select non-sensitive columns — never pull token or txHash for public responses
+    db
+      .select({
+        skillId:        paymentProofsTable.skillId,
+        agentWallet:    paymentProofsTable.agentWallet,
+        contentVersion: paymentProofsTable.contentVersion,
+        issuedAt:       paymentProofsTable.issuedAt,
+      })
+      .from(paymentProofsTable)
+      .where(inArray(paymentProofsTable.skillId, skillIds))
+      .orderBy(desc(paymentProofsTable.issuedAt))
+      .limit(50),
+    db
+      .select({ skillId: paymentProofsTable.skillId, total: count() })
+      .from(paymentProofsTable)
+      .where(inArray(paymentProofsTable.skillId, skillIds))
+      .groupBy(paymentProofsTable.skillId),
+  ]);
+
+  const skillMap = Object.fromEntries(bundleSkills.map((r) => [r.skill.skillId, r.skill]));
+
+  // Sanitize activity: mask agent wallet, omit token + txHash entirely
+  const recentActivity = rawActivity.map((row) => {
+    const skill     = skillMap[row.skillId];
+    const meta      = (skill?.meta as Record<string, unknown>) ?? {};
+    const skillName = (meta.name as string | undefined) ?? row.skillId;
+    return {
+      skillId:           row.skillId,
+      skillName,
+      agentWalletMasked: maskWallet(row.agentWallet),
+      contentVersion:    row.contentVersion,
+      issuedAt:          row.issuedAt,
+    };
+  });
+
+  const skillBreakdown = countsBySkill.map((row) => {
+    const skill      = skillMap[row.skillId];
+    const meta       = (skill?.meta as Record<string, unknown>) ?? {};
+    const basePrice  = (meta.basePrice as number | undefined) ?? 0;
+    const skillName  = (meta.name as string | undefined) ?? row.skillId;
+    return {
+      skillId:     row.skillId,
+      skillName,
+      invocations: row.total,
+      revenueW0G:  row.total * basePrice,
+    };
+  });
+
+  const totalInvocations = skillBreakdown.reduce((s, r) => s + r.invocations, 0);
+  const totalRevenueW0G  = skillBreakdown.reduce((s, r) => s + r.revenueW0G,  0);
+
+  res.json({
+    invocations:    totalInvocations,
+    revenueW0G:     totalRevenueW0G,
+    recentActivity,
+    skillBreakdown,
+  });
 });
 
 // POST /api/bundles — create bundle (requires wallet auth)
