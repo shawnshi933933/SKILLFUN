@@ -388,55 +388,86 @@ router.get("/skills/:id/verify", async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/skills/:id/content
 //
 // Downloads and decrypts the encrypted skill content from 0G Storage.
-// Used by AI agents to fetch the actual skill payload (system prompt, config)
-// after calling intelligentDataOf(tokenId) on-chain to get the rootHash.
+// Used by AI agents and the UI to fetch the actual skill payload.
 //
-// Authorization: owner (wallet sig) OR anyone if skill is public (basePrice=0).
-// For now: public read — agents can always fetch (auth can be tightened later).
+// Authorization (checked in order):
+//   1. Require a valid EIP-712 wallet signature (X-Wallet-Signature header).
+//   2. Caller must be the on-chain NFT owner (ownerOf(tokenId)) OR the
+//      recorded creator (skill.ownerAddress) — whichever is current.
+//
+// Rationale: the content is encrypted precisely because it should be
+// accessible ONLY to the NFT holder. Anyone who obtained the rootHash
+// from the tokenURI must still prove wallet ownership to decrypt.
 // ─────────────────────────────────────────────────────────────────────────────
-router.get("/skills/:id/content", async (req, res) => {
-  const skillId = req.params.id as string;
-  const [skill] = await db
-    .select()
-    .from(skillsTable)
-    .where(eq(skillsTable.skillId, skillId))
-    .limit(1);
+router.get(
+  "/skills/:id/content",
+  authMiddleware("fetch-skill-content"),
+  async (req, res) => {
+    const skillId       = req.params.id as string;
+    const callerAddress = req.walletAddress!.toLowerCase();
 
-  if (!skill) {
-    apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
-    return;
+    const [skill] = await db
+      .select()
+      .from(skillsTable)
+      .where(eq(skillsTable.skillId, skillId))
+      .limit(1);
+
+    if (!skill) {
+      apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+      return;
+    }
+
+    if (!skill.rootHash) {
+      apiError(res, ErrorCode.NOT_FOUND, "No 0G Storage rootHash for this skill — not yet uploaded");
+      return;
+    }
+
+    // ── Ownership check ──────────────────────────────────────────────────────
+    // Allow access if caller is the recorded creator OR the current on-chain NFT owner.
+    const dbOwner = skill.ownerAddress?.toLowerCase();
+    let authorized = callerAddress === dbOwner;
+
+    if (!authorized && skill.tokenId != null) {
+      const onChainOwner = await getOnChainOwner(skill.tokenId).catch(() => null);
+      if (onChainOwner && onChainOwner.toLowerCase() === callerAddress) {
+        authorized = true;
+      }
+    }
+
+    if (!authorized) {
+      logger.warn({ skillId, callerAddress, dbOwner, tokenId: skill.tokenId },
+        "content fetch denied — caller does not own skill NFT");
+      apiError(res, ErrorCode.UNAUTHORIZED,
+        "Access denied. You must own this Skill NFT to fetch its content. " +
+        "Sign with the wallet that holds token #" + (skill.tokenId ?? "(pending mint)") + "."
+      );
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    try {
+      const content = await downloadSkillContent(skill.rootHash);
+      logger.info({ skillId, callerAddress, rootHash: skill.rootHash }, "skill content fetched from 0G");
+      res.json({
+        skillId,
+        rootHash:       skill.rootHash,
+        storagePointer: `0g://${skill.rootHash}`,
+        content,
+        fetchedAt:      new Date().toISOString(),
+      });
+    } catch (err) {
+      logger.warn({ err, skillId, rootHash: skill.rootHash }, "0G content fetch failed");
+      apiError(res, ErrorCode.RPC_ERROR,
+        `Failed to fetch content from 0G Storage (rootHash: ${skill.rootHash}). ` +
+        "The content may not yet be finalized on storage nodes."
+      );
+    }
   }
-
-  if (!skill.rootHash) {
-    apiError(res, ErrorCode.NOT_FOUND, "No 0G Storage rootHash for this skill — not yet uploaded");
-    return;
-  }
-
-  // If rootHash looks like a keccak256 fallback (not a real 0G upload), return info
-  // Real 0G rootHash: 32 bytes, looks like keccak256 but IS a Merkle root
-  // We can't distinguish — just try to download and fall back to error message.
-
-  try {
-    const content = await downloadSkillContent(skill.rootHash);
-    logger.info({ skillId, rootHash: skill.rootHash }, "skill content fetched from 0G");
-    res.json({
-      skillId,
-      rootHash:       skill.rootHash,
-      storagePointer: `0g://${skill.rootHash}`,
-      content,
-      fetchedAt:      new Date().toISOString(),
-    });
-  } catch (err) {
-    logger.warn({ err, skillId, rootHash: skill.rootHash }, "0G content fetch failed");
-    apiError(res, ErrorCode.RPC_ERROR,
-      `Failed to fetch content from 0G Storage (rootHash: ${skill.rootHash}). ` +
-      "The content may not yet be finalized on storage nodes."
-    );
-  }
-});
+);
 
 // PATCH /api/skills/:id — update user-editable metadata (owner only)
 // NOTE: tokenId, mintStatus, reviewStatus, and manifestOwner are intentionally excluded.

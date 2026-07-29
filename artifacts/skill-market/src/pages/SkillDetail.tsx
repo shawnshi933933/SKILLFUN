@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAccount } from "wagmi";
+import { useEip712Sign } from "@/hooks/use-eip712";
 import { type DbSkill } from "@/lib/api";
 
 const EXPLORER      = "https://chainscan.0g.ai";
@@ -38,6 +40,9 @@ export default function SkillDetail() {
   const [verifyResult, setVerifyResult] = useState<{
     finalized: boolean; txSeq: number; size: number; verifiedOnNode: string; note: string;
   } | null>(null);
+
+  const { address: connectedAddress } = useAccount();
+  const sign = useEip712Sign();
 
   const { data, isLoading, error } = useSkill(params?.id);
 
@@ -100,14 +105,22 @@ export default function SkillDetail() {
 
   const handleFetchContent = async () => {
     if (!data?.skill?.skillId) return;
+    if (!connectedAddress) {
+      toast({ title: "Wallet required", description: "Connect your wallet to decrypt skill content (NFT ownership check)", variant: "destructive" });
+      return;
+    }
     setFetchingContent(true);
     setSkillContent(null);
     try {
-      const res = await fetch(`/api/skills/${data.skill.skillId}/content`);
+      // Sign proves wallet ownership — backend verifies you hold the NFT
+      const sigHeader = await sign("fetch-skill-content");
+      const res = await fetch(`/api/skills/${data.skill.skillId}/content`, {
+        headers: { "X-Wallet-Signature": sigHeader },
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed");
       setSkillContent(json.content as string);
-      toast({ title: "Content decrypted", description: "Skill content fetched from 0G Storage" });
+      toast({ title: "Content decrypted ✅", description: `${(json.content as string).length} bytes fetched from 0G Storage` });
     } catch (err) {
       toast({ title: "Fetch failed", description: (err as Error).message, variant: "destructive" });
     } finally {
@@ -349,10 +362,23 @@ export default function SkillDetail() {
                           {fetchingContent ? "Decrypting…" : "Fetch & Decrypt Content"}
                         </Button>
                         {skillContent && (
-                          <pre className="mt-2 p-3 rounded-lg bg-black/40 text-xs font-mono overflow-auto max-h-64 text-muted-foreground whitespace-pre-wrap break-all border border-white/10">
-                            {skillContent.slice(0, 2000)}
-                            {skillContent.length > 2000 && "\n…(truncated)"}
-                          </pre>
+                          <div className="mt-2 space-y-1">
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground px-1">
+                              <span>{skillContent.length.toLocaleString()} bytes decrypted</span>
+                              <button
+                                className="hover:text-foreground transition-colors"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(skillContent);
+                                  toast({ title: "Copied to clipboard" });
+                                }}
+                              >
+                                Copy ↗
+                              </button>
+                            </div>
+                            <pre className="p-3 rounded-lg bg-black/40 text-xs font-mono overflow-auto max-h-96 text-muted-foreground whitespace-pre-wrap break-words border border-white/10">
+                              {skillContent}
+                            </pre>
+                          </div>
                         )}
                       </div>
                     </>
