@@ -118,7 +118,14 @@ export default function SkillDetail() {
         headers: { "X-Wallet-Signature": sigHeader },
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed");
+      if (!res.ok) {
+        // API error shape: { error: { code: string, message: string } }
+        const errMsg = (json.error as { message?: string })?.message
+          ?? (typeof json.error === "string" ? json.error : null)
+          ?? json.message
+          ?? "Failed";
+        throw new Error(errMsg);
+      }
       setSkillContent(json.content as string);
       toast({ title: "Content decrypted ✅", description: `${(json.content as string).length} bytes fetched from 0G Storage` });
     } catch (err) {
