@@ -122,7 +122,19 @@ export default function SkillDetail() {
       setSkillContent(json.content as string);
       toast({ title: "Content decrypted ✅", description: `${(json.content as string).length} bytes fetched from 0G Storage` });
     } catch (err) {
-      toast({ title: "Fetch failed", description: (err as Error).message, variant: "destructive" });
+      const msg = (err as Error).message ?? "";
+      const isOwnershipError =
+        msg.includes("Access denied") ||
+        msg.includes("UNAUTHORIZED") ||
+        msg.includes("own this Skill NFT") ||
+        msg.includes("Missing X-Wallet-Signature");
+      toast({
+        title: isOwnershipError ? "🔒 非 NFT 持有者，无法解密" : "Fetch failed",
+        description: isOwnershipError
+          ? "只有持有该 Skill NFT 的钱包才能解密内容。请确认已连接正确的钱包地址。"
+          : msg,
+        variant: "destructive",
+      });
     } finally {
       setFetchingContent(false);
     }
