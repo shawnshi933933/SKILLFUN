@@ -80,6 +80,7 @@ export interface CreateSkillInput {
   meta?: {
     name?:         string;
     description?:  string;
+    instructions?: string;
     category?:     string;
     version?:      string;
     basePrice?:    number;
@@ -101,6 +102,7 @@ export interface PrepareMintInput {
   meta?: {
     name?:         string;
     description?:  string;
+    instructions?: string;
     category?:     string;
     version?:      string;
     basePrice?:    number;

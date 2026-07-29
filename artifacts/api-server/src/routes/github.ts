@@ -10,6 +10,7 @@
 import { Router } from "express";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
+import { analyzeSkillContent } from "../services/ai.js";
 
 const router = Router();
 
@@ -274,6 +275,89 @@ router.get("/github/skill-manifest", async (req, res) => {
     githubUrl:  `https://github.com/${owner}/${repoName}`,
     warning:    "No skill manifest found. Fill in the form manually and add a skillfun.json to your repo.",
   });
+});
+
+// ---------------------------------------------------------------------------
+// Simple per-IP rate limiter for the AI analyze endpoint
+// 10 requests per 10-minute window per IP
+// ---------------------------------------------------------------------------
+
+interface RateBucket { count: number; resetAt: number }
+const _rateBuckets = new Map<string, RateBucket>();
+const AI_RATE_LIMIT  = 10;
+const AI_RATE_WINDOW = 10 * 60 * 1_000; // 10 min in ms
+
+/** Returns true if the request should be allowed, false if rate-limited. */
+function allowAiRequest(ip: string): boolean {
+  const now = Date.now();
+  const bucket = _rateBuckets.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    _rateBuckets.set(ip, { count: 1, resetAt: now + AI_RATE_WINDOW });
+    // Periodically prune expired buckets to prevent memory growth
+    if (_rateBuckets.size > 10_000) {
+      for (const [k, v] of _rateBuckets) {
+        if (now > v.resetAt) _rateBuckets.delete(k);
+      }
+    }
+    return true;
+  }
+  if (bucket.count >= AI_RATE_LIMIT) return false;
+  bucket.count++;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/github/ai-analyze
+// Body: { rawContent: string; fileType: string; repoUrl: string }
+// Returns: { description, capabilities, tags, instructions }
+//
+// Protected by:
+//   • Per-IP rate limit (10 req / 10 min)
+//   • rawContent capped at 50 KB before forwarding to AI
+// ---------------------------------------------------------------------------
+
+const MAX_RAW_BYTES = 50_000; // 50 KB hard cap
+
+router.post("/github/ai-analyze", async (req, res) => {
+  // ── Rate limit ────────────────────────────────────────────────────────────
+  const ip = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0].trim()
+    ?? req.socket.remoteAddress
+    ?? "unknown";
+
+  if (!allowAiRequest(ip)) {
+    res.status(429).json({ error: { code: "RATE_LIMITED", message: "Too many AI analysis requests — please wait a few minutes." } });
+    return;
+  }
+
+  // ── Input validation ──────────────────────────────────────────────────────
+  const { rawContent, fileType, repoUrl } = req.body as {
+    rawContent?: string;
+    fileType?:   string;
+    repoUrl?:    string;
+  };
+
+  if (!rawContent || typeof rawContent !== "string") {
+    apiError(res, ErrorCode.INVALID_INPUT, "rawContent is required");
+    return;
+  }
+  if (!fileType || typeof fileType !== "string") {
+    apiError(res, ErrorCode.INVALID_INPUT, "fileType is required");
+    return;
+  }
+
+  // ── Call AI service ───────────────────────────────────────────────────────
+  try {
+    const result = await analyzeSkillContent(
+      rawContent.slice(0, MAX_RAW_BYTES), // enforce cap server-side too
+      fileType,
+      typeof repoUrl === "string" ? repoUrl : "unknown"
+    );
+    res.json(result);
+  } catch (err) {
+    // Log full error server-side; return a generic message to the client
+    logger.error({ err, ip, fileType }, "ai-analyze: upstream AI call failed");
+    apiError(res, ErrorCode.INTERNAL, "AI analysis failed — please try again later");
+  }
 });
 
 export default router;

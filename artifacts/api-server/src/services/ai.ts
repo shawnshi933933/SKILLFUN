@@ -1,14 +1,18 @@
 /**
- * AI analysis service — uses Replit-managed Anthropic integration.
+ * AI analysis service — uses 0G AI (OpenAI-compatible API).
  * Analyzes raw skill.md / README.md content and returns structured metadata.
+ *
+ * Base URL is read from ZEROG_AI_BASE_URL (default: https://0g.ai/v1).
+ * API key is read from ZEROG_AI_API_KEY.
  */
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { logger } from "../lib/logger.js";
 
-const anthropic = new Anthropic({
-  baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-  apiKey:  process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ?? "placeholder",
-});
+function buildClient(): OpenAI {
+  const baseURL = process.env.ZEROG_AI_BASE_URL ?? "https://0g.ai/v1";
+  const apiKey  = process.env.ZEROG_AI_API_KEY  ?? "missing";
+  return new OpenAI({ baseURL, apiKey });
+}
 
 export interface SkillAnalysis {
   description:  string;
@@ -31,35 +35,37 @@ Rules:
 - description: max 1 sentence, plain language, no marketing fluff
 - capabilities: actual MCP tool / function names this skill exposes; use snake_case; infer from context if not explicit (e.g. "get_weather", "search_web")
 - tags: 3–6 lowercase tags, specific (e.g. "python", "finance", "data-analysis"); avoid generic terms like "tool" or "ai"
-- instructions: 2–4 sentences, agent-facing, action-oriented; describe when to invoke this skill and any required parameters
-`;
+- instructions: 2–4 sentences, agent-facing, action-oriented; describe when to invoke this skill and any required parameters`;
 
 export async function analyzeSkillContent(
   rawContent: string,
   fileType: string,
   repoUrl: string
 ): Promise<SkillAnalysis> {
+  const client   = buildClient();
   const truncated = rawContent.slice(0, 8_000);
 
   logger.info({ repoUrl, fileType, chars: truncated.length }, "ai: analyzing skill content");
 
-  const msg = await anthropic.messages.create({
-    model:      "claude-haiku-4-5",
-    max_tokens: 8192,
-    system:     SYSTEM_PROMPT,
-    messages: [{
-      role:    "user",
-      content: `Analyze this skill file (${fileType}) from the repo "${repoUrl}":\n\n${truncated}`,
-    }],
+  const completion = await client.chat.completions.create({
+    model:      "auto",
+    max_tokens: 1024,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role:    "user",
+        content: `Analyze this skill file (${fileType}) from the repo "${repoUrl}":\n\n${truncated}`,
+      },
+    ],
   });
 
-  const text = msg.content[0]?.type === "text" ? msg.content[0].text : "";
+  const text = completion.choices[0]?.message?.content ?? "";
 
   // Extract JSON — may be wrapped in ```json``` fences
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     logger.warn({ text }, "ai: failed to extract JSON from response");
-    throw new Error("AI returned unparseable response");
+    throw new Error(`AI returned unparseable response: ${text.slice(0, 200)}`);
   }
 
   const parsed = JSON.parse(jsonMatch[0]);

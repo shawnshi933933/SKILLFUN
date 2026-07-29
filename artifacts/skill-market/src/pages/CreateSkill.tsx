@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckCircle, Zap, ArrowRight, ArrowLeft,
   ExternalLink, Loader2, Shield, User, Users,
-  Wallet, Github, AlertCircle, FileText,
+  Wallet, Github, AlertCircle, FileText, Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSelfMint, type MintPhase } from "@/hooks/use-self-mint";
@@ -20,7 +20,6 @@ import { githubApi, type GitHubManifestResult } from "@/lib/api";
 
 const STEPS = ["Basic Info", "Economics", "Ownership", "Review & Mint"] as const;
 const CATEGORIES = ["Code", "Analysis", "Writing", "Trading", "Research", "Social"] as const;
-const DEFAULT_CAPABILITIES = ["answer_question", "process_data", "generate_report"];
 const ZEROG_SCAN = "https://chainscan.0g.ai";
 
 // ─── Form state ───────────────────────────────────────────────────────────────
@@ -29,6 +28,7 @@ interface FormData {
   repoUrl:      string;
   name:         string;
   description:  string;
+  instructions: string;
   category:     string;
   version:      string;
   basePrice:    string;
@@ -41,10 +41,11 @@ const INITIAL_FORM: FormData = {
   repoUrl:      "",
   name:         "",
   description:  "",
+  instructions: "",
   category:     "Code",
   version:      "1.0.0",
   basePrice:    "0.01",
-  capabilities: DEFAULT_CAPABILITIES.join(", "),
+  capabilities: "",
   tags:         "",
   ownerMode:    "mine",
 };
@@ -57,7 +58,7 @@ interface GitHubState {
   rawContent:     string | null;
   githubUrl:      string | null;
   warning:        string | null;
-  fetchedForRepo: string | null;  // which repo slug was last successfully fetched
+  fetchedForRepo: string | null;
 }
 const INITIAL_GH: GitHubState = {
   status: "idle", fileType: null, rawContent: null, githubUrl: null, warning: null, fetchedForRepo: null,
@@ -77,37 +78,59 @@ const PHASE_LABEL: Record<MintPhase, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+// ─── Combined form + AI-fields state (atomic updates prevent race conditions) ──
+
+interface FormState {
+  data:     FormData;
+  /** Fields whose current value was written by AI (cleared on manual edit). */
+  aiFields: Set<string>;
+}
+
+const INITIAL_FS: FormState = { data: INITIAL_FORM, aiFields: new Set() };
+
 export default function CreateSkill() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { address } = useAccount();
   const { state: mintState, mint, reset } = useSelfMint();
 
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormData>(INITIAL_FORM);
-  const [gh, setGh]     = useState<GitHubState>(INITIAL_GH);
+  const [step, setStep]   = useState(0);
+  const [fs, setFs]       = useState<FormState>(INITIAL_FS);
+  const [gh, setGh]       = useState<GitHubState>(INITIAL_GH);
 
-  const update = (key: keyof FormData, val: string) =>
-    setForm((f) => ({ ...f, [key]: val }));
+  // Convenience aliases
+  const form     = fs.data;
+  const aiFields = fs.aiFields;
+
+  type AiStatus = "idle" | "loading" | "done" | "error";
+  const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
+
+  // Update a form field; if it was previously AI-filled, mark it as manual now.
+  // Uses functional update so the check against aiFields is always current.
+  const update = (key: keyof FormData, val: string) => {
+    setFs((s) => {
+      const newAiFields = s.aiFields.has(key)
+        ? (new Set(s.aiFields) as Set<string>)
+        : s.aiFields;
+      if (s.aiFields.has(key)) (newAiFields as Set<string>).delete(key);
+      return { data: { ...s.data, [key]: val }, aiFields: newAiFields };
+    });
+  };
 
   // ── GitHub auto-fetch on repo blur ─────────────────────────────────────────
 
   const handleRepoUrlBlur = async () => {
-    const raw  = form.repoUrl.trim();
-    // Normalise: strip protocol + github.com prefix
+    const raw  = fs.data.repoUrl.trim();
     const repo = raw
       .replace(/^https?:\/\/(www\.)?github\.com\//, "")
       .replace(/\/$/, "");
 
     if (!repo.includes("/")) {
-      // Not a valid owner/repo — just derive name from slug
-      if (!form.name && repo) update("name", repo.replace(/[-_]/g, " ").trim());
+      if (!fs.data.name && repo) update("name", repo.replace(/[-_]/g, " ").trim());
       return;
     }
 
-    // Already in-flight → skip
     if (gh.status === "loading") return;
-    // Already have a successful result for this exact repo → skip
     if (gh.status === "found" && gh.fetchedForRepo === repo) return;
 
     setGh({ ...INITIAL_GH, status: "loading", fetchedForRepo: null });
@@ -124,32 +147,87 @@ export default function CreateSkill() {
         fetchedForRepo: repo,
       });
 
-      // Auto-fill fields from parsed data (don't overwrite if already manually edited)
+      // Auto-fill from parsed data — never overwrite manually-edited fields
       const p = result.parsed;
       const slugName = repo.split("/").pop()!.replace(/[-_]/g, " ").trim();
-      setForm((f) => ({
-        ...f,
-        name:         f.name        || p.name         || slugName,
-        description:  f.description || p.description  || "",
-        version:      f.version !== "1.0.0"
-          ? f.version : (p.version || "1.0.0"),
-        category:     f.category !== "Code"
-          ? f.category : (p.category || "Code"),
-        basePrice:    f.basePrice !== "0.01"
-          ? f.basePrice : (p.basePrice != null ? String(p.basePrice) : "0.01"),
-        capabilities: f.capabilities !== DEFAULT_CAPABILITIES.join(", ")
-          ? f.capabilities
-          : (p.capabilities?.join(", ") || DEFAULT_CAPABILITIES.join(", ")),
-        tags: f.tags || (p.tags?.join(", ") || ""),
+      setFs((s) => ({
+        ...s,
+        data: {
+          ...s.data,
+          name:         s.data.name        || p.name         || slugName,
+          description:  s.data.description || p.description  || "",
+          version:      s.data.version !== "1.0.0" ? s.data.version : (p.version   || "1.0.0"),
+          category:     s.data.category !== "Code"  ? s.data.category : (p.category || "Code"),
+          basePrice:    s.data.basePrice !== "0.01" ? s.data.basePrice
+                          : (p.basePrice != null ? String(p.basePrice) : "0.01"),
+          capabilities: s.data.capabilities || (p.capabilities?.join(", ") || ""),
+          tags:         s.data.tags         || (p.tags?.join(", ")          || ""),
+        },
       }));
     } catch (err) {
       console.error("[GitHubFetch] error:", err);
       setGh({ ...INITIAL_GH, status: "error", fetchedForRepo: null, warning: "Could not reach GitHub. Fill in the form manually." });
-      if (!form.name && raw) {
+      if (!fs.data.name && raw) {
         update("name", raw.split("/").pop()!.replace(/[-_]/g, " ").trim());
       }
     }
   };
+
+  // ── AI auto-fill ───────────────────────────────────────────────────────────
+  // RACE-SAFE: overwrite conditions evaluated inside functional setFs updater,
+  // which always receives the LATEST state — even if the user edited fields
+  // while the async AI call was in-flight.
+
+  const analyzeWithAi = async () => {
+    if (!gh.rawContent || !gh.fileType) return;
+    setAiStatus("loading");
+
+    try {
+      const result = await githubApi.aiAnalyze({
+        rawContent: gh.rawContent,
+        fileType:   gh.fileType,
+        repoUrl:    fs.data.repoUrl,
+      });
+
+      setFs((s) => {
+        // Evaluate against LATEST s.data and s.aiFields at response time
+        const updates: Partial<FormData> = {};
+        const newAiFields = new Set<string>();
+
+        if (result.description && (!s.data.description || s.aiFields.has("description"))) {
+          updates.description = result.description;
+          newAiFields.add("description");
+        }
+        if (result.instructions && (!s.data.instructions || s.aiFields.has("instructions"))) {
+          updates.instructions = result.instructions;
+          newAiFields.add("instructions");
+        }
+        if (result.capabilities.length && (!s.data.capabilities || s.aiFields.has("capabilities"))) {
+          updates.capabilities = result.capabilities.join(", ");
+          newAiFields.add("capabilities");
+        }
+        if (result.tags.length && (!s.data.tags || s.aiFields.has("tags"))) {
+          updates.tags = result.tags.join(", ");
+          newAiFields.add("tags");
+        }
+
+        return { data: { ...s.data, ...updates }, aiFields: newAiFields };
+      });
+
+      setAiStatus("done");
+    } catch (err) {
+      console.error("[AI Analyze]", err);
+      setAiStatus("error");
+      // Show generic message to user; full error already logged by backend
+      toast({
+        variant:     "destructive",
+        title:       "AI analysis failed",
+        description: "Could not analyze the skill file. Please try again or fill in the form manually.",
+      });
+    }
+  };
+
+  // ── Validation ─────────────────────────────────────────────────────────────
 
   const canNext = () => {
     if (step === 0) return form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
@@ -158,16 +236,16 @@ export default function CreateSkill() {
     return true;
   };
 
+  // ── Mint ───────────────────────────────────────────────────────────────────
+
   const handleMint = async () => {
     const capabilities = form.capabilities.split(",").map((s) => s.trim()).filter(Boolean);
     const tags         = form.tags.split(",").map((s) => s.trim()).filter(Boolean);
 
     try {
-      // Convert human-readable 0G price → W0G wei (bigint as string)
       const basePriceWei = (() => {
         const v = parseFloat(form.basePrice);
         if (!v || v <= 0) return "0";
-        // parseEther expects a string in ether units
         return (BigInt(Math.round(v * 1e18))).toString();
       })();
 
@@ -180,6 +258,7 @@ export default function CreateSkill() {
         meta: {
           name:         form.name.trim(),
           description:  form.description.trim(),
+          instructions: form.instructions.trim() || undefined,
           category:     form.category,
           version:      form.version.trim(),
           basePrice:    parseFloat(form.basePrice),
@@ -236,7 +315,7 @@ export default function CreateSkill() {
             <Button
               variant="outline"
               className="border-white/10"
-              onClick={() => { reset(); setForm(INITIAL_FORM); setGh(INITIAL_GH); setStep(0); }}
+              onClick={() => { reset(); setFs(INITIAL_FS); setGh(INITIAL_GH); setStep(0); setAiStatus("idle"); }}
             >
               Mint another
             </Button>
@@ -303,13 +382,48 @@ export default function CreateSkill() {
                     onChange={(e) => {
                       const v = e.target.value.replace(/^https?:\/\/(github\.com\/)?/, "");
                       update("repoUrl", v);
-                      // Reset fetch badge whenever the repo field changes
                       setGh(INITIAL_GH);
+                      setAiStatus("idle");
+                      setFs((s) => ({ ...s, aiFields: new Set() }));
                     }}
                     onBlur={handleRepoUrlBlur}
                   />
                   {/* GitHub fetch status badge */}
                   <GitHubBadge gh={gh} />
+
+                  {/* ✨ AI Analyze button — shown once we have raw content */}
+                  {gh.status === "found" && gh.rawContent && (
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className={`gap-1.5 text-xs h-7 px-3 border transition-colors ${
+                          aiStatus === "done"
+                            ? "border-violet-500/40 text-violet-400 bg-violet-500/10"
+                            : "border-white/10 text-muted-foreground hover:text-foreground"
+                        }`}
+                        onClick={analyzeWithAi}
+                        disabled={aiStatus === "loading"}
+                      >
+                        {aiStatus === "loading" ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing…</>
+                        ) : aiStatus === "done" ? (
+                          <><Sparkles className="w-3 h-3" /> Re-analyze with AI</>
+                        ) : (
+                          <><Sparkles className="w-3 h-3" /> Analyze with AI</>
+                        )}
+                      </Button>
+                      {aiStatus === "done" && (
+                        <span className="text-xs text-violet-400/80">
+                          AI filled {aiFields.size} field{aiFields.size !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {aiStatus === "error" && (
+                        <span className="text-xs text-destructive/80">Analysis failed — try again</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Field>
 
@@ -321,13 +435,23 @@ export default function CreateSkill() {
                 />
               </Field>
 
-              <Field label="Description">
+              <Field label="Description" aiActive={aiFields.has("description")}>
                 <Textarea
                   placeholder="What does this skill do?"
                   rows={3}
                   className="resize-none"
                   value={form.description}
                   onChange={(e) => update("description", e.target.value)}
+                />
+              </Field>
+
+              <Field label="Instructions for Agents" hint="How should AI agents invoke this skill? (optional)" aiActive={aiFields.has("instructions")}>
+                <Textarea
+                  placeholder="Call this skill when you need to… Pass the following parameters…"
+                  rows={3}
+                  className="resize-none"
+                  value={form.instructions}
+                  onChange={(e) => update("instructions", e.target.value)}
                 />
               </Field>
 
@@ -393,7 +517,7 @@ export default function CreateSkill() {
                 ))}
               </div>
 
-              <Field label="Capabilities (comma-separated)" hint="MCP tool names this skill exposes">
+              <Field label="Capabilities (comma-separated)" hint="MCP tool names this skill exposes" aiActive={aiFields.has("capabilities")}>
                 <Input
                   placeholder="answer_question, process_data, generate_report"
                   value={form.capabilities}
@@ -401,7 +525,7 @@ export default function CreateSkill() {
                 />
               </Field>
 
-              <Field label="Tags (optional)">
+              <Field label="Tags (optional)" aiActive={aiFields.has("tags")}>
                 <Input
                   placeholder="llm, python, finance"
                   value={form.tags}
@@ -504,6 +628,7 @@ export default function CreateSkill() {
                 <ReviewRow label="Base Price"   value={`${form.basePrice} 0G`} />
                 <ReviewRow label="Capabilities" value={form.capabilities || "—"} />
                 {form.tags && <ReviewRow label="Tags" value={form.tags} />}
+                {form.instructions && <ReviewRow label="Instructions" value={form.instructions.slice(0, 80) + (form.instructions.length > 80 ? "…" : "")} />}
                 <ReviewRow
                   label="Ownership"
                   value={form.ownerMode === "mine" ? "My Repo — NFT to my wallet" : "Community — platform custody"}
@@ -661,10 +786,24 @@ function GitHubBadge({ gh }: { gh: GitHubState }) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label, hint, aiActive = false, children,
+}: {
+  label: string;
+  hint?: string;
+  aiActive?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium">{label}</label>
+      <label className="text-sm font-medium flex items-center gap-2">
+        {label}
+        {aiActive && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-violet-500/15 text-violet-400 border border-violet-500/25 rounded-full px-1.5 py-0.5">
+            <Sparkles className="w-2.5 h-2.5" /> AI
+          </span>
+        )}
+      </label>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       {children}
     </div>
