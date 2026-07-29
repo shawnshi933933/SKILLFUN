@@ -153,18 +153,39 @@ export function useSelfMint() {
 
       let tokenId: number | null = null;
 
-      // Try SkillRegistered event first
+      // Strategy 1: parse SkillRegistered via ABI
       try {
         const logs = parseEventLogs({ abi: SKILL_NFT_ABI_FRAGMENT, eventName: "SkillRegistered", logs: receipt.logs });
-        if (logs.length > 0) tokenId = Number((logs[0].args as { tokenId: bigint }).tokenId);
+        if (logs.length > 0) {
+          const id = Number((logs[0].args as { tokenId: bigint }).tokenId);
+          if (Number.isFinite(id)) tokenId = id;
+        }
       } catch { /* ignore */ }
 
-      // Fallback: Transfer event (ERC-721 mint: from=0x0)
+      // Strategy 2: ABI-decoded Transfer event
       if (tokenId === null) {
         try {
           const logs = parseEventLogs({ abi: SKILL_NFT_ABI_FRAGMENT, eventName: "Transfer", logs: receipt.logs });
-          if (logs.length > 0) tokenId = Number((logs[0].args as { tokenId: bigint }).tokenId);
+          if (logs.length > 0) {
+            const id = Number((logs[0].args as { tokenId: bigint }).tokenId);
+            if (Number.isFinite(id)) tokenId = id;
+          }
         } catch { /* ignore */ }
+      }
+
+      // Strategy 3: raw topic parsing — most reliable fallback.
+      // ERC-721 Transfer: topic[0] = sig, topic[1] = from (0x0 for mint),
+      // topic[2] = to, topic[3] = tokenId (uint256, zero-padded to 32 bytes).
+      if (tokenId === null) {
+        const TRANSFER_SIG = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+        const ZERO_ADDR    = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        const mintLog = receipt.logs.find(
+          (l) => l.topics[0]?.toLowerCase() === TRANSFER_SIG && l.topics[1] === ZERO_ADDR
+        );
+        if (mintLog?.topics[3]) {
+          const id = Number(BigInt(mintLog.topics[3]));
+          if (Number.isFinite(id)) tokenId = id;
+        }
       }
 
       if (tokenId === null) throw new Error("Could not parse tokenId from receipt");

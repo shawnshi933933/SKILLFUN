@@ -250,7 +250,7 @@ router.patch("/skills/:id/confirm-mint", async (req, res) => {
   const skillId = req.params.id as string;
   const { tokenId, txHash } = req.body as { tokenId: number; txHash: string };
 
-  if (!tokenId || !txHash) {
+  if (tokenId == null || !Number.isFinite(tokenId) || !txHash) {
     apiError(res, ErrorCode.INVALID_INPUT, "tokenId and txHash are required");
     return;
   }
