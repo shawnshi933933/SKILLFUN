@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -46,3 +46,6 @@ ZEROG_CHAIN_ID = "16661"
 ZEROG_RPC_URL = "https://evmrpc.0g.ai"
 SKILLFUN_VERIFIER_ADDRESS = "0x97F8f4a20d279B58Ebf8a13aB4cE856BbA8bb0f8"
 ZEROG_AI_BASE_URL = "https://router-api.0g.ai"
+
+[nix]
+channel = "stable-25_05"
