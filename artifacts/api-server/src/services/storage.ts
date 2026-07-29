@@ -100,6 +100,12 @@ export interface UploadResult {
   skillUri: string;
   /** true = actually uploaded to 0G; false = local-hash fallback */
   uploaded: boolean;
+  /**
+   * 0G Storage sequential transaction index (from Flow contract submission).
+   * Use with zgs_getFileInfoByTxSeq for direct-node verification.
+   * null when uploaded=false (fallback hash, not a real 0G upload).
+   */
+  txSeq: number | null;
 }
 
 // ── Build ERC-721 tokenURI JSON ───────────────────────────────────────────────
@@ -117,8 +123,9 @@ export function buildTokenURI(params: {
   rootHash:       string;
   meta?:          Record<string, unknown>;
   uploaded:       boolean;
+  txSeq?:         number | null;
 }): string {
-  const { skillId, repoUrl, rootHash, meta = {}, uploaded } = params;
+  const { skillId, repoUrl, rootHash, meta = {}, uploaded, txSeq } = params;
 
   const displayName = (meta.name as string) ||
     repoUrl.split("/").slice(-2).join(" / ") ||
@@ -149,14 +156,17 @@ export function buildTokenURI(params: {
       repoUrl,
       storagePointer: `0g://${rootHash}`,
       rootHash,
+      ...(txSeq != null ? { txSeq } : {}),
       chainId:       16661,
       encrypted:     true,
       algorithm:     "AES-256-GCM",
       /**
-       * Agents call this endpoint to get the decrypted skill content:
-       *   POST <decryptEndpoint>
-       *   Header: X-Wallet-Signature: <EIP-712 sig for "invoke-skill">
+       * Verify file exists directly on a 0G storage node:
+       *   POST <nodeUrl>  body: {"jsonrpc":"2.0","method":"zgs_getFileInfoByTxSeq","params":[<txSeq>],"id":1}
+       * Note: StorageScan (storagescan.0g.ai) does NOT index direct-node uploads;
+       *       use node RPC or the verifyEndpoint below instead.
        */
+      verifyEndpoint:  `/api/skills/${skillId}/verify`,
       contentEndpoint: `/api/skills/${skillId}/content`,
     },
   };
@@ -234,8 +244,9 @@ export async function uploadSkillManifest(
     logger.warn("DEPLOYER_PRIVATE_KEY not set — using local keccak256 hash");
     return {
       rootHash: fallbackRootHash,
-      skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false }),
+      skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
       uploaded: false,
+      txSeq: null,
     };
   }
 
@@ -259,8 +270,9 @@ export async function uploadSkillManifest(
       await zgFile.close();
       return {
         rootHash: fallbackRootHash,
-        skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false }),
+        skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
         uploaded: false,
+        txSeq: null,
       };
     }
 
@@ -268,9 +280,6 @@ export async function uploadSkillManifest(
     const rootHash: `0x${string}` = rawRootHash.startsWith("0x")
       ? (rawRootHash as `0x${string}`)
       : `0x${rawRootHash}`;
-
-    // Build tokenURI now that we have the rootHash
-    const skillUri = buildTokenURI({ skillId, repoUrl, rootHash, meta: manifest, uploaded: true });
 
     // Connect directly to mainnet storage nodes
     const provider    = new ethers.JsonRpcProvider(EVM_RPC);
@@ -294,25 +303,76 @@ export async function uploadSkillManifest(
       logger.warn({ err: uploadErr, skillId }, "0G Storage upload failed — using fallback hash");
       return {
         rootHash: fallbackRootHash,
-        skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false }),
+        skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
         uploaded: false,
+        txSeq: null,
       };
     }
 
-    logger.info({ rootHash, skillId, nodes: MAINNET_NODES }, "0G Storage upload success (encrypted)");
-    return { rootHash, skillUri, uploaded: true };
+    // Extract txSeq — the Flow contract submission index, used for direct-node verification.
+    // StorageScan does NOT work for direct-node uploads (it requires the public indexer).
+    const txSeq: number | null = (tx as { txSeq?: number })?.txSeq ?? null;
+
+    // Build tokenURI now that we have rootHash + txSeq
+    const skillUri = buildTokenURI({ skillId, repoUrl, rootHash, meta: manifest, uploaded: true, txSeq });
+
+    logger.info({ rootHash, txSeq, skillId }, "0G Storage upload success (encrypted)");
+    return { rootHash, skillUri, uploaded: true, txSeq };
   } catch (err) {
     logger.warn({ err, skillId }, "0G Storage upload threw — using fallback hash");
     return {
       rootHash: fallbackRootHash,
-      skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false }),
+      skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
       uploaded: false,
+      txSeq: null,
     };
   } finally {
     if (tmpFile) {
       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
     }
   }
+}
+
+// ── Direct-node file verification ────────────────────────────────────────────
+
+/**
+ * Verify a file exists on 0G Storage mainnet by querying a node directly.
+ *
+ * StorageScan (storagescan.0g.ai) relies on an indexer that we bypass, so it
+ * will NOT find our files. This function calls zgs_getFileInfo(rootHash, false)
+ * directly on a storage node — the authoritative source of truth.
+ *
+ * @returns Object with finalized, txSeq, size — or throws if not found.
+ */
+export async function verifyFileOnNode(rootHash: string): Promise<{
+  finalized: boolean;
+  txSeq:     number;
+  size:      number;
+  node:      string;
+}> {
+  const normalizedHash = rootHash.startsWith("0x") ? rootHash : `0x${rootHash}`;
+
+  const { StorageNode } = await import("@0gfoundation/0g-storage-ts-sdk");
+
+  const errors: string[] = [];
+  for (const nodeUrl of MAINNET_NODES) {
+    try {
+      const node = new StorageNode(nodeUrl);
+      // zgs_getFileInfo(root, needAvailable) — pass false to allow pruned files
+      const info = await node.getFileInfo(normalizedHash, false);
+      if (info && info.tx) {
+        return {
+          finalized: info.finalized ?? false,
+          txSeq:     info.tx.seq,
+          size:      info.tx.size,
+          node:      nodeUrl,
+        };
+      }
+    } catch (e) {
+      errors.push(`${nodeUrl}: ${(e as Error).message}`);
+    }
+  }
+  throw new Error(`File not found on any mainnet node. Errors: ${errors.join("; ")}`);
 }
 
 // ── Download + decrypt ────────────────────────────────────────────────────────

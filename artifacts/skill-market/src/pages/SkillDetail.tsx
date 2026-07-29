@@ -34,6 +34,10 @@ export default function SkillDetail() {
 
   const [fetchingContent, setFetchingContent] = useState(false);
   const [skillContent, setSkillContent] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{
+    finalized: boolean; txSeq: number; size: number; verifiedOnNode: string; note: string;
+  } | null>(null);
 
   const { data, isLoading, error } = useSkill(params?.id);
 
@@ -76,6 +80,23 @@ export default function SkillDetail() {
 
   const isMinted  = skill.mintStatus === "minted" || skill.mintStatus === "claimed";
   const isClaimed = skill.mintStatus === "claimed";
+
+  const handleVerify = async () => {
+    if (!data?.skill?.skillId) return;
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const res = await fetch(`/api/skills/${data.skill.skillId}/verify`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Verification failed");
+      setVerifyResult(json);
+      toast({ title: json.finalized ? "✅ Verified on 0G Storage" : "⚠️ File found but not finalized", description: `txSeq: ${json.txSeq} · ${json.size} bytes` });
+    } catch (err) {
+      toast({ title: "Verification failed", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleFetchContent = async () => {
     if (!data?.skill?.skillId) return;
@@ -260,11 +281,58 @@ export default function SkillDetail() {
                         </span>
                       </div>
                       <CopyRow label="Root Hash" value={skill.rootHash} mono />
-                      <LinkRow
-                        label="StorageScan"
-                        href={`https://storagescan.0g.ai/?search=${skill.rootHash}`}
-                        text="View on StorageScan ↗"
-                      />
+                      {/* txSeq — direct node verification reference */}
+                      {(() => {
+                        const m = skill.meta as Record<string, unknown>;
+                        const txSeq = verifyResult?.txSeq ?? (m?.storeTxSeq as number | undefined);
+                        return txSeq != null ? (
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="text-muted-foreground shrink-0">Flow txSeq</span>
+                            <span className="font-mono text-foreground">#{txSeq}</span>
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {/* Verify on node button — authoritative check (not StorageScan) */}
+                      <div className="pt-2 border-t border-white/10">
+                        <p className="text-[10px] text-muted-foreground mb-2">
+                          StorageScan cannot index direct-node uploads. Use node RPC to verify.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2 border-white/20 text-xs h-8 mb-2"
+                          onClick={handleVerify}
+                          disabled={verifying}
+                        >
+                          {verifying
+                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                            : <Shield className="w-3 h-3" />}
+                          {verifying ? "Querying node…" : "Verify on Storage Node"}
+                        </Button>
+                        {verifyResult && (
+                          <div className="text-[10px] font-mono space-y-1 p-2 rounded bg-emerald-500/5 border border-emerald-500/20">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Status</span>
+                              <span className={verifyResult.finalized ? "text-emerald-400" : "text-orange-400"}>
+                                {verifyResult.finalized ? "✅ Finalized" : "⏳ Pending"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">txSeq</span>
+                              <span>#{verifyResult.txSeq}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Size</span>
+                              <span>{verifyResult.size} bytes</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-muted-foreground shrink-0">Node</span>
+                              <span className="truncate text-right">{verifyResult.verifiedOnNode}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Fetch + decrypt button */}
                       <div className="pt-2 border-t border-white/10">

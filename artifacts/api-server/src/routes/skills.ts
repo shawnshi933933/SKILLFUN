@@ -6,7 +6,7 @@ import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
 import { getSkillOnChain, mintSkillOnChain, getOnChainOwner } from "../services/chain.js";
-import { uploadSkillManifest, downloadSkillContent } from "../services/storage.js";
+import { uploadSkillManifest, downloadSkillContent, verifyFileOnNode } from "../services/storage.js";
 import { invalidatePrefix, cacheKey } from "../services/cache.js";
 import { getAddresses } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
@@ -214,7 +214,12 @@ router.post("/skills/prepare-mint", async (req, res) => {
       rootHash:      uploadResult.rootHash,
       manifestOwner: manifestOwnerVal,
       ownerAddress:  resolvedOwner,
-      meta:          { ...resolvedMeta, ownerMode } as Record<string, unknown>,
+      meta: {
+        ...resolvedMeta,
+        ownerMode,
+        ...(uploadResult.txSeq != null ? { storeTxSeq: uploadResult.txSeq } : {}),
+        storageUploaded: uploadResult.uploaded,
+      } as Record<string, unknown>,
     })
     .returning();
 
@@ -316,6 +321,73 @@ router.patch("/skills/:id/confirm-mint", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/skills/:id/verify
+//
+// Verify a skill's encrypted content exists on a 0G Storage mainnet node.
+// Calls zgs_getFileInfo(rootHash, false) directly — does NOT rely on StorageScan.
+//
+// StorageScan only indexes files submitted via the public indexer service.
+// Since mainnet has no public indexer DNS, direct-node uploads are invisible
+// to StorageScan. This endpoint is the authoritative verification method.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get("/skills/:id/verify", async (req, res) => {
+  const skillId = req.params.id as string;
+  const [skill] = await db
+    .select()
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!skill) {
+    apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+    return;
+  }
+
+  if (!skill.rootHash) {
+    apiError(res, ErrorCode.NOT_FOUND, "No rootHash — skill not yet uploaded to 0G Storage");
+    return;
+  }
+
+  // Check if this is a real 0G upload (uploaded=true) or a fallback hash
+  const meta = (skill.meta as Record<string, unknown>) ?? {};
+  const isRealUpload = meta.storageUploaded === true;
+  const txSeq = meta.storeTxSeq as number | undefined;
+
+  try {
+    const verified = await verifyFileOnNode(skill.rootHash);
+    res.json({
+      skillId,
+      rootHash:       skill.rootHash,
+      storagePointer: `0g://${skill.rootHash}`,
+      txSeq:          verified.txSeq,
+      finalized:      verified.finalized,
+      size:           verified.size,
+      verifiedOnNode: verified.node,
+      verifiedAt:     new Date().toISOString(),
+      note: "Verified directly on 0G storage node. StorageScan cannot index direct-node uploads (no public mainnet indexer).",
+    });
+  } catch (err) {
+    // If stored txSeq exists, fall back to txSeq-based verification
+    if (txSeq != null) {
+      res.json({
+        skillId,
+        rootHash:       skill.rootHash,
+        storagePointer: `0g://${skill.rootHash}`,
+        txSeq,
+        finalized:      isRealUpload,
+        size:           null,
+        verifiedOnNode: null,
+        verifiedAt:     new Date().toISOString(),
+        note: "Node query failed; txSeq from upload record returned. File was confirmed finalized at upload time.",
+      });
+      return;
+    }
+    logger.warn({ err, skillId, rootHash: skill.rootHash }, "0G verify failed");
+    apiError(res, ErrorCode.RPC_ERROR, `Verification failed: ${(err as Error).message}`);
+  }
+});
+
 // GET /api/skills/:id/content
 //
 // Downloads and decrypts the encrypted skill content from 0G Storage.

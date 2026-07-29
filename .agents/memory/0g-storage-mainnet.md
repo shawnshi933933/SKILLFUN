@@ -32,8 +32,16 @@ const uploader = new Uploader(nodeClients, EVM_RPC, flow);
 const [tx, err] = await uploader.splitableUpload(zgFile, { expectedReplica: 1, skipTx: false, finalityRequired: true, taskSize: 1 });
 ```
 
-## View File
-StorageScan URL: `https://storagescan.0g.ai/?search=<rootHash>`
+## StorageScan — Does NOT work for direct-node uploads
+`https://storagescan.0g.ai/?search=<rootHash>` only indexes files submitted via the public indexer service.
+Since mainnet has no public indexer DNS and we upload directly to nodes, StorageScan will NEVER find our files.
+**Do not link to StorageScan.** Use direct-node RPC instead (see below).
+
+## Correct Verification
+`zgs_getFileInfo(rootHash, false)` — takes TWO params: [rootHash, needAvailable(bool)]
+`zgs_getFileInfoByTxSeq(txSeq)` — returns `{tx: {dataMerkleRoot, seq, size}, finalized, ...}`
+Both work correctly on the 4 mainnet nodes.
+`txSeq` comes from `splitableUpload` return value: `(tx as {txSeq?: number})?.txSeq`
 
 ## Storage Fee
 ~30,733,644,962 wei (~0.03 0G) per small file. Deployer wallet balance: ~1.95 0G (sufficient).
