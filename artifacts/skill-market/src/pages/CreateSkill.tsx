@@ -18,7 +18,7 @@ import { githubApi, type GitHubManifestResult } from "@/lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STEPS = ["Basic Info", "Economics", "Ownership", "Review & Mint"] as const;
+const STEPS = ["Basic Info", "Ownership", "Economics", "Review & Mint"] as const;
 const CATEGORIES = ["Code", "Analysis", "Writing", "Trading", "Research", "Social"] as const;
 const ZEROG_SCAN     = "https://chainscan.0g.ai";
 const SKILL_NFT_ADDR = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"; // v4
@@ -232,9 +232,20 @@ export default function CreateSkill() {
 
   const canNext = () => {
     if (step === 0) return form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
-    if (step === 1) return parseFloat(form.basePrice) >= 0;
-    if (step === 2) return !!address;
+    if (step === 1) return !!address;                          // Ownership — wallet must be connected
+    if (step === 2) return parseFloat(form.basePrice) >= 0;   // Economics — only shown for "mine"
     return true;
+  };
+
+  // Skip Economics (step 2) for community mints
+  const goNext = () => {
+    if (step === 1 && form.ownerMode === "community") { setStep(3); return; }
+    setStep((s) => s + 1);
+  };
+  const goBack = () => {
+    if (step === 3 && form.ownerMode === "community") { setStep(1); return; }
+    if (step === 0) { setLocation("/app/market"); return; }
+    setStep((s) => s - 1);
   };
 
   // ── Mint ───────────────────────────────────────────────────────────────────
@@ -502,42 +513,8 @@ export default function CreateSkill() {
             </div>
           )}
 
-          {/* ── Step 1: Economics ───────────────────────────────────────────── */}
+          {/* ── Step 1: Ownership ───────────────────────────────────────────── */}
           {step === 1 && (
-            <div className="space-y-5">
-              <h2 className="text-lg font-semibold">Economics</h2>
-
-              <Field label="Base Price (W0G per invocation)" hint="Amount agents pay to invoke your skill via x402">
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number" min="0" step="0.001" placeholder="0.01"
-                    value={form.basePrice}
-                    onChange={(e) => update("basePrice", e.target.value)}
-                    className="w-40"
-                  />
-                  <span className="text-sm text-muted-foreground">W0G</span>
-                </div>
-              </Field>
-
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2 text-xs">
-                <div className="font-medium text-muted-foreground mb-2">Revenue Split</div>
-                {[
-                  { label: "Platform fee",    pct: "10%", color: "bg-white/20" },
-                  { label: "Creator royalty", pct: "80%", color: "bg-primary/50" },
-                  { label: "Owner income",    pct: "10%", color: "bg-accent/50" },
-                ].map((r) => (
-                  <div key={r.label} className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-sm ${r.color}`} />
-                    <span className="text-muted-foreground flex-1">{r.label}</span>
-                    <span className="font-mono">{r.pct}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── Step 2: Ownership ───────────────────────────────────────────── */}
-          {step === 2 && (
             <div className="space-y-5">
               <h2 className="text-lg font-semibold">Ownership Mode</h2>
               <p className="text-sm text-muted-foreground">
@@ -616,6 +593,44 @@ export default function CreateSkill() {
             </div>
           )}
 
+          {/* ── Step 2: Economics (only for "mine") ─────────────────────────── */}
+          {step === 2 && (
+            <div className="space-y-5">
+              <h2 className="text-lg font-semibold">Economics</h2>
+              <p className="text-sm text-muted-foreground">
+                You own this skill — set the price agents pay per invocation. Curators who include
+                your Skill in a Bundle will pay this amount to <code className="text-primary/80">purchaseAuthorization</code>.
+              </p>
+
+              <Field label="Base Price (W0G per invocation)" hint="Amount Curators pay to authorize, and agents pay per invoke via x402">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number" min="0" step="0.001" placeholder="0.01"
+                    value={form.basePrice}
+                    onChange={(e) => update("basePrice", e.target.value)}
+                    className="w-40"
+                  />
+                  <span className="text-sm text-muted-foreground">W0G</span>
+                </div>
+              </Field>
+
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2 text-xs">
+                <div className="font-medium text-muted-foreground mb-2">Revenue Split (per invocation)</div>
+                {[
+                  { label: "Platform fee",    pct: "10%", color: "bg-white/20" },
+                  { label: "Creator royalty", pct: "80%", color: "bg-primary/50" },
+                  { label: "Owner income",    pct: "10%", color: "bg-accent/50" },
+                ].map((r) => (
+                  <div key={r.label} className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-sm ${r.color}`} />
+                    <span className="text-muted-foreground flex-1">{r.label}</span>
+                    <span className="font-mono">{r.pct}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── Step 3: Review & Mint ────────────────────────────────────────── */}
           {step === 3 && (
             <div className="space-y-5">
@@ -626,7 +641,9 @@ export default function CreateSkill() {
                 <ReviewRow label="Name"         value={form.name} />
                 <ReviewRow label="Category"     value={form.category} />
                 <ReviewRow label="Version"      value={form.version} />
-                <ReviewRow label="Base Price"   value={`${form.basePrice} W0G`} />
+                {form.ownerMode === "mine" && (
+                  <ReviewRow label="Base Price" value={`${form.basePrice} W0G`} />
+                )}
                 <ReviewRow label="Capabilities" value={form.capabilities || "—"} />
                 {form.tags && <ReviewRow label="Tags" value={form.tags} />}
                 {form.instructions && <ReviewRow label="Instructions" value={form.instructions.slice(0, 80) + (form.instructions.length > 80 ? "…" : "")} />}
@@ -690,7 +707,7 @@ export default function CreateSkill() {
           <Button
             variant="outline"
             className="border-white/10 gap-1"
-            onClick={() => step === 0 ? setLocation("/app/market") : setStep((s) => s - 1)}
+            onClick={goBack}
             disabled={isMinting}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -700,7 +717,7 @@ export default function CreateSkill() {
           {step < STEPS.length - 1 ? (
             <Button
               className="bg-primary hover:bg-primary/90 gap-1"
-              onClick={() => setStep((s) => s + 1)}
+              onClick={goNext}
               disabled={!canNext() || gh.status === "loading"}
             >
               {gh.status === "loading" && step === 0
