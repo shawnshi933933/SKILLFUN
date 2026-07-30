@@ -123,6 +123,7 @@ export interface SkillNFTInterface extends Interface {
       | "safeTransferFrom(address,address,uint256)"
       | "safeTransferFrom(address,address,uint256,bytes)"
       | "setApprovalForAll"
+      | "setBasePrice"
       | "setVerifier"
       | "supportsInterface"
       | "symbol"
@@ -140,6 +141,7 @@ export interface SkillNFTInterface extends Interface {
       | "ApprovalForAll"
       | "Authorization"
       | "AuthorizationRevoked"
+      | "BasePriceUpdated"
       | "BatchMetadataUpdate"
       | "DataHashUpdated"
       | "MetadataUpdate"
@@ -236,6 +238,10 @@ export interface SkillNFTInterface extends Interface {
     values: [AddressLike, boolean]
   ): string;
   encodeFunctionData(
+    functionFragment: "setBasePrice",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setVerifier",
     values: [AddressLike]
   ): string;
@@ -327,6 +333,10 @@ export interface SkillNFTInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setApprovalForAll",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setBasePrice",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -424,6 +434,28 @@ export namespace AuthorizationRevokedEvent {
     _from: string;
     _to: string;
     _tokenId: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace BasePriceUpdatedEvent {
+  export type InputTuple = [
+    tokenId: BigNumberish,
+    oldPrice: BigNumberish,
+    newPrice: BigNumberish
+  ];
+  export type OutputTuple = [
+    tokenId: bigint,
+    oldPrice: bigint,
+    newPrice: bigint
+  ];
+  export interface OutputObject {
+    tokenId: bigint;
+    oldPrice: bigint;
+    newPrice: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -748,6 +780,12 @@ export interface SkillNFT extends BaseContract {
     "nonpayable"
   >;
 
+  setBasePrice: TypedContractMethod<
+    [tokenId: BigNumberish, newPrice: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   setVerifier: TypedContractMethod<
     [_verifier: AddressLike],
     [void],
@@ -934,6 +972,13 @@ export interface SkillNFT extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "setBasePrice"
+  ): TypedContractMethod<
+    [tokenId: BigNumberish, newPrice: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "setVerifier"
   ): TypedContractMethod<[_verifier: AddressLike], [void], "nonpayable">;
   getFunction(
@@ -996,6 +1041,13 @@ export interface SkillNFT extends BaseContract {
     AuthorizationRevokedEvent.InputTuple,
     AuthorizationRevokedEvent.OutputTuple,
     AuthorizationRevokedEvent.OutputObject
+  >;
+  getEvent(
+    key: "BasePriceUpdated"
+  ): TypedContractEvent<
+    BasePriceUpdatedEvent.InputTuple,
+    BasePriceUpdatedEvent.OutputTuple,
+    BasePriceUpdatedEvent.OutputObject
   >;
   getEvent(
     key: "BatchMetadataUpdate"
@@ -1104,6 +1156,17 @@ export interface SkillNFT extends BaseContract {
       AuthorizationRevokedEvent.InputTuple,
       AuthorizationRevokedEvent.OutputTuple,
       AuthorizationRevokedEvent.OutputObject
+    >;
+
+    "BasePriceUpdated(uint256,uint256,uint256)": TypedContractEvent<
+      BasePriceUpdatedEvent.InputTuple,
+      BasePriceUpdatedEvent.OutputTuple,
+      BasePriceUpdatedEvent.OutputObject
+    >;
+    BasePriceUpdated: TypedContractEvent<
+      BasePriceUpdatedEvent.InputTuple,
+      BasePriceUpdatedEvent.OutputTuple,
+      BasePriceUpdatedEvent.OutputObject
     >;
 
     "BatchMetadataUpdate(uint256,uint256)": TypedContractEvent<

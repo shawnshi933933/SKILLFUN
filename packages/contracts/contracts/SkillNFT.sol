@@ -95,6 +95,12 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
         bytes32 oldHash,
         bytes32 newHash
     );
+    /// @notice Emitted when the NFT owner updates the invocation base price.
+    event BasePriceUpdated(
+        uint256 indexed tokenId,
+        uint256 oldPrice,
+        uint256 newPrice
+    );
 
     // ─────────────────────────────────────────────────────────────────
     // Errors
@@ -333,6 +339,19 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
     // ─────────────────────────────────────────────────────────────────
     // Data hash management (called after 0G Storage events)
     // ─────────────────────────────────────────────────────────────────
+
+    /// @notice Update the W0G invocation price for a skill.
+    ///         Only the current NFT owner may call this.
+    ///         Curators who have already authorized will continue to work at
+    ///         the price they paid; the new price applies to new authorizations.
+    /// @param tokenId   Token to update.
+    /// @param newPrice  New W0G amount in wei. Pass 0 to make the skill free.
+    function setBasePrice(uint256 tokenId, uint256 newPrice) external {
+        if (ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
+        uint256 old = basePrice[tokenId];
+        basePrice[tokenId] = newPrice;
+        emit BasePriceUpdated(tokenId, old, newPrice);
+    }
 
     /// @notice Update the 0G Storage rootHash for a token.
     ///         Called by the token owner after proxy re-encryption completes

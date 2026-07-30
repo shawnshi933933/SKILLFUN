@@ -23,7 +23,7 @@ export function useCuratorAuthorizations(wallet: string | undefined) {
 // ---------------------------------------------------------------------------
 // On-chain addresses (0G Mainnet)
 // ---------------------------------------------------------------------------
-const SKILL_NFT_ADDRESS = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8" as const;
+const SKILL_NFT_ADDRESS = "0x36cc7DBE8d2d3C0B44223e60CE94912ED8e11D72" as const; // v5
 const W0G_ADDRESS       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c" as const;
 
 // Minimal ABI fragments
