@@ -5,7 +5,7 @@ import { eq, desc, and, SQL, count } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
-import { getSkillOnChain, mintSkillOnChain, getOnChainOwner } from "../services/chain.js";
+import { getSkillOnChain, mintSkillOnChain, getOnChainOwner, getOnChainBasePrice } from "../services/chain.js";
 import { uploadSkillManifest, downloadSkillContent, verifyFileOnNode } from "../services/storage.js";
 import { invalidatePrefix, cacheKey } from "../services/cache.js";
 import { getAddresses } from "@workspace/abi";
@@ -495,12 +495,25 @@ router.get("/skills/:id/stats", async (req, res) => {
     .from(paymentProofsTable)
     .where(eq(paymentProofsTable.skillId, skillId));
 
-  const basePrice = ((skill.meta as Record<string, unknown>)?.basePrice as number | undefined) ?? 0;
+  // Read basePrice from chain when possible — owner may have changed it after mint
+  let basePriceWei = "0";
+  if (skill.tokenId != null) {
+    try {
+      basePriceWei = (await getOnChainBasePrice(skill.tokenId)).toString();
+    } catch {
+      // chain read failed — fall back to meta
+      const metaPrice = ((skill.meta as Record<string, unknown>)?.basePrice as number | undefined) ?? 0;
+      basePriceWei = BigInt(Math.round(metaPrice * 1e18)).toString();
+    }
+  }
+
+  const basePriceEther = Number(BigInt(basePriceWei)) / 1e18;
 
   res.json({
     skillId,
-    invocations: total,
-    revenueW0G:  total * basePrice,
+    invocations:  total,
+    revenueW0G:   total * basePriceEther,
+    basePriceWei,
   });
 });
 

@@ -283,9 +283,11 @@ export const bundlesApi = {
 };
 
 export interface SkillStatsResponse {
-  skillId:     string;
-  invocations: number;
-  revenueW0G:  number;
+  skillId:      string;
+  invocations:  number;
+  revenueW0G:   number;
+  /** On-chain basePrice in W0G wei, as decimal string. Present when skill is minted. */
+  basePriceWei?: string;
 }
 
 // ---------------------------------------------------------------------------

@@ -79,7 +79,10 @@ export default function SkillDetail() {
   const description = (meta.description as string | undefined) ?? `Registered from ${skill.repoUrl}`;
   const category    = (meta.category as string | undefined) ?? "Code";
   const version     = (meta.version as string | undefined) ?? "1.0.0";
-  const basePrice   = (meta.basePrice as number | undefined) ?? 0;
+  // Prefer chain-read basePrice (from stats); fall back to meta until stats load
+  const basePrice = statsData?.basePriceWei != null
+    ? Number(BigInt(statsData.basePriceWei)) / 1e18
+    : ((meta.basePrice as number | undefined) ?? 0);
   const creatorShare = (meta.creatorShare as number | undefined) ?? 80;
   const ownerShare   = (meta.ownerShare as number | undefined) ?? 10;
   const royaltyRate  = (meta.royaltyRate as number | undefined) ?? 5;

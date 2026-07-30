@@ -76,6 +76,17 @@ export async function getBalance(address: string) {
  * Return the current ERC-721 owner of a token (null if not minted / burned).
  * Used to confirm an on-chain claim before marking the DB record completed.
  */
+export async function getOnChainBasePrice(tokenId: number): Promise<bigint> {
+  return rpcCall("getOnChainBasePrice", () =>
+    client.readContract({
+      address: addresses.SkillNFT as `0x${string}`,
+      abi: SkillNFT_ABI,
+      functionName: "basePrice",
+      args: [BigInt(tokenId)],
+    }) as Promise<bigint>
+  );
+}
+
 export async function getOnChainOwner(tokenId: number): Promise<string | null> {
   return rpcCall("getOnChainOwner", async () => {
     try {
