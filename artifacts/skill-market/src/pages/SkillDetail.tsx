@@ -226,10 +226,9 @@ export default function SkillDetail() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: "Base Price",   value: basePrice > 0 ? `${basePrice} W0G` : "—" },
+                  { label: "Base Price",   value: basePrice > 0 ? `${basePrice} W0G` : "Free" },
                   { label: "Invocations",  value: invocations.toLocaleString() },
                   { label: "W0G Earned",   value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—" },
-                  { label: "Royalty",      value: `${royaltyRate}%` },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
