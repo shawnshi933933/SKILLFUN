@@ -110,7 +110,7 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
             </span>
             <span className="flex items-center gap-1 text-primary/70">
               <Zap className="w-3 h-3" />
-              Owner {skill.ownerShare}% income
+              Auth fee → 100% Owner
             </span>
           </div>
           {skill.creatorAddress && (

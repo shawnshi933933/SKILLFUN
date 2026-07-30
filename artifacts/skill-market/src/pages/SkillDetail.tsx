@@ -496,22 +496,26 @@ export default function SkillDetail() {
               )}
             </div>
 
-            {/* Revenue split */}
+            {/* Revenue model */}
             <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
-              <div className="text-xs text-muted-foreground">Revenue Split (per invocation)</div>
-              {[
-                { label: "Platform fee", value: "10%", color: "bg-white/20" },
-                { label: "Creator royalty", value: `${Math.round(creatorShare * 0.9)}%`, color: "bg-primary/60" },
-                { label: "Owner income", value: `${Math.round(ownerShare * 0.9)}%`, color: "bg-accent/60" },
-              ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-sm ${row.color}`} />
-                    <span className="text-muted-foreground">{row.label}</span>
-                  </div>
-                  <span className="font-mono font-medium">{row.value}</span>
+              <div className="text-xs text-muted-foreground">Revenue Model</div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-sm bg-accent/60" />
+                  <span className="text-muted-foreground">Authorization fee</span>
                 </div>
-              ))}
+                <span className="font-mono font-medium text-accent">100% → Owner</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-sm bg-primary/60" />
+                  <span className="text-muted-foreground">Per-invocation (x402)</span>
+                </div>
+                <span className="font-mono font-medium text-primary">100% → Curator</span>
+              </div>
+              <p className="text-xs text-muted-foreground/60 pt-1 border-t border-white/10 leading-relaxed">
+                Curators pay <span className="text-foreground font-mono">{basePrice > 0 ? `${basePrice} W0G` : "0 W0G"}</span> to authorize, then keep all agent invocation fees.
+              </p>
             </div>
 
             {/* Security */}
