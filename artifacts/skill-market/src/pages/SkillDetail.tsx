@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Bot, Lock, Shield, Clock, ArrowLeft, Hash,
+  Bot, Lock, Shield, Clock, ArrowLeft, Hash, Zap,
   ExternalLink, Loader2, AlertCircle, CheckCircle2,
   Github, Database, FileCode2, Download, KeyRound, RefreshCw,
 } from "lucide-react";
@@ -26,7 +26,7 @@ export default function SkillDetail() {
   const [, params] = useRoute("/app/skill/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [purchasing, setPurchasing] = useState(false);
+
 
   const [fetchingContent, setFetchingContent] = useState(false);
   const [skillContent, setSkillContent] = useState<string | null>(null);
@@ -151,13 +151,6 @@ export default function SkillDetail() {
     }
   };
 
-  const handleBuy = () => {
-    setPurchasing(true);
-    setTimeout(() => {
-      setPurchasing(false);
-      toast({ title: "Purchase simulated", description: "ERC-7857 iNFT acquired (demo — 0G Chain)" });
-    }, 1800);
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -471,13 +464,16 @@ export default function SkillDetail() {
 
           {/* Right — Action panel */}
           <div className="space-y-4">
-            {/* Buy card */}
+            {/* Access card */}
             <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
               <div className="flex items-baseline justify-between">
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Base Price</div>
                   <div className="text-2xl font-bold font-mono">
-                    {basePrice > 0 ? `${basePrice} W0G` : "—"}
+                    {basePrice > 0 ? `${basePrice} W0G` : <span className="text-emerald-400">Free</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {basePrice > 0 ? "per Curator authorization" : "Curators authorize for free"}
                   </div>
                 </div>
                 <Badge className={`${isMinted ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-white/5 text-muted-foreground border-white/10"} border`}>
@@ -485,15 +481,13 @@ export default function SkillDetail() {
                 </Badge>
               </div>
 
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-white gap-2"
-                onClick={handleBuy}
-                disabled={purchasing || !isMinted}
-                data-testid="button-buy-skill"
-              >
-                {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {purchasing ? "Processing…" : isMinted ? "Buy Skill NFT" : "Coming Soon"}
-              </Button>
+              <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+                <div className="font-medium text-primary mb-1 flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Agent Access via x402
+                </div>
+                Agents invoke this skill through a Curator's MCP Bundle endpoint.
+                Curators {basePrice > 0 ? `pay ${basePrice} W0G to authorize, then` : "authorize for free and"} earn revenue on every agent invocation.
+              </div>
 
               {!isMinted && (
                 <p className="text-xs text-muted-foreground text-center">

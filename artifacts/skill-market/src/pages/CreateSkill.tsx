@@ -255,8 +255,11 @@ export default function CreateSkill() {
     const tags         = form.tags.split(",").map((s) => s.trim()).filter(Boolean);
 
     try {
+      // Community mints are always free (selfAuthorize) — zero out basePrice
+      const effectiveBasePrice = form.ownerMode === "community" ? "0" : form.basePrice;
+
       const basePriceWei = (() => {
-        const v = parseFloat(form.basePrice);
+        const v = parseFloat(effectiveBasePrice);
         if (!v || v <= 0) return "0";
         return (BigInt(Math.round(v * 1e18))).toString();
       })();
@@ -273,7 +276,7 @@ export default function CreateSkill() {
           instructions: form.instructions.trim() || undefined,
           category:     form.category,
           version:      form.version.trim(),
-          basePrice:    parseFloat(form.basePrice),
+          basePrice:    parseFloat(effectiveBasePrice),
           capabilities,
           tags,
         },
