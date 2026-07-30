@@ -29,12 +29,12 @@ const FLOW_STEPS = [
   },
   {
     step: "05", title: "Pay on-chain",
-    desc: "Agent calls w0g.approve(skillNFT, amount) then skillNFT.invokeSkill(tokenId) on 0G Chain (chainId 16661). W0G transfers directly to the Skill NFT owner.",
+    desc: "Agent sends W0G ERC-20 transfer directly to the Curator's wallet (payTo from 402 response). Simple transfer — no approve step, no contract call. Amount set by the Curator's servicePrice.",
     color: "text-orange-400 bg-orange-500/10 border-orange-500/30",
   },
   {
     step: "06", title: "Get proof token",
-    desc: "Agent POSTs { txHash, tokenId, agentWallet } to /api/mcp/payment/prove. Server verifies the on-chain tx, issues a long-lived proof token bound to (skillId, contentVersion).",
+    desc: "Agent POSTs { txHash, tokenId, bundleId, agentWallet, signature } to /api/mcp/payment/prove. Server verifies the ERC-20 Transfer log on-chain, issues a proof scoped to (skillId, bundleId, contentVersion).",
     color: "text-purple-400 bg-purple-500/10 border-purple-500/30",
   },
   {
@@ -49,11 +49,11 @@ const FLOW_STEPS = [
   },
 ];
 
-const TS_EXAMPLE = `import { createPublicClient, createWalletClient, http, parseAbi } from "viem";
+const TS_EXAMPLE = `import { createWalletClient, http, parseAbi } from "viem";
 
-const SKILL_NFT = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"; // v4
 const W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
 const MCP_BASE  = "https://<your-domain>/mcp/<bundleId>";
+const BUNDLE_ID = "<bundleId>";
 
 // 1. Initialize — get bundle workflow + payment info
 const init = await fetch(\`\${MCP_BASE}/mcp\`, {
@@ -61,7 +61,8 @@ const init = await fetch(\`\${MCP_BASE}/mcp\`, {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }),
 }).then(r => r.json());
-console.log(init.result._skillfun.workflow); // orchestration playbook
+console.log(init.result._skillfun.workflow);     // orchestration playbook
+// paymentInfo: { method: "erc20-transfer", payTo: "<curatorWallet>", currency: "W0G" }
 
 // 2. List tools (free)
 const { tools } = await fetch(\`\${MCP_BASE}/tools\`).then(r => r.json());
@@ -77,37 +78,26 @@ const attempt  = await fetch(\`\${MCP_BASE}/mcp\`, {
 
 if (attempt.status === 402) {
   const { accepts, proveEndpoint } = await attempt.json();
-  // Server determines the correct method via on-chain ownerOf:
-  //   method == "selfAuthorize"         → unclaimed skill (free, gas-only)
-  //   method == "purchaseAuthorization" → claimed skill (approve W0G first)
-  const { tokenId, amount, method } = accepts[0];
-  const tokenIdBig = BigInt(tokenId);
-  let txHash: string;
+  // accepts[0]: { method: "erc20-transfer", payTo: "<curatorWallet>", amount: "<wei>", currency: "W0G" }
+  const { payTo, amount, tokenId } = accepts[0];
 
-  // 4. Pay on-chain — branch on server-provided method, not amount
-  if (method === "selfAuthorize") {
-    txHash = await walletClient.writeContract({
-      address: SKILL_NFT, abi: parseAbi(["function selfAuthorize(uint256)"]),
-      functionName: "selfAuthorize", args: [tokenIdBig],
-    });
-  } else {
-    // purchaseAuthorization — approve W0G first (even if amount == "0")
-    await walletClient.writeContract({
-      address: W0G, abi: parseAbi(["function approve(address,uint256)"]),
-      functionName: "approve", args: [SKILL_NFT, BigInt(amount)],
-    });
-    txHash = await walletClient.writeContract({
-      address: SKILL_NFT, abi: parseAbi(["function purchaseAuthorization(uint256)"]),
-      functionName: "purchaseAuthorization", args: [tokenIdBig],
-    });
-  }
+  // 4. Pay — send W0G ERC-20 directly to Curator's wallet (no approve, no contract call)
+  const txHash = await walletClient.writeContract({
+    address: W0G,
+    abi: parseAbi(["function transfer(address,uint256) returns (bool)"]),
+    functionName: "transfer",
+    args: [payTo as \`0x\${string}\`, BigInt(amount)],
+  });
 
-  // 5. Sign proof message + get proof token
+  // 5. Sign proof + get proof token (bundleId scopes proof to this bundle only)
   const sig = await walletClient.signMessage({ message: \`SkillFun payment proof: \${txHash}\` });
   const { proof } = await fetch("/api/mcp/payment/prove", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ txHash, tokenId, agentWallet: walletClient.account.address, signature: sig }),
+    body: JSON.stringify({
+      txHash, tokenId, bundleId: BUNDLE_ID,
+      agentWallet: walletClient.account.address, signature: sig,
+    }),
   }).then(r => r.json());
 
   // 6. Retry with proof — receive decrypted Skill content
@@ -116,7 +106,7 @@ if (attempt.status === 402) {
     headers: {
       "Content-Type": "application/json",
       "X-402-Payment-Proof": proof,
-      "X-402-Agent-Wallet": walletClient.account.address, // required: must match paying wallet
+      "X-402-Agent-Wallet": walletClient.account.address,
     },
     body: JSON.stringify(toolCall),
   }).then(r => r.json());
@@ -130,20 +120,22 @@ const PY_EXAMPLE = `import requests
 from eth_account import Account
 from web3 import Web3
 
-SKILL_NFT = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"  # v4
 W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c"
 MCP_BASE  = "https://<your-domain>/mcp/<bundleId>"
+BUNDLE_ID = "<bundleId>"
 
 w3 = Web3(Web3.HTTPProvider("https://evmrpc.0g.ai"))
+w0g = w3.eth.contract(address=W0G, abi=ERC20_ABI)
 
-# 1. Initialize
+# 1. Initialize — get workflow + payment info
 init = requests.post(f"{MCP_BASE}/mcp",
   json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}).json()
 print(init["result"]["_skillfun"]["workflow"])
+# paymentInfo: { method: "erc20-transfer", payTo: "<curatorWallet>", currency: "W0G" }
 
 # 2. List tools (free)
-tools = requests.get(f"{MCP_BASE}/tools").json()["tools"]
-tool_name = tools[0]["name"]   # e.g. "defi-alpha:3"
+tools    = requests.get(f"{MCP_BASE}/tools").json()["tools"]
+tool_name = tools[0]["name"]    # e.g. "defi-alpha:3"
 token_id  = tools[0]["_skillfun"]["tokenId"]
 
 # 3. Call tool — expect 402
@@ -151,32 +143,24 @@ tool_call = {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name
 resp = requests.post(f"{MCP_BASE}/mcp", json=tool_call)
 
 if resp.status_code == 402:
-    payment = resp.json()
-    amount  = int(payment["accepts"][0]["amount"])
+    payment  = resp.json()
+    pay_to   = payment["accepts"][0]["payTo"]    # Curator's wallet address
+    amount   = int(payment["accepts"][0]["amount"])
 
-    # 4. Pay on-chain — branch on server-provided method (not amount):
-    #    "selfAuthorize"         → unclaimed skill, free (gas-only)
-    #    "purchaseAuthorization" → claimed skill, approve W0G first (even if amount==0)
-    method = payment["accepts"][0]["method"]
-    amount = int(payment["accepts"][0]["amount"])
-    w0g_contract   = w3.eth.contract(address=W0G, abi=ERC20_ABI)
-    skill_contract = w3.eth.contract(address=SKILL_NFT, abi=SKILL_NFT_ABI)
-    if method == "selfAuthorize":
-        tx_hash = skill_contract.functions.selfAuthorize(token_id).transact({"from": agent_wallet})
-    else:
-        w0g_contract.functions.approve(SKILL_NFT, amount).transact({"from": agent_wallet})
-        tx_hash = skill_contract.functions.purchaseAuthorization(token_id).transact({"from": agent_wallet})
+    # 4. Pay — send W0G ERC-20 directly to Curator's wallet (no approve needed)
+    tx = w0g.functions.transfer(pay_to, amount).transact({"from": agent_wallet})
+    tx_hash = tx.hex()
 
-    # 5. Sign proof message + get proof token
-    msg      = f"SkillFun payment proof: {tx_hash.hex()}"
-    sig      = Account.sign_message(w3.eth.account.sign_message(msg), private_key=agent_pk)
+    # 5. Sign proof + get proof token (bundleId scopes proof to this bundle only)
+    msg = f"SkillFun payment proof: {tx_hash}"
+    sig = Account.sign_message(encode_defunct(text=msg), private_key=agent_pk)
     proof_resp = requests.post("/api/mcp/payment/prove", json={
-        "txHash": tx_hash.hex(), "tokenId": token_id,
+        "txHash": tx_hash, "tokenId": token_id, "bundleId": BUNDLE_ID,
         "agentWallet": agent_wallet, "signature": sig.signature.hex()
     }).json()
     proof = proof_resp["proof"]
 
-    # 6. Retry with proof
+    # 6. Retry with proof — receive decrypted Skill content
     result = requests.post(f"{MCP_BASE}/mcp", json=tool_call,
         headers={"X-402-Payment-Proof": proof, "X-402-Agent-Wallet": agent_wallet}).json()
     print(result["result"]["content"][0]["text"])
@@ -198,15 +182,14 @@ export default function AgentApi() {
     const steps = [
       `→ POST ${mcpUrl}  { method: "initialize" }`,
       `← 200 OK — bundle info + workflow + payment details`,
-      `   _skillfun.paymentInfo.method: "purchaseAuthorization"`,
+      `   _skillfun.paymentInfo: { method: "erc20-transfer", payTo: "0xcurator…", currency: "W0G" }`,
       `→ GET /mcp/${simBundleId}/tools`,
       `← 200 OK — [{ name: "defi-alpha:3", _skillfun.tokenId: 3 }]`,
       `→ POST ${mcpUrl}  { method: "tools/call", params: { name: "defi-alpha:3" } }`,
       `← HTTP 402 Payment Required`,
-      `   accepts[0]: { currency: "W0G", method: "purchaseAuthorization", tokenId: 3 }`,
-      `→ w0g.approve(skillNFT, amount)  [on-chain 0G Mainnet]`,
-      `→ skillNFT.purchaseAuthorization(3)  → txHash: 0xa1b2…c3d4`,
-      `→ POST /api/mcp/payment/prove  { txHash, tokenId: 3, agentWallet, signature }`,
+      `   accepts[0]: { method: "erc20-transfer", payTo: "0xcurator…", amount: "1000000000000000", currency: "W0G" }`,
+      `→ w0g.transfer("0xcurator…", amount)  [on-chain 0G Mainnet — direct ERC-20 transfer]`,
+      `→ POST /api/mcp/payment/prove  { txHash, tokenId: 3, bundleId, agentWallet, signature }`,
       `← 201 { proof: "f8e7d6…", skillId: "sk_xxx", contentVersion: 1 }`,
       `→ POST ${mcpUrl}  { method: "tools/call" }  X-402-Payment-Proof: f8e7d6…`,
       `← 200 OK — content: [{ type: "text", text: "<decrypted skill content>" }]`,
@@ -244,7 +227,7 @@ export default function AgentApi() {
           {[
             { icon: <Layers className="w-5 h-5 text-accent" />, title: "One endpoint per Bundle", desc: "POST /mcp/{bundleId}/mcp exposes all Skills in the Bundle via MCP tools/list + tools/call. Agents discover, initialize, and pay in one flow." },
             { icon: <Coins className="w-5 h-5 text-emerald-400" />, title: "Version-gated proofs", desc: "Pay once per Skill version. Proof token is valid until the creator updates the Skill content. Creator update = contentVersion bump = agents repay. No expiry timers." },
-            { icon: <Shield className="w-5 h-5 text-primary" />, title: "Creator IP protected", desc: "Skill content (system prompt / workflow config) stays encrypted on 0G Storage. Agents receive decrypted content only after on-chain invokeSkill payment is verified." },
+            { icon: <Shield className="w-5 h-5 text-primary" />, title: "Creator IP protected", desc: "Skill content (system prompt / workflow config) stays encrypted on 0G Storage. Agents receive decrypted content only after a valid W0G ERC-20 transfer proof is verified." },
           ].map((c) => (
             <div key={c.title} className="bg-card border border-white/10 rounded-xl p-5">
               <div className="mb-3">{c.icon}</div>
@@ -282,7 +265,7 @@ export default function AgentApi() {
             {[
               { method: "POST", path: "/mcp/{bundleId}/mcp", desc: "MCP JSON-RPC 2.0 — initialize, tools/list, tools/call, resources/list, resources/read", badge: "JSON-RPC" },
               { method: "GET",  path: "/mcp/{bundleId}/tools", desc: "Shortcut: returns tools list for the Bundle (no auth)", badge: "free" },
-              { method: "POST", path: "/api/mcp/payment/prove", desc: "Verify on-chain invokeSkill tx → issue proof token", badge: "x402" },
+              { method: "POST", path: "/api/mcp/payment/prove", desc: "Verify ERC-20 Transfer tx (W0G → curatorWallet) → issue proof token scoped to bundleId", badge: "x402" },
               { method: "GET",  path: "/api/bundles", desc: "List Bundles with MCP endpoint URLs", badge: "" },
               { method: "GET",  path: "/api/bundles/{id}", desc: "Bundle details + skill list + workflow playbook", badge: "" },
               { method: "GET",  path: "/api/skills", desc: "List Skills with contentVersion and rootHash", badge: "" },

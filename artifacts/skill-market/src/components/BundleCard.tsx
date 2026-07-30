@@ -32,16 +32,10 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
             </div>
             <Badge variant="outline" className="text-xs border-accent/30 text-accent bg-accent/10">Bundle</Badge>
           </div>
-          {bundle.apy > 0 ? (
-            <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
-              {bundle.apy.toFixed(1)}% APY
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-xs border-primary/30 text-primary gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Live
-            </Badge>
-          )}
+          <Badge variant="outline" className="text-xs border-primary/30 text-primary gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Live
+          </Badge>
         </div>
 
         <h3 className="font-semibold text-foreground mb-1.5 group-hover:text-accent transition-colors line-clamp-1">
@@ -85,12 +79,10 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
               <Layers className="w-3 h-3" />
               {skillCount} Skill{skillCount !== 1 ? "s" : ""}
             </span>
-            {bundle.stakerPool > 0 && (
-              <span className="flex items-center gap-1 text-emerald-400/80">
-                <Coins className="w-3 h-3" />
-                {(bundle.stakerPool / 1000).toFixed(1)}K SKILL staked
-              </span>
-            )}
+            <span className="flex items-center gap-1 text-emerald-400/80">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              MCP endpoint
+            </span>
           </div>
           {bundle.skillNames && bundle.skillNames.length > 0 && (
             <div className="flex items-center gap-1 overflow-hidden">

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  ArrowLeft, Bot, Layers, Coins, Shield, Lock,
+  ArrowLeft, Bot, Layers, Shield, Lock,
   ExternalLink, Zap, Loader2, AlertCircle, Package,
   Copy, CheckCircle2, ChevronDown, ChevronUp, TrendingUp, RefreshCw,
 } from "lucide-react";
@@ -36,8 +36,6 @@ export default function BundleDetail() {
   const [, params] = useRoute("/app/bundle/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [staking, setStaking]         = useState(false);
-  const [stakeAmount, setStakeAmount]  = useState("500");
   const [snippetOpen, setSnippetOpen]  = useState(false);
 
   const { data, isLoading, error } = useBundle(params?.id);
@@ -132,17 +130,6 @@ if (attempt.status === 402) {
 
   console.log(result.result.content[0].text); // decrypted skill content
 }`;
-
-  const handleStake = () => {
-    setStaking(true);
-    setTimeout(() => {
-      setStaking(false);
-      toast({
-        title: "Staked successfully",
-        description: `${stakeAmount} SKILL staked to ${bundle.name} (demo — 0G Chain)`,
-      });
-    }, 1800);
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -398,63 +385,57 @@ if (attempt.status === 402) {
             </div>
           </div>
 
-          {/* Right — Stake panel */}
+          {/* Right — Access panel */}
           <div className="space-y-4">
+            {/* Price card */}
             <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
-              <div className="flex items-baseline justify-between">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">Bundle Price</div>
-                  <div className="text-2xl font-bold font-mono">
-                    {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} W0G` : "—"}
-                  </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-0.5">Bundle Price</div>
+                <div className="text-2xl font-bold font-mono">
+                  {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} W0G` : <span className="text-emerald-400">Free</span>}
                 </div>
-                {apy > 0 && (
-                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 border">
-                    {apy.toFixed(1)}% APY
-                  </Badge>
-                )}
-              </div>
-
-              <div className="text-xs text-muted-foreground">Quick Stake</div>
-              <div className="flex gap-1.5">
-                {["100", "500", "1000", "5000"].map((amt) => (
-                  <button
-                    key={amt}
-                    onClick={() => setStakeAmount(amt)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-mono transition-colors ${
-                      stakeAmount === amt
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                        : "bg-white/5 text-muted-foreground hover:bg-white/10"
-                    }`}
-                  >
-                    {amt}
-                  </button>
-                ))}
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Stake</span>
-                  <span className="font-mono">{parseInt(stakeAmount).toLocaleString()} SKILL</span>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {bundleTotal > 0 ? "per Skill invocation via x402" : "Curator authorization is free"}
                 </div>
-                {apy > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Est. daily yield</span>
-                    <span className="font-mono text-emerald-400">
-                      +{(parseInt(stakeAmount) * apy / 100 / 365).toFixed(2)} SKILL
-                    </span>
-                  </div>
-                )}
               </div>
 
+              {/* MCP endpoint */}
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">MCP Endpoint</div>
+                <div className="bg-background border border-white/10 rounded-lg px-3 py-2 font-mono text-xs text-primary/80 break-all">
+                  POST /mcp/{bundle.bundleId}/mcp
+                </div>
+                <div className="text-xs text-muted-foreground/60">
+                  MCP JSON-RPC 2.0 · initialize · tools/list · tools/call
+                </div>
+              </div>
+
+              {/* x402 payment info */}
+              <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+                <div className="font-medium text-primary mb-1 flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> x402 ERC-20 Transfer
+                </div>
+                Agents send W0G directly to the Curator's wallet on 0G Chain (chainId 16661).
+                No approve step. Proof token is valid until the Skill creator updates content.
+              </div>
+            </div>
+
+            {/* Curator auth reminder */}
+            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
+              <div className="text-xs text-muted-foreground">Curator Authorization</div>
+              <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                Each Skill in this Bundle must be authorized on-chain before agents can access it.
+                Unclaimed Skills are free; claimed Skills require a W0G payment.
+              </p>
               <Button
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
-                onClick={handleStake}
-                disabled={staking}
-                data-testid="button-confirm-stake"
+                variant="outline"
+                size="sm"
+                className="w-full border-primary/30 text-primary hover:bg-primary/10 gap-1"
+                onClick={() => setLocation("/app/curator/skills")}
+                data-testid="button-manage-authorizations"
               >
-                <Coins className="w-4 h-4" />
-                {staking ? "Staking…" : `Stake ${parseInt(stakeAmount).toLocaleString()} SKILL`}
+                <Shield className="w-3.5 h-3.5" />
+                Manage Authorizations
               </Button>
             </div>
           </div>

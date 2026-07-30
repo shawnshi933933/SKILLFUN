@@ -92,7 +92,7 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Base Price</div>
               <div className="font-mono font-semibold text-foreground text-sm">
-                {skill.basePrice > 0 ? `${skill.basePrice} 0G` : "—"}
+                {skill.basePrice > 0 ? `${skill.basePrice} W0G` : <span className="text-emerald-400 text-xs">Free</span>}
               </div>
             </div>
             <div className="text-right">
@@ -110,7 +110,7 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
             </span>
             <span className="flex items-center gap-1 text-primary/70">
               <Zap className="w-3 h-3" />
-              Creator {skill.creatorShare}% · Owner {skill.ownerShare}%
+              Creator 80% · Owner 10%
             </span>
           </div>
           {skill.creatorAddress && (
