@@ -1,17 +1,21 @@
 /**
  * POST /api/mcp/payment/prove
  *
- * Called by AI agents after paying on-chain via invokeSkill(tokenId).
+ * Called by AI agents after authorizing on-chain via:
+ *   - selfAuthorize(tokenId)        — unclaimed skills (free)
+ *   - purchaseAuthorization(tokenId) — claimed skills (pays basePrice W0G to owner)
+ *
  * Verifies the tx on 0G Chain, issues a long-lived proof token bound
  * to (skillId, contentVersion). Idempotent: same tx re-issues the same token.
  *
  * Flow:
  *   1. eth_getTransactionReceipt(txHash) on 0G Chain
  *   2. Confirm tx status=success, to=SkillNFT contract
- *   3. Decode input: confirm invokeSkill(tokenId) with matching tokenId
- *   4. Look up skill by tokenId → get skillId + contentVersion
- *   5. Upsert into payment_proofs (idempotent by unique constraint)
- *   6. Return { proof, skillId, contentVersion, expiresAt: null }
+ *   3. Decode input: confirm selfAuthorize(tokenId) OR purchaseAuthorization(tokenId)
+ *   4. Verify EIP-191 signature: signer == tx.from
+ *   5. Look up skill by tokenId → get skillId + contentVersion
+ *   6. Upsert into payment_proofs (idempotent by txHash)
+ *   7. Return { proof, skillId, contentVersion, expiresAt: null }
  */
 
 import { Router } from "express";
@@ -19,7 +23,7 @@ import crypto from "node:crypto";
 import { createPublicClient, http, decodeFunctionData, recoverMessageAddress } from "viem";
 import { db } from "@workspace/db";
 import { skillsTable, paymentProofsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { SkillNFT_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
@@ -41,7 +45,7 @@ router.post("/mcp/payment/prove", async (req, res) => {
     txHash?:      string;
     tokenId?:     number | string;
     agentWallet?: string;
-    /** EIP-191 personal_sign of the message "SkillFun payment proof: {txHash}" */
+    /** EIP-191 personal_sign of "SkillFun payment proof: {txHash}" */
     signature?:   string;
   };
 
@@ -63,7 +67,7 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // ── 1. Fetch tx receipt on-chain ────────────────────────────────────────────
+  // ── 1. Fetch tx receipt on-chain ─────────────────────────────────────────────
   let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>>;
   try {
     receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
@@ -73,9 +77,9 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // ── 2. Confirm tx succeeded and targeted SkillNFT ──────────────────────────
+  // ── 2. Confirm tx succeeded and targeted SkillNFT ───────────────────────────
   if (receipt.status !== "success") {
-    apiError(res, ErrorCode.INVALID_INPUT, "Transaction failed on-chain. No payment proof issued.");
+    apiError(res, ErrorCode.INVALID_INPUT, "Transaction failed on-chain. No proof issued.");
     return;
   }
 
@@ -86,7 +90,7 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // ── 3. Decode tx input to confirm invokeSkill(tokenId) ─────────────────────
+  // ── 3. Decode tx input: must be selfAuthorize or purchaseAuthorization ───────
   let tx: Awaited<ReturnType<typeof client.getTransaction>>;
   try {
     tx = await client.getTransaction({ hash: txHash as `0x${string}` });
@@ -104,9 +108,11 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  if (decoded.functionName !== "invokeSkill") {
+  const ACCEPTED_FUNCTIONS = ["selfAuthorize", "purchaseAuthorization"];
+  if (!ACCEPTED_FUNCTIONS.includes(decoded.functionName)) {
     apiError(res, ErrorCode.INVALID_INPUT,
-      `Expected invokeSkill, but transaction calls "${decoded.functionName}".`
+      `Expected selfAuthorize or purchaseAuthorization, but transaction calls "${decoded.functionName}". ` +
+      `Use selfAuthorize(tokenId) for unclaimed skills (free) or purchaseAuthorization(tokenId) for claimed skills.`
     );
     return;
   }
@@ -114,15 +120,14 @@ router.post("/mcp/payment/prove", async (req, res) => {
   const calledTokenId = Number(decoded.args[0]);
   if (calledTokenId !== tokenId) {
     apiError(res, ErrorCode.INVALID_INPUT,
-      `Transaction calls invokeSkill(${calledTokenId}), but you claimed tokenId=${tokenId}.`
+      `Transaction calls ${decoded.functionName}(${calledTokenId}), but you claimed tokenId=${tokenId}.`
     );
     return;
   }
 
-  // ── 3b. Verify caller owns tx.from via signed challenge ────────────────────
-  // Agent must sign the deterministic message: "SkillFun payment proof: {txHash}"
-  // Server recovers the signer address and asserts it equals tx.from.
-  // This prevents anyone from claiming a proof for a tx they didn't submit.
+  // ── 4. Verify caller owns tx.from via signed challenge ──────────────────────
+  // Agent must sign: "SkillFun payment proof: {txHash}"
+  // Server recovers signer and asserts it equals tx.from.
   const proofMessage = `SkillFun payment proof: ${txHash}`;
   let recoveredSigner: string;
   try {
@@ -139,13 +144,13 @@ router.post("/mcp/payment/prove", async (req, res) => {
   if (recoveredSigner !== txFrom) {
     apiError(res, ErrorCode.FORBIDDEN,
       `Signature mismatch: recovered ${recoveredSigner}, but tx.from is ${txFrom}. ` +
-      `Sign the message "SkillFun payment proof: ${txHash}" with the wallet that submitted the transaction.`
+      `Sign "SkillFun payment proof: ${txHash}" with the wallet that submitted the transaction.`
     );
     return;
   }
   const confirmedWallet = txFrom;
 
-  // ── 4. Look up skill by tokenId ─────────────────────────────────────────────
+  // ── 5. Look up skill by tokenId ──────────────────────────────────────────────
   const [skill] = await db
     .select()
     .from(skillsTable)
@@ -159,9 +164,7 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // ── 5. Idempotency: check if this exact txHash was already used ─────────────
-  // txHash is globally unique in payment_proofs — one tx can produce at most one proof ever.
-  // This prevents replaying an old invokeSkill tx to get a proof for a newer contentVersion.
+  // ── 6. Idempotency: same txHash → same proof ─────────────────────────────────
   const [existingByTx] = await db
     .select()
     .from(paymentProofsTable)
@@ -169,7 +172,7 @@ router.post("/mcp/payment/prove", async (req, res) => {
     .limit(1);
 
   if (existingByTx) {
-    logger.info({ skillId: skill.skillId, txHash, confirmedWallet }, "mcp/prove: txHash already used — returning existing proof");
+    logger.info({ skillId: skill.skillId, txHash, confirmedWallet }, "mcp/prove: reissuing existing proof");
     res.json({
       proof:          existingByTx.token,
       skillId:        existingByTx.skillId,
@@ -180,10 +183,7 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // ── 6. Issue new proof token ────────────────────────────────────────────────
-  // Each distinct txHash produces exactly one proof token.
-  // Multiple valid tokens per (skill, version, wallet) are allowed (agent double-paid — their loss).
-  // Replay is prevented solely by txHash uniqueness above.
+  // ── 7. Issue new proof token ──────────────────────────────────────────────────
   const token = crypto.randomBytes(32).toString("hex");
 
   await db.insert(paymentProofsTable).values({
@@ -195,7 +195,10 @@ router.post("/mcp/payment/prove", async (req, res) => {
     expiresAt:      null,
   });
 
-  logger.info({ skillId: skill.skillId, contentVersion: skill.contentVersion, confirmedWallet, txHash }, "mcp/prove: proof issued");
+  logger.info(
+    { skillId: skill.skillId, contentVersion: skill.contentVersion, confirmedWallet, txHash, method: decoded.functionName },
+    "mcp/prove: proof issued"
+  );
 
   res.status(201).json({
     proof:          token,

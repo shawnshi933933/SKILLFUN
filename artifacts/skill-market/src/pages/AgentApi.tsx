@@ -51,7 +51,7 @@ const FLOW_STEPS = [
 
 const TS_EXAMPLE = `import { createPublicClient, createWalletClient, http, parseAbi } from "viem";
 
-const SKILL_NFT = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF";
+const SKILL_NFT = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"; // v4
 const W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
 const MCP_BASE  = "https://<your-domain>/mcp/<bundleId>";
 
@@ -77,24 +77,37 @@ const attempt  = await fetch(\`\${MCP_BASE}/mcp\`, {
 
 if (attempt.status === 402) {
   const { accepts, proveEndpoint } = await attempt.json();
-  const { tokenId, amount } = accepts[0];
-
-  // 4. Pay on-chain: approve W0G + invokeSkill
+  // Server determines the correct method via on-chain ownerOf:
+  //   method == "selfAuthorize"         → unclaimed skill (free, gas-only)
+  //   method == "purchaseAuthorization" → claimed skill (approve W0G first)
+  const { tokenId, amount, method } = accepts[0];
   const tokenIdBig = BigInt(tokenId);
-  await walletClient.writeContract({
-    address: W0G, abi: parseAbi(["function approve(address,uint256)"]),
-    functionName: "approve", args: [SKILL_NFT, BigInt(amount)],
-  });
-  const txHash = await walletClient.writeContract({
-    address: SKILL_NFT, abi: parseAbi(["function invokeSkill(uint256)"]),
-    functionName: "invokeSkill", args: [tokenIdBig],
-  });
+  let txHash: string;
 
-  // 5. Get proof token
+  // 4. Pay on-chain — branch on server-provided method, not amount
+  if (method === "selfAuthorize") {
+    txHash = await walletClient.writeContract({
+      address: SKILL_NFT, abi: parseAbi(["function selfAuthorize(uint256)"]),
+      functionName: "selfAuthorize", args: [tokenIdBig],
+    });
+  } else {
+    // purchaseAuthorization — approve W0G first (even if amount == "0")
+    await walletClient.writeContract({
+      address: W0G, abi: parseAbi(["function approve(address,uint256)"]),
+      functionName: "approve", args: [SKILL_NFT, BigInt(amount)],
+    });
+    txHash = await walletClient.writeContract({
+      address: SKILL_NFT, abi: parseAbi(["function purchaseAuthorization(uint256)"]),
+      functionName: "purchaseAuthorization", args: [tokenIdBig],
+    });
+  }
+
+  // 5. Sign proof message + get proof token
+  const sig = await walletClient.signMessage({ message: \`SkillFun payment proof: \${txHash}\` });
   const { proof } = await fetch("/api/mcp/payment/prove", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ txHash, tokenId, agentWallet: walletClient.account.address }),
+    body: JSON.stringify({ txHash, tokenId, agentWallet: walletClient.account.address, signature: sig }),
   }).then(r => r.json());
 
   // 6. Retry with proof — receive decrypted Skill content
@@ -114,9 +127,10 @@ if (attempt.status === 402) {
 }`;
 
 const PY_EXAMPLE = `import requests
+from eth_account import Account
 from web3 import Web3
 
-SKILL_NFT = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF"
+SKILL_NFT = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"  # v4
 W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c"
 MCP_BASE  = "https://<your-domain>/mcp/<bundleId>"
 
@@ -140,22 +154,33 @@ if resp.status_code == 402:
     payment = resp.json()
     amount  = int(payment["accepts"][0]["amount"])
 
-    # 4. Pay on-chain
+    # 4. Pay on-chain — branch on server-provided method (not amount):
+    #    "selfAuthorize"         → unclaimed skill, free (gas-only)
+    #    "purchaseAuthorization" → claimed skill, approve W0G first (even if amount==0)
+    method = payment["accepts"][0]["method"]
+    amount = int(payment["accepts"][0]["amount"])
     w0g_contract   = w3.eth.contract(address=W0G, abi=ERC20_ABI)
     skill_contract = w3.eth.contract(address=SKILL_NFT, abi=SKILL_NFT_ABI)
-    w0g_contract.functions.approve(SKILL_NFT, amount).transact({"from": agent_wallet})
-    tx_hash = skill_contract.functions.invokeSkill(token_id).transact({"from": agent_wallet})
+    if method == "selfAuthorize":
+        tx_hash = skill_contract.functions.selfAuthorize(token_id).transact({"from": agent_wallet})
+    else:
+        w0g_contract.functions.approve(SKILL_NFT, amount).transact({"from": agent_wallet})
+        tx_hash = skill_contract.functions.purchaseAuthorization(token_id).transact({"from": agent_wallet})
 
-    # 5. Get proof
-    proof_resp = requests.post("/api/mcp/payment/prove",
-        json={"txHash": tx_hash.hex(), "tokenId": token_id, "agentWallet": agent_wallet}).json()
+    # 5. Sign proof message + get proof token
+    msg      = f"SkillFun payment proof: {tx_hash.hex()}"
+    sig      = Account.sign_message(w3.eth.account.sign_message(msg), private_key=agent_pk)
+    proof_resp = requests.post("/api/mcp/payment/prove", json={
+        "txHash": tx_hash.hex(), "tokenId": token_id,
+        "agentWallet": agent_wallet, "signature": sig.signature.hex()
+    }).json()
     proof = proof_resp["proof"]
 
     # 6. Retry with proof
     result = requests.post(f"{MCP_BASE}/mcp", json=tool_call,
-        headers={"X-402-Payment-Proof": proof}).json()
+        headers={"X-402-Payment-Proof": proof, "X-402-Agent-Wallet": agent_wallet}).json()
     print(result["result"]["content"][0]["text"])
-    # Proof persists — no payment until creator updates Skill content`;
+    # Proof persists — no re-payment until creator updates Skill content`;
 
 export default function AgentApi() {
   const [activeTab, setActiveTab] = useState<"ts" | "py">("ts");
@@ -173,15 +198,15 @@ export default function AgentApi() {
     const steps = [
       `→ POST ${mcpUrl}  { method: "initialize" }`,
       `← 200 OK — bundle info + workflow + payment details`,
-      `   _skillfun.paymentInfo.method: "invokeSkill"`,
+      `   _skillfun.paymentInfo.method: "purchaseAuthorization"`,
       `→ GET /mcp/${simBundleId}/tools`,
       `← 200 OK — [{ name: "defi-alpha:3", _skillfun.tokenId: 3 }]`,
       `→ POST ${mcpUrl}  { method: "tools/call", params: { name: "defi-alpha:3" } }`,
       `← HTTP 402 Payment Required`,
-      `   accepts[0]: { currency: "W0G", method: "invokeSkill", tokenId: 3 }`,
+      `   accepts[0]: { currency: "W0G", method: "purchaseAuthorization", tokenId: 3 }`,
       `→ w0g.approve(skillNFT, amount)  [on-chain 0G Mainnet]`,
-      `→ skillNFT.invokeSkill(3)  → txHash: 0xa1b2…c3d4`,
-      `→ POST /api/mcp/payment/prove  { txHash, tokenId: 3, agentWallet }`,
+      `→ skillNFT.purchaseAuthorization(3)  → txHash: 0xa1b2…c3d4`,
+      `→ POST /api/mcp/payment/prove  { txHash, tokenId: 3, agentWallet, signature }`,
       `← 201 { proof: "f8e7d6…", skillId: "sk_xxx", contentVersion: 1 }`,
       `→ POST ${mcpUrl}  { method: "tools/call" }  X-402-Payment-Proof: f8e7d6…`,
       `← 200 OK — content: [{ type: "text", text: "<decrypted skill content>" }]`,

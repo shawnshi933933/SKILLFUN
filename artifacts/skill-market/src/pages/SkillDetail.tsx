@@ -16,7 +16,7 @@ import { useEip712Sign } from "@/hooks/use-eip712";
 import { type DbSkill } from "@/lib/api";
 
 const EXPLORER      = "https://chainscan.0g.ai";
-const SKILL_NFT_ADDR = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF";
+const SKILL_NFT_ADDR = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"; // v4
 
 function getMeta(skill: DbSkill, key: string, fallback: unknown) {
   return (skill.meta as Record<string, unknown>)[key] ?? fallback;

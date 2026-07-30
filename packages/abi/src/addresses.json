@@ -1,8 +1,8 @@
 {
   "16661": {
-    "SkillFunOracle": "0x687a12ff978426DA9F731E7c6c2223f113b4C0f5",
+    "SkillFunOracle": "0x9ac710e2afa493ecc9d765da413e1f921764ca31",
     "SkillFunVerifierStub": "0xeC407EE664027AB8Ed84944C47c4FaaE3A5c8E7e",
-    "SkillNFT": "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF"
+    "SkillNFT": "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"
   },
   "31337": {
     "SkillFunOracle": "0x5FbDB2315678afecb367f032d93F642f64180aa3",

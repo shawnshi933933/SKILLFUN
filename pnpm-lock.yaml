@@ -159,6 +159,10 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      solc:
+        specifier: 0.8.24
+        version: 0.8.24
     devDependencies:
       prettier:
         specifier: ^3.8.1
@@ -5954,6 +5958,11 @@ packages:
   socket.io-parser@4.2.7:
     resolution: {integrity: sha512-IH/iSeO9T6gz1KkFleGDWkG9N3dl4jXVYUtMhIqH10Md0ttMer8nUNWiP1DKuNrybD2xBrixLJdCC9J6ECoYkg==}
     engines: {node: '>=10.0.0'}
+
+  solc@0.8.24:
+    resolution: {integrity: sha512-G5yUqjTUPc8Np74sCFwfsevhBPlUifUOfhYrgyu6CmYlC6feSw0YS6eZW47XDT23k3JYdKx5nJ+Q7whCEmNcoA==}
+    engines: {node: '>=10.0.0'}
+    hasBin: true
 
   solc@0.8.26:
     resolution: {integrity: sha512-yiPQNVf5rBFHwN6SIf3TUUvVAFKcQqmSUFeq+fb6pNRCo0ZCgpYOZDi3BVoezCPIAcKrVYd/qXlBLUP9wVrZ9g==}
@@ -13493,6 +13502,18 @@ snapshots:
       debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
+
+  solc@0.8.24:
+    dependencies:
+      command-exists: 1.2.9
+      commander: 8.3.0
+      follow-redirects: 1.16.0(debug@4.4.3)
+      js-sha3: 0.8.0
+      memorystream: 0.3.1
+      semver: 5.7.2
+      tmp: 0.0.33
+    transitivePeerDependencies:
+      - debug
 
   solc@0.8.26(debug@4.4.3):
     dependencies:

@@ -5,14 +5,18 @@
  *   POST /mcp/:bundleId/mcp   — JSON-RPC 2.0 dispatcher
  *   GET  /mcp/:bundleId/tools — tools list shortcut (no auth)
  *
- * x402 payment model:
+ * x402 payment model (v4):
  *   tools/call and skill resources/read require X-402-Payment-Proof header.
  *   If missing or stale (contentVersion mismatch) → HTTP 402 with W0G settlement details.
- *   Agent pays on-chain via invokeSkill(), POSTs txHash to /api/mcp/payment/prove,
- *   receives a proof token, then retries with X-402-Payment-Proof: <token>.
+ *   Agent pays on-chain via:
+ *     • selfAuthorize(tokenId)         — unclaimed skills (free, just needs gas)
+ *     • purchaseAuthorization(tokenId) — claimed skills (approve W0G first, then call)
+ *   Then POSTs txHash to /api/mcp/payment/prove to receive a proof token,
+ *   then retries with X-402-Payment-Proof: <token>.
  */
 
 import { Router, type Request, type Response } from "express";
+import { createPublicClient, http } from "viem";
 import { db } from "@workspace/db";
 import {
   bundlesTable,
@@ -22,7 +26,7 @@ import {
 } from "@workspace/db";
 import { eq, asc, and } from "drizzle-orm";
 import { downloadSkillContent } from "../services/storage.js";
-import { getAddresses } from "@workspace/abi";
+import { getAddresses, ZEROG_MAINNET, SkillNFT_ABI } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
 
 const router = Router();
@@ -30,6 +34,11 @@ const router = Router();
 const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT;
 const MCP_PROTOCOL_VERSION = "2024-11-05";
 const W0G_ADDRESS = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
+
+const chainClient = createPublicClient({
+  chain: ZEROG_MAINNET,
+  transport: http(process.env.ZEROG_RPC_URL ?? "https://evmrpc.0g.ai"),
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,10 +85,51 @@ async function validateProof(
   return { valid: true };
 }
 
-/** Return HTTP 402 challenge for a skill */
-function send402(res: Response, skill: { skillId: string; tokenId: number | null; meta: unknown }, reason: string) {
+/**
+ * Return HTTP 402 challenge for a skill.
+ *
+ * Method is determined by on-chain ownership:
+ *   • ownerOf == SkillNFT contract → skill is unclaimed → selfAuthorize (free, gas-only)
+ *   • ownerOf == real wallet       → skill is claimed  → purchaseAuthorization (requires W0G approval)
+ *
+ * This is authoritative: basePrice is irrelevant for method selection. A claimed skill
+ * with basePrice=0 still requires purchaseAuthorization (which will transfer 0 W0G).
+ */
+async function send402(
+  res: Response,
+  skill: { skillId: string; tokenId: number | null; meta: unknown },
+  reason: string
+) {
   const meta = (skill.meta as Record<string, unknown>) ?? {};
   const basePrice = (meta.basePrice as string | number | undefined) ?? "0";
+
+  if (skill.tokenId == null) {
+    res.status(503).json({ error: "Skill has no on-chain token — cannot determine payment method." });
+    return;
+  }
+
+  let method: string;
+  try {
+    const owner = await chainClient.readContract({
+      address: SKILL_NFT_ADDRESS as `0x${string}`,
+      abi: SkillNFT_ABI,
+      functionName: "ownerOf",
+      args: [BigInt(skill.tokenId)],
+    }) as string;
+    // Unclaimed: NFT is held by the SkillNFT contract itself
+    method = owner.toLowerCase() === SKILL_NFT_ADDRESS.toLowerCase()
+      ? "selfAuthorize"
+      : "purchaseAuthorization";
+  } catch (err) {
+    // ownerOf reverted — token may not exist or RPC is unavailable. Return explicit 503.
+    logger.error({ err, tokenId: skill.tokenId }, "send402: ownerOf check failed — cannot issue 402");
+    res.status(503).json({
+      error: "Temporarily unable to determine skill ownership. Please retry in a few seconds.",
+      tokenId: skill.tokenId,
+    });
+    return;
+  }
+
   res.status(402).json({
     error: "Payment required",
     reason,
@@ -92,7 +142,9 @@ function send402(res: Response, skill: { skillId: string; tokenId: number | null
         tokenAddress: W0G_ADDRESS,
         amount: String(basePrice),
         payTo: SKILL_NFT_ADDRESS,
-        method: "invokeSkill",
+        // selfAuthorize:         unclaimed skill — free, no W0G approval needed
+        // purchaseAuthorization: claimed skill  — approve W0G first (even if amount=0)
+        method,
         tokenId: skill.tokenId,
       },
     ],
@@ -175,7 +227,9 @@ router.post("/:bundleId/mcp", async (req, res) => {
               currency: "W0G",
               tokenAddress: W0G_ADDRESS,
               skillNFTContract: SKILL_NFT_ADDRESS,
-              method: "invokeSkill",
+              // Unclaimed skills: selfAuthorize(tokenId) — free
+              // Claimed skills:   approve W0G → purchaseAuthorization(tokenId)
+              method: "purchaseAuthorization",
               proveEndpoint: "/api/mcp/payment/prove",
               model: "pay-per-version: proof valid until creator updates skill content",
             },
@@ -244,7 +298,7 @@ router.post("/:bundleId/mcp", async (req, res) => {
 
         if (!proofCheck.valid) {
           logger.info({ bundleId, toolName, reason: proofCheck.reason }, "mcp tools/call 402");
-          send402(res, skill, proofCheck.reason);
+          await send402(res, skill, proofCheck.reason);
           return;
         }
 
@@ -353,7 +407,7 @@ router.post("/:bundleId/mcp", async (req, res) => {
         const proofCheck = await validateProof(proofToken, agentWallet, skill.skillId, skill.contentVersion);
 
         if (!proofCheck.valid) {
-          send402(res, skill, proofCheck.reason);
+          await send402(res, skill, proofCheck.reason);
           return;
         }
 

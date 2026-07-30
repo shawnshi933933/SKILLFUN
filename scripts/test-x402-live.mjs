@@ -1,13 +1,13 @@
 /**
  * Live end-to-end x402 payment test.
  *
- * Deployer wallet = skill owner (funds the test, can't call invokeSkill on own skill)
+ * Deployer wallet = skill owner (funds the test)
  * Agent wallet    = fresh ephemeral wallet simulating a paying agent
  *
- * Steps:
+ * Steps (v4 contract — selfAuthorize / purchaseAuthorization):
  *  1. Setup: deployer wraps 0G→W0G if needed, sends W0G + gas to agent wallet
- *  2. Agent approves SkillNFT to spend W0G
- *  3. Agent calls invokeSkill(tokenId) on-chain
+ *  2. If claimed: agent approves SkillNFT to spend W0G
+ *  3. Agent calls selfAuthorize(tokenId) [unclaimed] or purchaseAuthorization(tokenId) [claimed]
  *  4. Agent signs EIP-191 "SkillFun payment proof: {txHash}"
  *  5. POST /api/mcp/payment/prove → get proof token
  *  6. POST /mcp/:bundleId/mcp tools/call WITH proof → skill content returned
@@ -23,7 +23,7 @@ import { privateKeyToAccount, generatePrivateKey } from
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 if (!PRIVATE_KEY) throw new Error("DEPLOYER_PRIVATE_KEY not set");
 
-const SKILL_NFT = "0x1f76DEBCf09a1901a002FD1B4d2C636fd2AF4DAF";
+const SKILL_NFT = "0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8"; // v4
 const W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
 const BUNDLE_ID = "bd_uOIs5p3wytcxF-oJw5GC";
 const TOKEN_ID  = 3n;
@@ -48,8 +48,12 @@ const W0G_DEPOSIT_ABI = [
 ];
 
 const SKILL_ABI = [
-  { name: "invokeSkill",   inputs: [{ name: "tokenId", type: "uint256" }], outputs: [],                stateMutability: "nonpayable", type: "function" },
-  { name: "getSkillPrice", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint256" }], stateMutability: "view",   type: "function" },
+  // v4 authorization functions
+  { name: "selfAuthorize",         inputs: [{ name: "tokenId", type: "uint256" }], outputs: [], stateMutability: "nonpayable", type: "function" },
+  { name: "purchaseAuthorization", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [], stateMutability: "nonpayable", type: "function" },
+  { name: "isAuthorized",          inputs: [{ name: "tokenId", type: "uint256" }, { name: "user", type: "address" }], outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
+  { name: "basePrice",             inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+  { name: "ownerOf",               inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "address" }], stateMutability: "view", type: "function" },
 ];
 
 const hr   = ()       => console.log("─".repeat(64));
@@ -95,10 +99,10 @@ step(1, "Setup — fund agent wallet with W0G + gas");
 
 const decimals = await publicClient.readContract({ address: W0G, abi: ERC20_ABI, functionName: "decimals", args: [] });
 
-// Get skill price (fallback 0.01)
+// Get skill price from basePrice mapping
 let skillPrice;
 try {
-  skillPrice = await publicClient.readContract({ address: SKILL_NFT, abi: SKILL_ABI, functionName: "getSkillPrice", args: [TOKEN_ID] });
+  skillPrice = await publicClient.readContract({ address: SKILL_NFT, abi: SKILL_ABI, functionName: "basePrice", args: [TOKEN_ID] });
   info("Skill price (on-chain)", `${formatUnits(skillPrice, decimals)} W0G`);
 } catch {
   skillPrice = parseUnits("0.01", Number(decimals));
@@ -142,37 +146,59 @@ const agentW0G = await publicClient.readContract({ address: W0G, abi: ERC20_ABI,
 info("Agent W0G balance", `${formatUnits(agentW0G, decimals)} W0G`);
 ok("Agent wallet funded ✓");
 
-// ── Step 2: Agent approves SkillNFT to spend W0G ──────────────────────────
-step(2, "Agent approves SkillNFT to spend W0G");
+// Check whether skill is claimed or unclaimed
+const nftOwner = await publicClient.readContract({ address: SKILL_NFT, abi: SKILL_ABI, functionName: "ownerOf", args: [TOKEN_ID] });
+const isUnclaimed = nftOwner.toLowerCase() === SKILL_NFT.toLowerCase();
+info("Skill NFT owner", isUnclaimed ? "contract (unclaimed)" : nftOwner);
 
-const approveTx = await agentWalletClient.writeContract({
-  address: W0G, abi: ERC20_ABI, functionName: "approve",
-  args: [SKILL_NFT, skillPrice * 10n],
-});
-info("Approve txHash", approveTx);
-await waitReceipt(approveTx);
-ok("Approved ✓");
+// ── Step 2: Agent approves SkillNFT to spend W0G (claimed skills only) ─────
+step(2, isUnclaimed ? "Skill is unclaimed — no W0G approval needed" : "Agent approves SkillNFT to spend W0G");
 
-// ── Step 3: Agent calls invokeSkill(tokenId) ──────────────────────────────
-step(3, `Agent calls invokeSkill(${TOKEN_ID})`);
+let authTxHash;
+if (isUnclaimed) {
+  // Free: selfAuthorize
+  info("Calling selfAuthorize", `tokenId=${TOKEN_ID}`);
+  authTxHash = await agentWalletClient.writeContract({
+    address: SKILL_NFT, abi: SKILL_ABI, functionName: "selfAuthorize", args: [TOKEN_ID],
+    gas: 100000n,
+  });
+} else {
+  // Claimed: approve W0G then purchaseAuthorization
+  const approveTx = await agentWalletClient.writeContract({
+    address: W0G, abi: ERC20_ABI, functionName: "approve",
+    args: [SKILL_NFT, skillPrice * 10n],
+  });
+  info("Approve txHash", approveTx);
+  await waitReceipt(approveTx);
+  ok("Approved ✓");
 
-const invokeTxHash = await agentWalletClient.writeContract({
-  address: SKILL_NFT, abi: SKILL_ABI, functionName: "invokeSkill", args: [TOKEN_ID],
-});
-info("invokeSkill txHash", invokeTxHash);
+  // ── Step 3: Agent calls purchaseAuthorization(tokenId) ─────────────────────
+  step(3, `Agent calls purchaseAuthorization(${TOKEN_ID})`);
+  authTxHash = await agentWalletClient.writeContract({
+    address: SKILL_NFT, abi: SKILL_ABI, functionName: "purchaseAuthorization", args: [TOKEN_ID],
+    gas: 150000n,
+  });
+}
+
+info("Auth txHash", authTxHash);
 info("Waiting for receipt", "...");
 
-const receipt = await waitReceipt(invokeTxHash);
+const receipt = await waitReceipt(authTxHash);
 info("Status", receipt.status);
 info("Block", receipt.blockNumber.toString());
 
-if (receipt.status !== "success") fail("invokeSkill tx failed on-chain");
-ok("invokeSkill confirmed on-chain ✓");
+if (receipt.status !== "success") fail("Authorization tx failed on-chain");
+
+// Verify on-chain authorization
+const isAuth = await publicClient.readContract({ address: SKILL_NFT, abi: SKILL_ABI, functionName: "isAuthorized", args: [TOKEN_ID, agent.address] });
+info("isAuthorized (agent)", isAuth.toString());
+if (!isAuth) fail("isAuthorized returned false after authorization tx");
+ok(`${isUnclaimed ? "selfAuthorize" : "purchaseAuthorization"} confirmed — isAuthorized = true ✓`);
 
 // ── Step 4: Agent signs EIP-191 proof message ─────────────────────────────
 step(4, "Agent signs EIP-191 proof message");
 
-const message   = `SkillFun payment proof: ${invokeTxHash}`;
+const message   = `SkillFun payment proof: ${authTxHash}`;
 info("Message", message);
 const signature = await agentWalletClient.signMessage({ message });
 info("Signature", `${signature.slice(0, 20)}...`);
@@ -185,7 +211,7 @@ const proveRes  = await fetch(`${API_BASE}/api/mcp/payment/prove`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    txHash:      invokeTxHash,
+    txHash:      authTxHash,
     tokenId:     Number(TOKEN_ID),
     agentWallet: agent.address,
     signature,
@@ -230,7 +256,7 @@ step("B", "Replay same txHash → same proof returned (idempotent)");
 const replayRes  = await fetch(`${API_BASE}/api/mcp/payment/prove`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ txHash: invokeTxHash, tokenId: Number(TOKEN_ID), agentWallet: agent.address, signature }),
+  body: JSON.stringify({ txHash: authTxHash, tokenId: Number(TOKEN_ID), agentWallet: agent.address, signature }),
 });
 const replayBody = await replayRes.json();
 info("HTTP status", replayRes.status);
