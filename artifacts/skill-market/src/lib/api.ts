@@ -325,6 +325,51 @@ export const authApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Curator authorizations
+// ---------------------------------------------------------------------------
+
+export type AuthStatus = "active" | "needs_reauth" | "revoked" | "pending";
+
+export interface CuratorAuthorization {
+  tokenId:        number;
+  skillId:        string;
+  skillName:      string;
+  repoUrl:        string;
+  ownerAddress:   string | null;
+  /** Live on-chain NFT owner — null means unclaimed */
+  nftOwner:       string | null;
+  /** true if the NFT is held by a real wallet (not SkillNFT contract) */
+  isClaimed:      boolean;
+  /** On-chain basePrice in W0G wei, as decimal string */
+  basePrice:      string;
+  authorizedAt:   string | null;
+  revokedAt:      string | null;
+  storedEpoch:    number | null;
+  onChainEpoch:   number;
+  isAuthorized:   boolean;
+  status:         AuthStatus;
+  contentVersion: number;
+  bundleIds:      string[];
+}
+
+export interface CuratorAuthorizationsResponse {
+  authorizations: CuratorAuthorization[];
+  curatorWallet:  string;
+}
+
+export const curatorApi = {
+  listAuthorizations: (wallet: string) =>
+    apiFetch<CuratorAuthorizationsResponse>(
+      `/curator/authorizations?wallet=${encodeURIComponent(wallet)}`
+    ),
+
+  getAuthorizationStatus: (tokenId: number, wallet: string) =>
+    apiFetch<CuratorAuthorization & { status: AuthStatus }>(
+      `/curator/authorizations/${tokenId}/status?wallet=${encodeURIComponent(wallet)}`
+    ),
+};
+
+// ---------------------------------------------------------------------------
 // Admin (deployer-wallet only)
 // ---------------------------------------------------------------------------
 export const adminApi = {

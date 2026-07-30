@@ -12,6 +12,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/app/market", label: "Skills" },
     { href: "/app/market?tab=bundles", label: "Bundles" },
+    { href: "/app/curator/skills", label: "Curator" },
     { href: "/app/stake", label: "Stake" },
     { href: "/app/agent-api", label: "Agent API" },
     { href: "/app/kol", label: "KOL" },

@@ -18,6 +18,7 @@ import Claim from "@/pages/Claim";
 import Flywheel from "@/pages/Flywheel";
 import AgentApi from "@/pages/AgentApi";
 import Profile from "@/pages/Profile";
+import CuratorSkills from "@/pages/CuratorSkills";
 
 import "@rainbow-me/rainbowkit/styles.css";
 
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/app/flywheel" component={Flywheel} />
       <Route path="/app/agent-api" component={AgentApi} />
       <Route path="/app/profile" component={Profile} />
+      <Route path="/app/curator/skills" component={CuratorSkills} />
       <Route component={NotFound} />
     </Switch>
   );

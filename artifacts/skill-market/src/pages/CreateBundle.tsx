@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, X, Loader2, Package } from "lucide-react";
+import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, X, Loader2, Package, Shield, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSkills } from "@/hooks/use-skills";
 import { useEip712Sign } from "@/hooks/use-eip712";
@@ -336,9 +336,34 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                     );
                   })}
                   {deployState === "done" && (
-                    <div className="text-center pt-4">
-                      <div className="text-2xl font-bold text-emerald-400 mb-2">Bundle Deployed!</div>
-                      <p className="text-muted-foreground text-sm mb-4">Your Bundle is live. Agents can now discover and invoke Skills via x402 W0G payment.</p>
+                    <div className="text-center pt-4 space-y-4">
+                      <div className="text-2xl font-bold text-emerald-400">Bundle Deployed!</div>
+                      <p className="text-muted-foreground text-sm">Your Bundle is live. Agents can now discover and invoke Skills via x402 W0G payment.</p>
+
+                      {/* Authorization reminder */}
+                      {selectedSkills.length > 0 && (
+                        <div className="text-left bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+                          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm text-amber-400 font-medium mb-1">Authorize your Skills</p>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              You have {selectedSkills.length} Skill{selectedSkills.length > 1 ? "s" : ""} in this Bundle.
+                              Agents can't access them until you authorize each one on-chain.
+                              Unclaimed Skills are free; claimed Skills require a W0G payment equal to their base price.
+                            </p>
+                            <Button
+                              size="sm"
+                              className="bg-amber-500 hover:bg-amber-600 text-black gap-1"
+                              onClick={() => setLocation("/app/curator/skills")}
+                              data-testid="button-go-authorize-skills"
+                            >
+                              <Shield className="w-3.5 h-3.5" />
+                              Manage Authorizations
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex gap-3 justify-center">
                         {createdBundleId && (
                           <Button

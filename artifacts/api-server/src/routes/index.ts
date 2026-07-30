@@ -9,6 +9,7 @@ import claimsRouter       from "./claims.js";
 import adminRouter        from "./admin.js";
 import githubRouter       from "./github.js";
 import mcpRouter          from "./mcp.js";
+import curatorRouter      from "./curator.js";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(claimsRouter);
 router.use(adminRouter);
 router.use(githubRouter);
 router.use(mcpRouter);
+router.use(curatorRouter);
 
 export default router;
