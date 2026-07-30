@@ -343,7 +343,7 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                         {createdBundleId && (
                           <Button
                             className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                            onClick={() => setLocation(`/app/bundles/${createdBundleId}`)}
+                            onClick={() => setLocation(`/app/bundle/${createdBundleId}`)}
                             data-testid="button-view-bundle"
                           >
                             View Bundle
