@@ -190,7 +190,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
   // Encrypt + upload to 0G Storage (falls back to keccak256 if unavailable).
   // When skillFileContent is provided (fetched from GitHub) that real file
   // is what gets encrypted and stored — the rootHash anchors the actual skill.
-  let uploadResult: { rootHash: string; skillUri: string; uploaded: boolean; txSeq?: number | null };
+  let uploadResult: { rootHash: string; skillUri: string; uploaded: boolean; txSeq?: number | null; aesKey: string };
   try {
     uploadResult = await uploadSkillManifest(
       skillId,
@@ -205,6 +205,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
   }
 
   // Create DB record (pending — confirmed after user's tx lands)
+  // aesKey is stored in DB only — never sent to client or on-chain
   const [skill] = await db
     .insert(skillsTable)
     .values({
@@ -212,6 +213,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
       repoUrl:       manifestOwnerVal,
       skillUri:      uploadResult.skillUri,
       rootHash:      uploadResult.rootHash,
+      aesKey:        uploadResult.aesKey,
       manifestOwner: manifestOwnerVal,
       ownerAddress:  resolvedOwner,
       meta: {

@@ -51,6 +51,9 @@ export const skillsTable = pgTable(
     mintStatus:    mintStatusEnum("mint_status").notNull().default("pending"),
     reviewStatus:  reviewStatusEnum("review_status").notNull().default("pending"),
     ownerAddress:  text("owner_address"),                     // submitter's EVM address
+    /** Per-skill AES-256-GCM key (hex, 32 bytes). Null for skills encrypted with the
+     *  legacy platform-wide key (SESSION_SECRET). New skills always have a per-skill key. */
+    aesKey:        text("aes_key"),
     meta:          jsonb("meta").$type<Record<string, unknown>>().default({}),
     createdAt:     timestamp("created_at").notNull().defaultNow(),
     updatedAt:     timestamp("updated_at").notNull().defaultNow(),
@@ -81,7 +84,10 @@ export const bundlesTable = pgTable(
     name:        text("name").notNull(),
     description: text("description"),
     workflow:    text("workflow"),                            // MCP orchestration playbook shown to agents on initialize
-    ownerAddress: text("owner_address").notNull(),           // EVM address of bundle creator
+    ownerAddress: text("owner_address").notNull(),           // EVM address of bundle creator (= Curator wallet)
+    /** x402 price in W0G wei that agents must transfer to ownerAddress per access.
+     *  Null means free (no x402 payment required). */
+    servicePrice: text("service_price"),
     meta:        jsonb("meta").$type<Record<string, unknown>>().default({}),
     createdAt:   timestamp("created_at").notNull().defaultNow(),
     updatedAt:   timestamp("updated_at").notNull().defaultNow(),
@@ -173,17 +179,59 @@ export const paymentProofsTable = pgTable(
     token:          text("token").primaryKey(),                   // opaque 32-byte hex
     skillId:        text("skill_id").notNull().references(() => skillsTable.skillId, { onDelete: "cascade" }),
     contentVersion: integer("content_version").notNull(),         // skill.contentVersion at issuance
-    agentWallet:    text("agent_wallet").notNull(),               // wallet that called invokeSkill on-chain
-    txHash:         text("tx_hash").notNull(),                    // on-chain invokeSkill tx; globally unique — prevents replay across versions
+    agentWallet:    text("agent_wallet").notNull(),               // EVM address of the agent
+    txHash:         text("tx_hash").notNull(),                    // on-chain tx; unique per (txHash, bundleId)
+    /** Bundle the proof was issued for. Null on legacy records (pre-v5 x402 flow).
+     *  Prevents cross-bundle replay: a proof issued for bundleA cannot be used on bundleB. */
+    bundleId:       text("bundle_id"),
     issuedAt:       timestamp("issued_at").notNull().defaultNow(),
     expiresAt:      timestamp("expires_at"),                     // null = version-gated only
   },
   (t) => [
     index("payment_proofs_skill_idx").on(t.skillId),
     index("payment_proofs_wallet_idx").on(t.agentWallet),
-    // One txHash can ever produce one proof (prevents replaying an old payment for a newer contentVersion)
-    uniqueIndex("payment_proofs_tx_hash_unique").on(t.txHash),
+    index("payment_proofs_bundle_idx").on(t.bundleId),
+    // One (txHash, bundleId) pair can ever produce one proof
+    // (prevents replaying the same payment across bundles or across versions)
+    uniqueIndex("payment_proofs_tx_bundle_unique").on(t.txHash, t.bundleId),
   ]
 );
 
 export type PaymentProof = typeof paymentProofsTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// curator_authorizations  (tracks who authorized which skill + epoch)
+// ---------------------------------------------------------------------------
+export const curatorAuthorizationsTable = pgTable(
+  "curator_authorizations",
+  {
+    id:           text("id").primaryKey(),                      // ca_xxxx
+    tokenId:      integer("token_id").notNull(),
+    curatorWallet: text("curator_wallet").notNull(),            // lowercased EVM address
+    authEpoch:    integer("auth_epoch").notNull().default(0),   // epoch at authorization time
+    authorizedAt: timestamp("authorized_at").notNull().defaultNow(),
+    revokedAt:    timestamp("revoked_at"),                      // set when AuthorizationsPurged fires
+  },
+  (t) => [
+    uniqueIndex("curator_auth_token_wallet_unique").on(t.tokenId, t.curatorWallet),
+    index("curator_auth_token_idx").on(t.tokenId),
+    index("curator_auth_wallet_idx").on(t.curatorWallet),
+  ]
+);
+
+export type CuratorAuthorization = typeof curatorAuthorizationsTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// skill_content_cache  (server-side decrypted content cache)
+// ---------------------------------------------------------------------------
+export const skillContentCacheTable = pgTable(
+  "skill_content_cache",
+  {
+    tokenId:        integer("token_id").primaryKey(),
+    contentVersion: integer("content_version").notNull(),
+    decryptedContent: text("decrypted_content").notNull(),
+    cachedAt:       timestamp("cached_at").notNull().defaultNow(),
+  }
+);
+
+export type SkillContentCache = typeof skillContentCacheTable.$inferSelect;

@@ -5,14 +5,18 @@
  *   POST /mcp/:bundleId/mcp   — JSON-RPC 2.0 dispatcher
  *   GET  /mcp/:bundleId/tools — tools list shortcut (no auth)
  *
- * x402 payment model (v4):
+ * x402 payment model (v5 — ERC-20 Transfer):
  *   tools/call and skill resources/read require X-402-Payment-Proof header.
- *   If missing or stale (contentVersion mismatch) → HTTP 402 with W0G settlement details.
- *   Agent pays on-chain via:
- *     • selfAuthorize(tokenId)         — unclaimed skills (free, just needs gas)
- *     • purchaseAuthorization(tokenId) — claimed skills (approve W0G first, then call)
- *   Then POSTs txHash to /api/mcp/payment/prove to receive a proof token,
- *   then retries with X-402-Payment-Proof: <token>.
+ *   If missing or stale (contentVersion mismatch) → HTTP 402 with:
+ *     { method: "erc20-transfer", payTo: bundle.ownerAddress, amount: bundle.servicePrice }
+ *   Agent sends W0G ERC-20 directly to the Curator's wallet, then POSTs txHash
+ *   to /api/mcp/payment/prove with bundleId, receives a proof token,
+ *   and retries with X-402-Payment-Proof: <token>.
+ *
+ *   Additionally, before serving content, the server verifies:
+ *     isAuthorized(tokenId, bundle.ownerAddress) on-chain
+ *   If the Curator's wallet is not authorized on SkillNFT, content is withheld
+ *   (even if a valid proof token is present — the Curator must authorize first).
  */
 
 import { Router, type Request, type Response } from "express";
@@ -23,9 +27,10 @@ import {
   bundleSkillsTable,
   skillsTable,
   paymentProofsTable,
+  skillContentCacheTable,
 } from "@workspace/db";
 import { eq, asc, and } from "drizzle-orm";
-import { downloadSkillContent } from "../services/storage.js";
+import { downloadSkillContent } from "../services/storage.js"; // used in getSkillContent helper
 import { getAddresses, ZEROG_MAINNET, SkillNFT_ABI } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
 
@@ -60,14 +65,20 @@ function parseToolName(name: string): number | null {
   return Number.isFinite(tokenId) ? tokenId : null;
 }
 
-/** Check X-402-Payment-Proof + X-402-Agent-Wallet headers against DB */
+/**
+ * Check X-402-Payment-Proof + X-402-Agent-Wallet headers against DB.
+ *
+ * Bundle-scoped: a proof is only valid for the bundle it was issued for.
+ * This prevents cross-bundle replay (paying a cheaper bundle → using proof on an expensive one).
+ */
 async function validateProof(
-  proofToken: string | undefined,
-  agentWallet: string | undefined,
-  skillId: string,
-  contentVersion: number
+  proofToken:   string | undefined,
+  agentWallet:  string | undefined,
+  skillId:      string,
+  contentVersion: number,
+  bundleId:     string
 ): Promise<{ valid: true } | { valid: false; reason: string }> {
-  if (!proofToken) return { valid: false, reason: "missing_proof" };
+  if (!proofToken)  return { valid: false, reason: "missing_proof" };
   if (!agentWallet) return { valid: false, reason: "missing_wallet" };
 
   const [proof] = await db
@@ -76,57 +87,34 @@ async function validateProof(
     .where(eq(paymentProofsTable.token, proofToken))
     .limit(1);
 
-  if (!proof) return { valid: false, reason: "unknown_token" };
-  if (proof.agentWallet !== agentWallet.toLowerCase()) return { valid: false, reason: "wallet_mismatch" };
-  if (proof.skillId !== skillId) return { valid: false, reason: "wrong_skill" };
-  if (proof.contentVersion !== contentVersion) return { valid: false, reason: "stale_version" };
-  if (proof.expiresAt && proof.expiresAt < new Date()) return { valid: false, reason: "expired" };
+  if (!proof)                                                    return { valid: false, reason: "unknown_token" };
+  if (proof.agentWallet !== agentWallet.toLowerCase())           return { valid: false, reason: "wallet_mismatch" };
+  if (proof.skillId !== skillId)                                 return { valid: false, reason: "wrong_skill" };
+  if (proof.contentVersion !== contentVersion)                   return { valid: false, reason: "stale_version" };
+  if (proof.bundleId !== null && proof.bundleId !== bundleId)    return { valid: false, reason: "wrong_bundle" };
+  if (proof.expiresAt && proof.expiresAt < new Date())           return { valid: false, reason: "expired" };
 
   return { valid: true };
 }
 
 /**
- * Return HTTP 402 challenge for a skill.
+ * Return HTTP 402 challenge.
  *
- * Method is determined by on-chain ownership:
- *   • ownerOf == SkillNFT contract → skill is unclaimed → selfAuthorize (free, gas-only)
- *   • ownerOf == real wallet       → skill is claimed  → purchaseAuthorization (requires W0G approval)
+ * v5 model (erc20-transfer):
+ *   Agent sends W0G ERC-20 directly to bundle.ownerAddress (the Curator's wallet).
+ *   Amount = bundle.servicePrice (in W0G wei); "0" if the bundle is free.
+ *   Agent then POSTs txHash + bundleId to /api/mcp/payment/prove.
  *
- * This is authoritative: basePrice is irrelevant for method selection. A claimed skill
- * with basePrice=0 still requires purchaseAuthorization (which will transfer 0 W0G).
+ * No on-chain ownerOf check required — payTo is always the Curator's wallet.
  */
-async function send402(
+function send402(
   res: Response,
   skill: { skillId: string; tokenId: number | null; meta: unknown },
+  bundle: { bundleId: string; ownerAddress: string; servicePrice: string | null },
   reason: string
 ) {
-  const meta = (skill.meta as Record<string, unknown>) ?? {};
-  const basePrice = (meta.basePrice as string | number | undefined) ?? "0";
-
   if (skill.tokenId == null) {
-    res.status(503).json({ error: "Skill has no on-chain token — cannot determine payment method." });
-    return;
-  }
-
-  let method: string;
-  try {
-    const owner = await chainClient.readContract({
-      address: SKILL_NFT_ADDRESS as `0x${string}`,
-      abi: SkillNFT_ABI,
-      functionName: "ownerOf",
-      args: [BigInt(skill.tokenId)],
-    }) as string;
-    // Unclaimed: NFT is held by the SkillNFT contract itself
-    method = owner.toLowerCase() === SKILL_NFT_ADDRESS.toLowerCase()
-      ? "selfAuthorize"
-      : "purchaseAuthorization";
-  } catch (err) {
-    // ownerOf reverted — token may not exist or RPC is unavailable. Return explicit 503.
-    logger.error({ err, tokenId: skill.tokenId }, "send402: ownerOf check failed — cannot issue 402");
-    res.status(503).json({
-      error: "Temporarily unable to determine skill ownership. Please retry in a few seconds.",
-      tokenId: skill.tokenId,
-    });
+    res.status(503).json({ error: "Skill has no on-chain token — cannot serve content." });
     return;
   }
 
@@ -140,16 +128,83 @@ async function send402(
         network: "0g-mainnet",
         currency: "W0G",
         tokenAddress: W0G_ADDRESS,
-        amount: String(basePrice),
-        payTo: SKILL_NFT_ADDRESS,
-        // selfAuthorize:         unclaimed skill — free, no W0G approval needed
-        // purchaseAuthorization: claimed skill  — approve W0G first (even if amount=0)
-        method,
-        tokenId: skill.tokenId,
+        amount:    bundle.servicePrice ?? "0",
+        payTo:     bundle.ownerAddress,
+        method:    "erc20-transfer",
+        tokenId:   skill.tokenId,
+        bundleId:  bundle.bundleId,
       },
     ],
     proveEndpoint: "/api/mcp/payment/prove",
   });
+}
+
+/**
+ * Check on-chain isAuthorized(tokenId, curatorWallet).
+ * Returns true if the Curator (bundle.ownerAddress) is authorized to access this skill.
+ * Also returns true for unclaimed skills (isAuthorized returns true for everyone).
+ */
+async function checkCuratorAuthorized(tokenId: number, curatorWallet: string): Promise<boolean> {
+  try {
+    const authorized = await chainClient.readContract({
+      address: SKILL_NFT_ADDRESS as `0x${string}`,
+      abi: SkillNFT_ABI,
+      functionName: "isAuthorized",
+      args: [BigInt(tokenId), curatorWallet as `0x${string}`],
+    }) as boolean;
+    return authorized;
+  } catch (err) {
+    logger.warn({ err, tokenId, curatorWallet }, "checkCuratorAuthorized: RPC error — defaulting to false");
+    return false;
+  }
+}
+
+/**
+ * Fetch skill content — checks DB cache first, falls back to 0G download + decrypt.
+ * Cache key is (tokenId, contentVersion).
+ */
+async function getSkillContent(skill: {
+  tokenId: number | null;
+  skillId: string;
+  rootHash: string | null;
+  aesKey: string | null;
+  contentVersion: number;
+}): Promise<string> {
+  if (!skill.rootHash) throw new Error("Skill content not yet uploaded to 0G Storage");
+  if (skill.tokenId == null) throw new Error("Skill has no on-chain token");
+
+  // Check cache
+  const [cached] = await db
+    .select()
+    .from(skillContentCacheTable)
+    .where(eq(skillContentCacheTable.tokenId, skill.tokenId))
+    .limit(1);
+
+  if (cached && cached.contentVersion === skill.contentVersion) {
+    return cached.decryptedContent;
+  }
+
+  // Cache miss — download + decrypt
+  const content = await downloadSkillContent(skill.rootHash, skill.aesKey);
+
+  // Persist to cache (upsert)
+  await db.insert(skillContentCacheTable)
+    .values({
+      tokenId:          skill.tokenId,
+      contentVersion:   skill.contentVersion,
+      decryptedContent: content,
+      cachedAt:         new Date(),
+    })
+    .onConflictDoUpdate({
+      target: skillContentCacheTable.tokenId,
+      set: {
+        contentVersion:   skill.contentVersion,
+        decryptedContent: content,
+        cachedAt:         new Date(),
+      },
+    });
+
+  return content;
 }
 
 // ---------------------------------------------------------------------------
@@ -224,14 +279,13 @@ router.post("/:bundleId/mcp", async (req, res) => {
             description: bundle.description ?? "",
             workflow: bundle.workflow ?? "",
             paymentInfo: {
-              currency: "W0G",
+              currency:    "W0G",
               tokenAddress: W0G_ADDRESS,
-              skillNFTContract: SKILL_NFT_ADDRESS,
-              // Unclaimed skills: selfAuthorize(tokenId) — free
-              // Claimed skills:   approve W0G → purchaseAuthorization(tokenId)
-              method: "purchaseAuthorization",
+              method:      "erc20-transfer",
+              payTo:       bundle.ownerAddress,
+              amount:      bundle.servicePrice ?? "0",
               proveEndpoint: "/api/mcp/payment/prove",
-              model: "pay-per-version: proof valid until creator updates skill content",
+              model: "pay-per-version: proof valid until Curator updates skill content",
             },
           },
         }));
@@ -291,25 +345,32 @@ router.post("/:bundleId/mcp", async (req, res) => {
 
         const { skill } = row;
 
-        // ── x402 proof check ───────────────────────────────────────────────
+        // ── x402 proof check (bundle-scoped) ──────────────────────────────
         const proofToken   = req.headers["x-402-payment-proof"] as string | undefined;
         const agentWallet  = req.headers["x-402-agent-wallet"]  as string | undefined;
-        const proofCheck = await validateProof(proofToken, agentWallet, skill.skillId, skill.contentVersion);
+        const proofCheck = await validateProof(proofToken, agentWallet, skill.skillId, skill.contentVersion, bundleId);
 
         if (!proofCheck.valid) {
           logger.info({ bundleId, toolName, reason: proofCheck.reason }, "mcp tools/call 402");
-          await send402(res, skill, proofCheck.reason);
+          send402(res, skill, bundle, proofCheck.reason);
           return;
         }
 
-        // ── fetch + decrypt content from 0G ───────────────────────────────
-        if (!skill.rootHash) {
-          res.json(jsonRpcError(id, -32001, "Skill content not yet uploaded to 0G Storage"));
-          return;
+        // ── isAuthorized check: Curator must be authorized on SkillNFT ────
+        if (skill.tokenId != null) {
+          const curatorAuthorized = await checkCuratorAuthorized(skill.tokenId, bundle.ownerAddress);
+          if (!curatorAuthorized) {
+            res.json(jsonRpcError(id, -32403,
+              `Curator wallet ${bundle.ownerAddress} is not authorized for skill tokenId=${skill.tokenId}. ` +
+              `The Curator must call selfAuthorize(${skill.tokenId}) (unclaimed) or purchaseAuthorization(${skill.tokenId}) (claimed) on the SkillNFT contract.`
+            ));
+            return;
+          }
         }
 
+        // ── fetch + decrypt content (cache-first) ─────────────────────────
         try {
-          const content = await downloadSkillContent(skill.rootHash);
+          const content = await getSkillContent(skill);
           logger.info({ bundleId, toolName, skillId: skill.skillId }, "mcp tools/call success");
           res.json(jsonRpcOk(id, {
             content: [{ type: "text", text: content }],
@@ -401,23 +462,30 @@ router.post("/:bundleId/mcp", async (req, res) => {
 
         const { skill } = row;
 
-        // x402 check
+        // x402 check (bundle-scoped)
         const proofToken  = req.headers["x-402-payment-proof"] as string | undefined;
         const agentWallet = req.headers["x-402-agent-wallet"]  as string | undefined;
-        const proofCheck = await validateProof(proofToken, agentWallet, skill.skillId, skill.contentVersion);
+        const proofCheck = await validateProof(proofToken, agentWallet, skill.skillId, skill.contentVersion, bundleId);
 
         if (!proofCheck.valid) {
-          await send402(res, skill, proofCheck.reason);
+          send402(res, skill, bundle, proofCheck.reason);
           return;
         }
 
-        if (!skill.rootHash) {
-          res.json(jsonRpcError(id, -32001, "Skill content not yet uploaded to 0G Storage"));
-          return;
+        // isAuthorized check
+        if (skill.tokenId != null) {
+          const curatorAuthorized = await checkCuratorAuthorized(skill.tokenId, bundle.ownerAddress);
+          if (!curatorAuthorized) {
+            res.json(jsonRpcError(id, -32403,
+              `Curator wallet ${bundle.ownerAddress} is not authorized for skill tokenId=${skill.tokenId}. ` +
+              `Call selfAuthorize or purchaseAuthorization on the SkillNFT contract first.`
+            ));
+            return;
+          }
         }
 
         try {
-          const content = await downloadSkillContent(skill.rootHash);
+          const content = await getSkillContent(skill);
           res.json(jsonRpcOk(id, {
             contents: [{ uri, mimeType: "text/plain", text: content }],
           }));

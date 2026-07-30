@@ -147,10 +147,12 @@ router.get("/bundles/:id/analytics", async (req, res) => {
 
 // POST /api/bundles — create bundle (requires wallet auth)
 router.post("/bundles", authMiddleware("create-bundle"), async (req, res) => {
-  const { subdomain, name, description, meta } = req.body as {
+  const { subdomain, name, description, servicePrice, meta } = req.body as {
     subdomain?: string;
     name?: string;
     description?: string;
+    /** x402 price in W0G wei (as string). Null/omit = free bundle. */
+    servicePrice?: string | null;
     meta?: Record<string, unknown>;
   };
 
@@ -162,6 +164,10 @@ router.post("/bundles", authMiddleware("create-bundle"), async (req, res) => {
     apiError(res, ErrorCode.INVALID_INPUT, "subdomain must be lowercase alphanumeric with hyphens");
     return;
   }
+  if (servicePrice && !/^\d+$/.test(servicePrice)) {
+    apiError(res, ErrorCode.INVALID_INPUT, "servicePrice must be a non-negative integer string (W0G wei)");
+    return;
+  }
 
   try {
     const [bundle] = await db
@@ -171,6 +177,7 @@ router.post("/bundles", authMiddleware("create-bundle"), async (req, res) => {
         subdomain,
         name,
         description:  description ?? null,
+        servicePrice: servicePrice ?? null,
         ownerAddress: req.walletAddress!,
         meta:         meta ?? {},
       })
@@ -205,20 +212,28 @@ router.put("/bundles/:id", authMiddleware("update-bundle"), async (req, res) => 
     return;
   }
 
-  const { name, description, workflow, meta } = req.body as {
-    name?:        string;
-    description?: string;
-    workflow?:    string;
-    meta?:        Record<string, unknown>;
+  const { name, description, workflow, servicePrice, meta } = req.body as {
+    name?:         string;
+    description?:  string;
+    workflow?:     string;
+    /** x402 price in W0G wei (as string). Null = free bundle. */
+    servicePrice?: string | null;
+    meta?:         Record<string, unknown>;
   };
+
+  if (servicePrice !== undefined && servicePrice !== null && !/^\d+$/.test(servicePrice)) {
+    apiError(res, ErrorCode.INVALID_INPUT, "servicePrice must be a non-negative integer string (W0G wei)");
+    return;
+  }
 
   const [updated] = await db
     .update(bundlesTable)
     .set({
-      ...(name        !== undefined && { name }),
-      ...(description !== undefined && { description }),
-      ...(workflow    !== undefined && { workflow }),
-      ...(meta        !== undefined && { meta }),
+      ...(name         !== undefined && { name }),
+      ...(description  !== undefined && { description }),
+      ...(workflow     !== undefined && { workflow }),
+      ...(servicePrice !== undefined && { servicePrice: servicePrice ?? null }),
+      ...(meta         !== undefined && { meta }),
       updatedAt: new Date(),
     })
     .where(eq(bundlesTable.bundleId, bundleId))

@@ -57,17 +57,31 @@ function deriveKey(rootHashHex: string): Buffer {
 }
 
 /**
- * Encrypt plaintext bytes.
+ * Derive the legacy platform-wide AES key from SESSION_SECRET.
+ * Used only for skills uploaded before per-skill keys were introduced.
+ */
+function derivePlatformKey(): Buffer {
+  const secret = process.env.SESSION_SECRET ?? "skillfun-insecure-default-secret";
+  return crypto.createHash("sha256").update(`platform-key:${secret}`).digest();
+}
+
+/**
+ * Generate a fresh random AES-256 key for a new skill.
+ * Returns 32 bytes of cryptographically random data.
+ */
+export function generateSkillAesKey(): Buffer {
+  return crypto.randomBytes(32);
+}
+
+/**
+ * Encrypt plaintext bytes with the given AES-256-GCM key.
+ * If no key is provided, falls back to the legacy platform-wide key.
  * Output layout: [ 12B IV ][ 16B GCM tag ][ ciphertext... ]
  */
-export function encryptContent(plaintext: Buffer): Buffer {
-  // We need the rootHash to derive the key, but we don't have it yet at
-  // encryption time (the rootHash depends on the encrypted bytes).
-  // Solution: use a random IV + a static per-platform key derived only from SECRET.
-  const secret = process.env.SESSION_SECRET ?? "skillfun-insecure-default-secret";
-  const key    = crypto.createHash("sha256").update(`platform-key:${secret}`).digest();
+export function encryptContent(plaintext: Buffer, key?: Buffer): Buffer {
+  const aesKey = key ?? derivePlatformKey();
   const iv     = crypto.randomBytes(IV_LEN);
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  const cipher = crypto.createCipheriv(ALGORITHM, aesKey, iv);
   const enc    = Buffer.concat([cipher.update(plaintext), cipher.final()]);
   const tag    = cipher.getAuthTag();
   return Buffer.concat([iv, tag, enc]);
@@ -75,15 +89,14 @@ export function encryptContent(plaintext: Buffer): Buffer {
 
 /**
  * Decrypt bytes produced by encryptContent().
- * Accepts either the raw encrypted buffer or its hex string.
+ * If no key is provided, falls back to the legacy platform-wide key.
  */
-export function decryptContent(encrypted: Buffer): Buffer {
-  const secret = process.env.SESSION_SECRET ?? "skillfun-insecure-default-secret";
-  const key    = crypto.createHash("sha256").update(`platform-key:${secret}`).digest();
-  const iv     = encrypted.subarray(0, IV_LEN);
-  const tag    = encrypted.subarray(IV_LEN, IV_LEN + TAG_LEN);
-  const body   = encrypted.subarray(IV_LEN + TAG_LEN);
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+export function decryptContent(encrypted: Buffer, key?: Buffer): Buffer {
+  const aesKey   = key ?? derivePlatformKey();
+  const iv       = encrypted.subarray(0, IV_LEN);
+  const tag      = encrypted.subarray(IV_LEN, IV_LEN + TAG_LEN);
+  const body     = encrypted.subarray(IV_LEN + TAG_LEN);
+  const decipher = crypto.createDecipheriv(ALGORITHM, aesKey, iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(body), decipher.final()]);
 }
@@ -106,6 +119,12 @@ export interface UploadResult {
    * null when uploaded=false (fallback hash, not a real 0G upload).
    */
   txSeq: number | null;
+  /**
+   * Per-skill AES-256-GCM encryption key (hex, 32 bytes).
+   * Store this in the DB alongside the skill record — it is NEVER sent on-chain.
+   * Required to decrypt content downloaded from 0G Storage.
+   */
+  aesKey: string;
 }
 
 // ── Build ERC-721 tokenURI JSON ───────────────────────────────────────────────
@@ -228,6 +247,10 @@ export async function uploadSkillManifest(
     rawContent = rawContentArg;
   }
 
+  // Generate a fresh per-skill AES-256 key — stored in DB, never on-chain
+  const skillAesKey = generateSkillAesKey();
+  const aesKeyHex  = skillAesKey.toString("hex");
+
   // Build plaintext payload: raw skill file + manifest envelope
   const plaintextPayload = rawContent
     ? `${rawContent}\n\n<!-- skillfun-manifest\n${JSON.stringify(manifest, null, 2)}\n-->`
@@ -247,12 +270,13 @@ export async function uploadSkillManifest(
       skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
       uploaded: false,
       txSeq: null,
+      aesKey: aesKeyHex,
     };
   }
 
-  // Encrypt content before upload
-  const encryptedBytes = encryptContent(plaintextBytes);
-  logger.info({ skillId, plaintextLen: plaintextBytes.length, encryptedLen: encryptedBytes.length }, "skill content encrypted");
+  // Encrypt content with the per-skill key before upload
+  const encryptedBytes = encryptContent(plaintextBytes, skillAesKey);
+  logger.info({ skillId, plaintextLen: plaintextBytes.length, encryptedLen: encryptedBytes.length }, "skill content encrypted (per-skill key)");
 
   let tmpFile: string | null = null;
   try {
@@ -273,6 +297,7 @@ export async function uploadSkillManifest(
         skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
         uploaded: false,
         txSeq: null,
+        aesKey: aesKeyHex,
       };
     }
 
@@ -306,6 +331,7 @@ export async function uploadSkillManifest(
         skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
         uploaded: false,
         txSeq: null,
+        aesKey: aesKeyHex,
       };
     }
 
@@ -316,8 +342,8 @@ export async function uploadSkillManifest(
     // Build tokenURI now that we have rootHash + txSeq
     const skillUri = buildTokenURI({ skillId, repoUrl, rootHash, meta: manifest, uploaded: true, txSeq });
 
-    logger.info({ rootHash, txSeq, skillId }, "0G Storage upload success (encrypted)");
-    return { rootHash, skillUri, uploaded: true, txSeq };
+    logger.info({ rootHash, txSeq, skillId }, "0G Storage upload success (encrypted, per-skill key)");
+    return { rootHash, skillUri, uploaded: true, txSeq, aesKey: aesKeyHex };
   } catch (err) {
     logger.warn({ err, skillId }, "0G Storage upload threw — using fallback hash");
     return {
@@ -325,6 +351,7 @@ export async function uploadSkillManifest(
       skillUri: buildTokenURI({ skillId, repoUrl, rootHash: fallbackRootHash, meta: manifest, uploaded: false, txSeq: null }),
       uploaded: false,
       txSeq: null,
+      aesKey: aesKeyHex,
     };
   } finally {
     if (tmpFile) {
@@ -381,12 +408,15 @@ export async function verifyFileOnNode(rootHash: string): Promise<{
  * Download encrypted skill content from 0G Storage and decrypt it.
  *
  * @param rootHash  0G Storage Merkle root hash (from NFT's intelligentDataOf).
+ * @param aesKey    Per-skill AES key (hex string, 32 bytes). If omitted, falls back
+ *                  to the legacy platform-wide key for backward compatibility.
  * @returns         Decrypted plaintext content (skill.md / skillfun.json).
  *
  * Throws if download fails on all nodes and no local backup exists.
  */
-export async function downloadSkillContent(rootHash: string): Promise<string> {
+export async function downloadSkillContent(rootHash: string, aesKey?: string | null): Promise<string> {
   const normalizedHash = rootHash.startsWith("0x") ? rootHash : `0x${rootHash}`;
+  const keyBuf = aesKey ? Buffer.from(aesKey, "hex") : undefined;
 
   const { StorageNode, Downloader } = await import("@0gfoundation/0g-storage-ts-sdk");
   const nodeClients = MAINNET_NODES.map((url: string) => new StorageNode(url));
@@ -400,8 +430,8 @@ export async function downloadSkillContent(rootHash: string): Promise<string> {
     }
 
     const encryptedBytes = fs.readFileSync(tmpFile);
-    const decrypted      = decryptContent(encryptedBytes);
-    logger.info({ rootHash: normalizedHash, size: encryptedBytes.length }, "0G download + decrypt OK");
+    const decrypted      = decryptContent(encryptedBytes, keyBuf);
+    logger.info({ rootHash: normalizedHash, size: encryptedBytes.length, perSkillKey: !!aesKey }, "0G download + decrypt OK");
     return decrypted.toString("utf8");
   } finally {
     try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
