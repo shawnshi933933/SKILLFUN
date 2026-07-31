@@ -53,6 +53,7 @@ function adaptBundle(b: DbBundle) {
     curatorMarkup:       (meta.curatorMarkup as number | undefined) ?? 10,
     tags:                (meta.tags as string[] | undefined) ?? [],
     isLive:              true,
+    servicePrice:        b.servicePrice,
   };
 }
 

@@ -15,6 +15,21 @@ export interface BundleCardData {
   tags:                string[];
   isLive:              boolean;
   skillNames?:         string[];
+  /** W0G wei (integer string) agents pay per proof. null/undefined = free. */
+  servicePrice?:       string | null;
+}
+
+/** Format a wei string as a human-readable W0G amount, e.g. "0.1 W0G" or "Free". */
+function formatServicePrice(wei: string | null | undefined): string {
+  if (!wei || wei === "0") return "Free";
+  try {
+    const w0g = Number(BigInt(wei)) / 1e18;
+    // Show up to 6 significant digits, strip trailing zeros
+    const formatted = w0g.toPrecision(6).replace(/\.?0+$/, "");
+    return `${formatted} W0G`;
+  } catch {
+    return "Free";
+  }
 }
 
 export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
@@ -71,6 +86,18 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
               <div className="flex items-center gap-1 text-accent font-mono text-sm">
                 <Bot className="w-3 h-3" />
                 {bundle.invocations.toLocaleString()}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-muted-foreground mb-0.5">Service Price</div>
+              <div className="flex items-center gap-1 font-mono font-semibold text-sm">
+                <Coins className="w-3 h-3 text-yellow-400/80" />
+                {formatServicePrice(bundle.servicePrice) === "Free"
+                  ? <span className="text-emerald-400">Free</span>
+                  : <span className="text-yellow-300/90">{formatServicePrice(bundle.servicePrice)}</span>
+                }
               </div>
             </div>
           </div>
