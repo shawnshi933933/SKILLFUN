@@ -3,16 +3,21 @@ import Navbar from "@/components/Navbar";
 import { useBundle, useBundleAnalytics } from "@/hooks/use-skills";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Bot, Layers, Shield, Lock,
   ExternalLink, Zap, Loader2, AlertCircle, Package,
   Copy, CheckCircle2, ChevronDown, ChevronUp, TrendingUp, RefreshCw,
+  Pencil, Check, X,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { type DbSkill, type DbBundle } from "@/lib/api";
+import { useAccount } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEip712Sign } from "@/hooks/use-eip712";
+import { type DbSkill, type DbBundle, bundlesApi } from "@/lib/api";
 
 function getMeta<T>(obj: DbBundle | DbSkill, key: string, fallback: T): T {
   return ((obj.meta as Record<string, unknown>)[key] as T) ?? fallback;
@@ -37,6 +42,13 @@ export default function BundleDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [snippetOpen, setSnippetOpen]  = useState(false);
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceInput,   setPriceInput]   = useState("");
+  const [savingPrice,  setSavingPrice]  = useState(false);
+
+  const { address } = useAccount();
+  const sign         = useEip712Sign();
+  const queryClient  = useQueryClient();
 
   const { data, isLoading, error } = useBundle(params?.id);
   const {
@@ -77,6 +89,33 @@ export default function BundleDetail() {
 
   const totalBasePrice = skills.reduce((s, k) => s + getMeta<number>(k, "basePrice", 0), 0);
   const bundleTotal    = totalBasePrice * (1 + curatorMarkup / 100);
+
+  // Owner check — show edit controls only to the bundle owner
+  const isOwner = !!address && address.toLowerCase() === bundle.ownerAddress.toLowerCase();
+
+  // servicePrice display helpers (W0G wei → decimal W0G)
+  const servicePrice    = bundle.servicePrice ?? null;
+  const servicePriceW0G = servicePrice
+    ? (Number(BigInt(servicePrice)) / 1e18).toFixed(4).replace(/\.?0+$/, "")
+    : null;
+
+  const handleSavePrice = async () => {
+    try {
+      setSavingPrice(true);
+      const wei = priceInput.trim() === ""
+        ? null
+        : String(BigInt(Math.round(parseFloat(priceInput) * 1e18)));
+      const sigHeader = await sign("update-bundle");
+      await bundlesApi.update(params!.id!, { servicePrice: wei }, sigHeader);
+      await queryClient.invalidateQueries({ queryKey: ["bundle", params?.id] });
+      setEditingPrice(false);
+      toast({ title: "Price updated" });
+    } catch (err) {
+      toast({ title: "Failed to update price", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setSavingPrice(false);
+    }
+  };
 
   // MCP endpoint — derived from the bundle subdomain
   const devDomain  = (import.meta.env.DEV_DOMAIN as string | undefined) ?? window.location.host;
@@ -390,13 +429,66 @@ if (attempt.status === 402) {
             {/* Price card */}
             <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
               <div>
-                <div className="text-xs text-muted-foreground mb-0.5">Bundle Price</div>
-                <div className="text-2xl font-bold font-mono">
-                  {bundleTotal > 0 ? `${bundleTotal.toFixed(4)} W0G` : <span className="text-emerald-400">Free</span>}
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-xs text-muted-foreground">Service Price (x402)</div>
+                  {isOwner && !editingPrice && (
+                    <button
+                      onClick={() => { setPriceInput(servicePriceW0G ?? ""); setEditingPrice(true); }}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                      title="Edit price"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {bundleTotal > 0 ? "per Skill invocation via x402" : "Curator authorization is free"}
-                </div>
+
+                {editingPrice ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.0001"
+                        placeholder="0 = Free"
+                        value={priceInput}
+                        onChange={(e) => setPriceInput(e.target.value)}
+                        className="h-8 font-mono text-sm bg-background border-white/20 w-32"
+                        disabled={savingPrice}
+                        autoFocus
+                      />
+                      <span className="text-xs text-muted-foreground">W0G</span>
+                      <button
+                        onClick={handleSavePrice}
+                        disabled={savingPrice}
+                        className="text-emerald-400 hover:text-emerald-300 disabled:opacity-50 transition-colors"
+                        title="Save"
+                      >
+                        {savingPrice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingPrice(false)}
+                        disabled={savingPrice}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        title="Cancel"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="text-xs text-muted-foreground/60">Leave blank to make free</div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold font-mono">
+                      {servicePriceW0G
+                        ? `${servicePriceW0G} W0G`
+                        : <span className="text-emerald-400">Free</span>
+                      }
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {servicePriceW0G ? "per proof via x402 · paid to Curator wallet" : "Agents get free access proofs"}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* MCP endpoint */}

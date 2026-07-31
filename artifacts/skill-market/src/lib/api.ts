@@ -52,6 +52,8 @@ export interface DbBundle {
   name:         string;
   description:  string | null;
   ownerAddress: string;
+  /** W0G wei (integer string) agents pay per proof. null = free. */
+  servicePrice: string | null;
   meta:         Record<string, unknown>;
   createdAt:    string;
   updatedAt:    string;
@@ -270,6 +272,17 @@ export const bundlesApi = {
   ) =>
     apiFetch<{ bundle: DbBundle }>("/bundles", {
       method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify(body),
+    }),
+
+  update: (
+    bundleId: string,
+    body: { name?: string; description?: string; servicePrice?: string | null; workflow?: string },
+    sigHeader: string,
+  ) =>
+    apiFetch<{ bundle: DbBundle }>(`/bundles/${bundleId}`, {
+      method: "PUT",
       headers: { "X-Wallet-Signature": sigHeader },
       body: JSON.stringify(body),
     }),
