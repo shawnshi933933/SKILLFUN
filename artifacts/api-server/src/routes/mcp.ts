@@ -1,17 +1,23 @@
 /**
  * POST /api/mcp/payment/prove
  *
- * Called by AI agents after sending W0G ERC-20 to the Curator's wallet.
+ * Called by AI agents after sending W0G ERC-20 to the Curator's wallet,
+ * OR directly (no TX required) when the bundle's servicePrice is 0 / null.
  *
  * bundleId is REQUIRED — it binds the proof to a specific bundle, preventing
  * a cheaper-bundle payment from minting proofs for an expensive bundle.
  *
- * Flow:
+ * ── Zero-amount (free) flow ──────────────────────────────────────────────────
+ *   When bundle.servicePrice is null or "0", no on-chain TX is needed.
+ *   Agent signs:  "SkillFun free access: {bundleId}:{tokenId}:{agentWallet}"
+ *   Body:         { tokenId, agentWallet, bundleId, signature }  (no txHash)
+ *
+ * ── Paid flow ────────────────────────────────────────────────────────────────
  *   1. Validate bundleId + tokenId: verify skill is in bundle (bundle_skills)
  *   2. Fetch tx receipt (must be success)
  *   3. Parse ERC-20 Transfer logs for W0G token:
  *        Transfer(from=agentWallet, to=bundle.ownerAddress, value≥bundle.servicePrice)
- *   4. Verify EIP-191 sig: signer == agentWallet
+ *   4. Verify EIP-191 sig: signer == agentWallet, message = "SkillFun payment proof: {txHash}"
  *   5. Look up skill by tokenId → skillId + contentVersion
  *   6. Upsert payment_proofs with bundleId (idempotent by txHash+bundleId)
  *   7. Return { proof, skillId, contentVersion }
@@ -58,14 +64,12 @@ router.post("/mcp/payment/prove", async (req, res) => {
     txHash?:      string;
     tokenId?:     number | string;
     agentWallet?: string;
-    /** Required: binds proof to a specific bundle's pricing + owner */
     bundleId?:    string;
-    /** EIP-191 personal_sign of "SkillFun payment proof: {txHash}" */
     signature?:   string;
   };
 
-  if (!txHash || rawTokenId == null || !rawWallet || !bundleId || !signature) {
-    apiError(res, ErrorCode.INVALID_INPUT, "txHash, tokenId, agentWallet, bundleId, and signature are required");
+  if (rawTokenId == null || !rawWallet || !bundleId || !signature) {
+    apiError(res, ErrorCode.INVALID_INPUT, "tokenId, agentWallet, bundleId, and signature are required");
     return;
   }
 
@@ -77,14 +81,7 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
-    apiError(res, ErrorCode.INVALID_INPUT, "txHash must be a valid 0x-prefixed 32-byte hex string");
-    return;
-  }
-
-  // ── 1. Verify bundleId + tokenId relationship ─────────────────────────────
-  // Load bundle and confirm the skill is in it — prevents paying a free bundle
-  // and claiming a proof for a skill in an expensive bundle.
+  // ── 1. Load bundle + verify (bundleId, tokenId) membership ───────────────
   const [bundle] = await db
     .select()
     .from(bundlesTable)
@@ -96,28 +93,96 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // Verify (bundleId, tokenId) is a valid pairing via bundle_skills
   const [membership] = await db
     .select({ skillId: bundleSkillsTable.skillId })
     .from(bundleSkillsTable)
     .innerJoin(skillsTable, eq(bundleSkillsTable.skillId, skillsTable.skillId))
-    .where(
-      and(
-        eq(bundleSkillsTable.bundleId, bundleId),
-        eq(skillsTable.tokenId, tokenId)
-      )
-    )
+    .where(and(
+      eq(bundleSkillsTable.bundleId, bundleId),
+      eq(skillsTable.tokenId, tokenId)
+    ))
     .limit(1);
 
   if (!membership) {
     apiError(res, ErrorCode.INVALID_INPUT,
-      `tokenId=${tokenId} is not a skill in bundle "${bundleId}". ` +
-      `Check the bundleId or tokenId and retry.`
+      `tokenId=${tokenId} is not a skill in bundle "${bundleId}". Check the bundleId or tokenId and retry.`
     );
     return;
   }
 
-  // ── 2. Fetch tx receipt ────────────────────────────────────────────────────
+  const isFree = !bundle.servicePrice || bundle.servicePrice === "0";
+
+  // ── 2a. FREE path — no on-chain TX required ───────────────────────────────
+  // Agent signs: "SkillFun free access: {bundleId}:{tokenId}:{agentWallet}"
+  if (isFree) {
+    const freeMessage = `SkillFun free access: ${bundleId}:${tokenId}:${agentWallet}`;
+    let recoveredSigner: string;
+    try {
+      recoveredSigner = (await recoverMessageAddress({
+        message:   freeMessage,
+        signature: signature as `0x${string}`,
+      })).toLowerCase();
+    } catch {
+      apiError(res, ErrorCode.INVALID_INPUT, "Invalid signature — cannot recover signer address.");
+      return;
+    }
+
+    if (recoveredSigner !== agentWallet) {
+      apiError(res, ErrorCode.FORBIDDEN,
+        `Signature mismatch: recovered ${recoveredSigner} but agentWallet is ${agentWallet}. ` +
+        `Sign "SkillFun free access: ${bundleId}:${tokenId}:${agentWallet}" with your agent wallet.`
+      );
+      return;
+    }
+
+    // Idempotency: same (agentWallet, bundleId, tokenId) → same proof
+    // Use a stable synthetic key since there's no txHash
+    const freeKey = `free:${agentWallet}:${bundleId}:${tokenId}`;
+    const [skill] = await db.select().from(skillsTable).where(eq(skillsTable.tokenId, tokenId)).limit(1);
+    if (!skill) { apiError(res, ErrorCode.NOT_FOUND, `No skill found for tokenId=${tokenId}.`); return; }
+
+    const [existingFree] = await db
+      .select()
+      .from(paymentProofsTable)
+      .where(and(
+        eq(paymentProofsTable.txHash,   freeKey),
+        eq(paymentProofsTable.bundleId, bundleId)
+      ))
+      .limit(1);
+
+    if (existingFree) {
+      logger.info({ skillId: skill.skillId, agentWallet, bundleId }, "mcp/prove: reissuing free proof");
+      res.json({ proof: existingFree.token, skillId: existingFree.skillId, contentVersion: existingFree.contentVersion, expiresAt: null, reissued: true, free: true });
+      return;
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    await db.insert(paymentProofsTable).values({
+      token,
+      skillId:        skill.skillId,
+      contentVersion: skill.contentVersion,
+      agentWallet,
+      txHash:         freeKey,
+      bundleId,
+      expiresAt:      null,
+    });
+
+    logger.info({ skillId: skill.skillId, agentWallet, bundleId }, "mcp/prove: free proof issued");
+    res.status(201).json({ proof: token, skillId: skill.skillId, contentVersion: skill.contentVersion, expiresAt: null, reissued: false, free: true });
+    return;
+  }
+
+  // ── 2b. PAID path — verify on-chain W0G Transfer ──────────────────────────
+  if (!txHash) {
+    apiError(res, ErrorCode.INVALID_INPUT, "txHash is required for paid bundles");
+    return;
+  }
+
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+    apiError(res, ErrorCode.INVALID_INPUT, "txHash must be a valid 0x-prefixed 32-byte hex string");
+    return;
+  }
+
   let receipt: Awaited<ReturnType<typeof client.getTransactionReceipt>>;
   try {
     receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
@@ -132,66 +197,40 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // ── 3. Verify ERC-20 Transfer event ───────────────────────────────────────
-  // Require: Transfer(from=agentWallet, to=bundle.ownerAddress, value≥servicePrice)
   const expectedRecipient = bundle.ownerAddress.toLowerCase();
-  const requiredPrice     = bundle.servicePrice ? BigInt(bundle.servicePrice) : null;
-
-  const w0gLogs = receipt.logs.filter(
-    (log) => log.address.toLowerCase() === W0G_ADDRESS
-  );
-
+  const requiredPrice     = BigInt(bundle.servicePrice!);
+  const w0gLogs = receipt.logs.filter((log) => log.address.toLowerCase() === W0G_ADDRESS);
   let transferVerified = false;
 
   for (const log of w0gLogs) {
     try {
-      const decoded = decodeEventLog({
-        abi:    [TRANSFER_EVENT],
-        topics: log.topics,
-        data:   log.data,
-      });
-
+      const decoded = decodeEventLog({ abi: [TRANSFER_EVENT], topics: log.topics, data: log.data });
       if (decoded.eventName !== "Transfer") continue;
-
-      const transferArgs = decoded.args as { from: string; to: string; value: bigint };
-      const fromAddr = transferArgs.from.toLowerCase();
-      const toAddr   = transferArgs.to.toLowerCase();
-      const value    = transferArgs.value;
-
-      if (fromAddr !== agentWallet) continue;
-      if (toAddr !== expectedRecipient) continue;
-
-      if (requiredPrice !== null && value < requiredPrice) {
-        apiError(res, ErrorCode.INVALID_INPUT,
-          `W0G transfer value ${value} is less than required servicePrice ${requiredPrice} for bundle "${bundleId}".`
-        );
+      const { from, to, value } = decoded.args as { from: string; to: string; value: bigint };
+      if (from.toLowerCase() !== agentWallet) continue;
+      if (to.toLowerCase() !== expectedRecipient) continue;
+      if (value < requiredPrice) {
+        apiError(res, ErrorCode.INVALID_INPUT, `W0G transfer value ${value} is less than required servicePrice ${requiredPrice}.`);
         return;
       }
-
       transferVerified = true;
       break;
-    } catch {
-      // Not a Transfer event — skip
-    }
+    } catch { /* not a Transfer event */ }
   }
 
   if (!transferVerified) {
     apiError(res, ErrorCode.INVALID_INPUT,
       `No valid W0G ERC-20 Transfer found in tx ${txHash}. ` +
-      `Expected Transfer(from=${agentWallet}, to=${expectedRecipient}) on W0G (${W0G_ADDRESS}). ` +
-      `Send W0G to the Curator's wallet before calling /prove.`
+      `Expected Transfer(from=${agentWallet}, to=${expectedRecipient}) on W0G (${W0G_ADDRESS}).`
     );
     return;
   }
 
-  // ── 4. Verify EIP-191 signature ────────────────────────────────────────────
+  // Verify EIP-191 signature
   const proofMessage = `SkillFun payment proof: ${txHash}`;
   let recoveredSigner: string;
   try {
-    recoveredSigner = (await recoverMessageAddress({
-      message:   proofMessage,
-      signature: signature as `0x${string}`,
-    })).toLowerCase();
+    recoveredSigner = (await recoverMessageAddress({ message: proofMessage, signature: signature as `0x${string}` })).toLowerCase();
   } catch {
     apiError(res, ErrorCode.INVALID_INPUT, "Invalid signature — cannot recover signer address.");
     return;
@@ -205,65 +244,28 @@ router.post("/mcp/payment/prove", async (req, res) => {
     return;
   }
 
-  // ── 5. Look up skill by tokenId ───────────────────────────────────────────
-  const [skill] = await db
-    .select()
-    .from(skillsTable)
-    .where(eq(skillsTable.tokenId, tokenId))
-    .limit(1);
+  // Look up skill
+  const [skill] = await db.select().from(skillsTable).where(eq(skillsTable.tokenId, tokenId)).limit(1);
+  if (!skill) { apiError(res, ErrorCode.NOT_FOUND, `No skill found for tokenId=${tokenId}.`); return; }
 
-  if (!skill) {
-    apiError(res, ErrorCode.NOT_FOUND, `No skill found for tokenId=${tokenId}.`);
-    return;
-  }
-
-  // ── 6. Idempotency: same (txHash, bundleId) → same proof ─────────────────
+  // Idempotency
   const [existingByTx] = await db
     .select()
     .from(paymentProofsTable)
-    .where(and(
-      eq(paymentProofsTable.txHash,    txHash),
-      eq(paymentProofsTable.bundleId,  bundleId)
-    ))
+    .where(and(eq(paymentProofsTable.txHash, txHash), eq(paymentProofsTable.bundleId, bundleId)))
     .limit(1);
 
   if (existingByTx) {
     logger.info({ skillId: skill.skillId, txHash, agentWallet, bundleId }, "mcp/prove: reissuing existing proof");
-    res.json({
-      proof:          existingByTx.token,
-      skillId:        existingByTx.skillId,
-      contentVersion: existingByTx.contentVersion,
-      expiresAt:      null,
-      reissued:       true,
-    });
+    res.json({ proof: existingByTx.token, skillId: existingByTx.skillId, contentVersion: existingByTx.contentVersion, expiresAt: null, reissued: true });
     return;
   }
 
-  // ── 7. Issue new proof token ───────────────────────────────────────────────
   const token = crypto.randomBytes(32).toString("hex");
+  await db.insert(paymentProofsTable).values({ token, skillId: skill.skillId, contentVersion: skill.contentVersion, agentWallet, txHash, bundleId, expiresAt: null });
 
-  await db.insert(paymentProofsTable).values({
-    token,
-    skillId:        skill.skillId,
-    contentVersion: skill.contentVersion,
-    agentWallet,
-    txHash,
-    bundleId,
-    expiresAt:      null,
-  });
-
-  logger.info(
-    { skillId: skill.skillId, contentVersion: skill.contentVersion, agentWallet, txHash, bundleId },
-    "mcp/prove: proof issued (erc20-transfer)"
-  );
-
-  res.status(201).json({
-    proof:          token,
-    skillId:        skill.skillId,
-    contentVersion: skill.contentVersion,
-    expiresAt:      null,
-    reissued:       false,
-  });
+  logger.info({ skillId: skill.skillId, contentVersion: skill.contentVersion, agentWallet, txHash, bundleId }, "mcp/prove: proof issued (erc20-transfer)");
+  res.status(201).json({ proof: token, skillId: skill.skillId, contentVersion: skill.contentVersion, expiresAt: null, reissued: false });
 });
 
 export default router;

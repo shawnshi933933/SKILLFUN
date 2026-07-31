@@ -65,19 +65,8 @@ async function processRange(fromBlock: bigint, toBlock: bigint): Promise<void> {
       if (!curatorWallet || tokenIdBig == null) continue;
       const tokenId = Number(tokenIdBig);
 
-      // Read current authEpoch on-chain
-      let authEpoch = 0;
-      try {
-        const epoch = await client.readContract({
-          address: SKILL_NFT_ADDRESS,
-          abi: SkillNFT_ABI,
-          functionName: "authEpoch",
-          args: [BigInt(tokenId)],
-        }) as bigint;
-        authEpoch = Number(epoch);
-      } catch (err) {
-        logger.warn({ err, tokenId }, "event-listener: authEpoch read failed");
-      }
+      // authEpoch is not present in the current contract (v6+); default to 0.
+      const authEpoch = 0;
 
       await db.insert(curatorAuthorizationsTable)
         .values({
