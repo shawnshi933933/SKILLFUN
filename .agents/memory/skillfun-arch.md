@@ -7,7 +7,10 @@ description: Core design decisions for SkillFun — ERC-7857 on 0G Chain, x402 p
 
 ## Contract versions
 - v4 (old): `0xfd5d67840915fa25af61b68bdb30bc6bb61fe4f8` — no setBasePrice
-- v5 (current): `0x36cc7DBE8d2d3C0B44223e60CE94912ED8e11D72` — added setBasePrice(tokenId, newPriceWei)
+- v5 (dead): `0x36cc7DBE8d2d3C0B44223e60CE94912ED8e11D72` — added setBasePrice but missing selfAuthorize/purchaseAuthorization
+- v6 (current): `0xF119d7FB60f897D79b10b23C843ED706bFB59F79` — setBasePrice + selfAuthorize + purchaseAuthorization
+
+**Why v5→v6:** selfAuthorize and purchaseAuthorization were never in the Solidity source. The ABI fragment in use-curator.ts called functions whose selectors had no match on-chain — wallets simulated a failed tx and disabled the confirm button. Always verify the deployed ABI against use-curator.ts ABI fragments when redeploying.
 
 ## Revenue model
 - Curator authorization: pays `basePrice` W0G to Skill NFT Owner (100% to Owner)

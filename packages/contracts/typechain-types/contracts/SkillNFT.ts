@@ -117,11 +117,13 @@ export interface SkillNFTInterface extends Interface {
       | "oracle"
       | "owner"
       | "ownerOf"
+      | "purchaseAuthorization"
       | "registerSkill"
       | "renounceOwnership"
       | "revokeAuthorization"
       | "safeTransferFrom(address,address,uint256)"
       | "safeTransferFrom(address,address,uint256,bytes)"
+      | "selfAuthorize"
       | "setApprovalForAll"
       | "setBasePrice"
       | "setVerifier"
@@ -214,6 +216,10 @@ export interface SkillNFTInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "purchaseAuthorization",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "registerSkill",
     values: [string, string, BytesLike, AddressLike, BigNumberish]
   ): string;
@@ -232,6 +238,10 @@ export interface SkillNFTInterface extends Interface {
   encodeFunctionData(
     functionFragment: "safeTransferFrom(address,address,uint256,bytes)",
     values: [AddressLike, AddressLike, BigNumberish, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "selfAuthorize",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setApprovalForAll",
@@ -312,6 +322,10 @@ export interface SkillNFTInterface extends Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "ownerOf", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "purchaseAuthorization",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "registerSkill",
     data: BytesLike
   ): Result;
@@ -329,6 +343,10 @@ export interface SkillNFTInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "safeTransferFrom(address,address,uint256,bytes)",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "selfAuthorize",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -737,6 +755,12 @@ export interface SkillNFT extends BaseContract {
 
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
+  purchaseAuthorization: TypedContractMethod<
+    [tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   registerSkill: TypedContractMethod<
     [
       repoUrl: string,
@@ -770,6 +794,12 @@ export interface SkillNFT extends BaseContract {
       tokenId: BigNumberish,
       data: BytesLike
     ],
+    [void],
+    "nonpayable"
+  >;
+
+  selfAuthorize: TypedContractMethod<
+    [tokenId: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -923,6 +953,9 @@ export interface SkillNFT extends BaseContract {
     nameOrSignature: "ownerOf"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
   getFunction(
+    nameOrSignature: "purchaseAuthorization"
+  ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "registerSkill"
   ): TypedContractMethod<
     [
@@ -964,6 +997,9 @@ export interface SkillNFT extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "selfAuthorize"
+  ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "setApprovalForAll"
   ): TypedContractMethod<

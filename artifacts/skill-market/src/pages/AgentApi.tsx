@@ -51,7 +51,7 @@ const FLOW_STEPS = [
 
 const TS_EXAMPLE = `import { createWalletClient, http, parseAbi } from "viem";
 
-const SKILL_NFT = "0x36cc7DBE8d2d3C0B44223e60CE94912ED8e11D72"; // v5
+const SKILL_NFT = "0xF119d7FB60f897D79b10b23C843ED706bFB59F79"; // v6
 const W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
 const MCP_BASE  = "https://<your-domain>/mcp/<bundleId>";
 const BUNDLE_ID = "<bundleId>";
@@ -121,7 +121,7 @@ const PY_EXAMPLE = `import requests
 from eth_account import Account
 from web3 import Web3
 
-SKILL_NFT = "0x36cc7DBE8d2d3C0B44223e60CE94912ED8e11D72"  # v5
+SKILL_NFT = "0xF119d7FB60f897D79b10b23C843ED706bFB59F79"  # v6
 W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c"
 MCP_BASE  = "https://<your-domain>/mcp/<bundleId>"
 BUNDLE_ID = "<bundleId>"

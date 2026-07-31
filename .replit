@@ -33,3 +33,19 @@ ZEROG_AI_BASE_URL = "https://router-api.0g.ai"
 
 [nix]
 channel = "stable-25_05"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 20247
+externalPort = 80
+
+[[ports]]
+localPort = 22013
+externalPort = 3000

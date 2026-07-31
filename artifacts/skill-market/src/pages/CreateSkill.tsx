@@ -21,7 +21,7 @@ import { githubApi, type GitHubManifestResult } from "@/lib/api";
 const STEPS = ["Basic Info", "Ownership", "Economics", "Review & Mint"] as const;
 const CATEGORIES = ["Code", "Analysis", "Writing", "Trading", "Research", "Social"] as const;
 const ZEROG_SCAN     = "https://chainscan.0g.ai";
-const SKILL_NFT_ADDR = "0x36cc7DBE8d2d3C0B44223e60CE94912ED8e11D72"; // v5
+const SKILL_NFT_ADDR = "0xF119d7FB60f897D79b10b23C843ED706bFB59F79"; // v6
 
 // ─── Form state ───────────────────────────────────────────────────────────────
 

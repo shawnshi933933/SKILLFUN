@@ -194,6 +194,45 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // SkillFun: Curator Authorization
+    // ─────────────────────────────────────────────────────────────────
+
+    /// @notice Authorize yourself to use an unclaimed skill (NFT held by this
+    ///         contract). Free — no payment required.
+    ///         Reverts if the skill has already been claimed by its creator.
+    /// @param tokenId  The unclaimed skill to authorize.
+    function selfAuthorize(uint256 tokenId) external {
+        require(
+            ownerOf(tokenId) == address(this),
+            "SkillNFT: skill is claimed, use purchaseAuthorization"
+        );
+        _authorized[tokenId][msg.sender] = true;
+        emit Authorization(address(this), msg.sender, tokenId);
+    }
+
+    /// @notice Authorize yourself to use a claimed skill by paying basePrice
+    ///         W0G to the current NFT owner. Caller must have approved this
+    ///         contract for at least basePrice[tokenId] W0G before calling.
+    ///         Pass 0-price skills also work (no approve needed).
+    /// @param tokenId  The claimed skill to authorize.
+    function purchaseAuthorization(uint256 tokenId) external {
+        address owner_ = ownerOf(tokenId);
+        require(
+            owner_ != address(this),
+            "SkillNFT: skill is unclaimed, use selfAuthorize"
+        );
+        uint256 price = basePrice[tokenId];
+        if (price > 0) {
+            require(
+                w0g.transferFrom(msg.sender, owner_, price),
+                "SkillNFT: W0G transfer failed"
+            );
+        }
+        _authorized[tokenId][msg.sender] = true;
+        emit Authorization(owner_, msg.sender, tokenId);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     // SkillFun: Invoke (x402 stub)
     // ─────────────────────────────────────────────────────────────────
 
