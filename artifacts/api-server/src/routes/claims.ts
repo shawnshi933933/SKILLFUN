@@ -339,11 +339,3 @@ router.post("/claims/:id/complete", authMiddleware("complete-claim"), async (req
 });
 
 export default router;
-
-  const claimIds      = writable.map(c => c.id);
-
-  const writable = approvedClaims.filter(c => !!c.walletAddress);
-
-  const tokenIds      = writable.map(c => c.tokenId);
-
-  const walletAddrs   = writable.map(c => c.walletAddress!);

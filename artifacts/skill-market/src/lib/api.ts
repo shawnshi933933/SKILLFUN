@@ -28,6 +28,8 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
 export interface DbSkill {
   id: string;
+  /** Same as `id` — the canonical string primary key returned by the server. */
+  skillId?: string;
   repoUrl: string;
   githubUsername: string;
   skillName: string;
@@ -39,26 +41,36 @@ export interface DbSkill {
   tokenId: number | null;
   mintStatus: "pending" | "minted" | "claimed";
   ownerAddress: string | null;
+  /** The GitHub identity (username or org/repo) that owns the skill manifest. */
+  manifestOwner: string | null;
   basePrice: string | null;
   createdAt: string;
   updatedAt: string;
   isLive: boolean;
   version: number;
+  meta?: Record<string, unknown> | null;
 }
 
 export interface DbBundle {
   id: string;
+  /** Same as `id` — the canonical string primary key returned by the server. */
+  bundleId?: string;
   bundleName: string;
+  /** Human-readable display name (may differ from bundleName). */
+  name?: string | null;
   description: string | null;
   tags: string[] | null;
   coverImageUrl: string | null;
   serviceEndpoint: string | null;
   priceWei: string | null;
+  /** Per-proof price charged to agents (W0G wei). */
+  servicePrice?: string | null;
   ownerAddress: string | null;
   createdAt: string;
   updatedAt: string;
   isLive: boolean;
   skills?: DbSkill[];
+  meta?: Record<string, unknown> | null;
 }
 
 export interface DbClaim {
@@ -70,6 +82,43 @@ export interface DbClaim {
   txHash: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type AuthStatus = "active" | "needs_reauth" | "revoked" | "pending";
+
+export interface CuratorAuthorization {
+  tokenId: number;
+  skillId: string;
+  skillName: string;
+  repoUrl: string;
+  ownerAddress: string | null;
+  nftOwner: string | null;
+  isClaimed: boolean;
+  basePrice: string;
+  authorizedAt: string | null;
+  revokedAt: string | null;
+  storedEpoch: number | null;
+  onChainEpoch: number;
+  isAuthorized: boolean;
+  status: AuthStatus;
+  contentVersion: number;
+  bundleIds: string[];
+}
+
+export interface CreateSkillInput {
+  repoUrl: string;
+  skillName: string;
+  description?: string;
+  tags?: string[];
+  coverImageUrl?: string;
+}
+
+export interface PrepareMintInput {
+  repoUrl: string;
+  ownerMode: "mine" | "community";
+  meta?: Record<string, unknown>;
+  skillFileContent?: string;
+  fileType?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,19 +137,31 @@ export const skillsApi = {
 
   get: (id: string) => apiFetch<{ skill: DbSkill }>(`/skills/${id}`),
 
-  create: (
-    data: {
-      repoUrl: string;
-      skillName: string;
-      description?: string;
-      tags?: string[];
-      coverImageUrl?: string;
-    },
-    sigHeader: string
-  ) =>
+  create: (data: CreateSkillInput, sigHeader: string) =>
     apiFetch<{ skill: DbSkill }>("/skills", {
       method: "POST",
       headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify(data),
+    }),
+
+  prepareMint: (data: PrepareMintInput, sigHeader: string) =>
+    apiFetch<{
+      skillId: string;
+      rootHash: string;
+      skillUri: string;
+      manifestOwner: string;
+      skillNFTAddress: string;
+      w0gAddress: string;
+      storage: { uploaded: boolean };
+    }>("/skills/prepare-mint", {
+      method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify(data),
+    }),
+
+  confirmMint: (id: string, data: { tokenId: number; txHash: string }) =>
+    apiFetch<{ skill: DbSkill; onChainOwner: string }>(`/skills/${id}/confirm-mint`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
 };
@@ -157,6 +218,11 @@ export const bundlesApi = {
       headers: { "X-Wallet-Signature": sigHeader },
       body: JSON.stringify(data),
     }),
+
+  analytics: (id: string) =>
+    apiFetch<{ bundleId: string; totalInvocations: number; uniqueAgents: number; totalEarnedWei: string }>(
+      `/bundles/${id}/analytics`
+    ),
 };
 
 export const claimsApi = {
@@ -190,8 +256,41 @@ export const authApi = {
   session: () =>
     apiFetch<{ githubUsername: string | null }>("/auth/session"),
 
+  me: () =>
+    apiFetch<{ githubUsername: string | null; walletAddress: string | null }>("/auth/me"),
+
+  challenge: () =>
+    apiFetch<{ nonce: string }>("/auth/challenge"),
+
   logout: () =>
     apiFetch<{ ok: boolean }>("/auth/logout", { method: "POST" }),
+};
+
+// ---------------------------------------------------------------------------
+// Curator authorizations (agent wallet — on-chain authorization management)
+// ---------------------------------------------------------------------------
+
+export const curatorApi = {
+  listAuthorizations: (wallet: string) =>
+    apiFetch<{ authorizations: CuratorAuthorization[]; curatorWallet: string }>(
+      `/curator/authorizations?wallet=${encodeURIComponent(wallet)}`
+    ),
+
+  getAuthorizationStatus: (tokenId: number, wallet: string) =>
+    apiFetch<{
+      tokenId: number;
+      skillId: string;
+      skillName: string;
+      nftOwner: string | null;
+      isClaimed: boolean;
+      basePrice: string;
+      storedEpoch: number | null;
+      onChainEpoch: number;
+      isAuthorized: boolean;
+      status: AuthStatus;
+      authorizedAt: string | null;
+      revokedAt: string | null;
+    }>(`/curator/authorizations/${tokenId}/status?wallet=${encodeURIComponent(wallet)}`),
 };
 
 // ---------------------------------------------------------------------------
@@ -238,4 +337,65 @@ export const adminApi = {
   /** Fetch platform config (deployer address, oracle address). */
   getConfig: () =>
     apiFetch<{ deployerAddress: string; oracleAddress: string }>("/admin/config"),
+};
+
+// ---------------------------------------------------------------------------
+// GitHub manifest fetch + AI analysis
+// ---------------------------------------------------------------------------
+
+export interface GitHubManifestResult {
+  found: boolean;
+  fileType: string | null;
+  rawContent: string | null;
+  parsed: {
+    name?: string;
+    description?: string;
+    version?: string;
+    category?: string;
+    basePrice?: number;
+    capabilities?: string[];
+    tags?: string[];
+  };
+  githubUrl: string;
+  warning?: string;
+}
+
+export const githubApi = {
+  fetchSkillManifest: (repo: string) =>
+    apiFetch<GitHubManifestResult>(`/github/skill-manifest?repo=${encodeURIComponent(repo)}`),
+
+  aiAnalyze: (body: { rawContent: string; fileType: string; repoUrl: string }) =>
+    apiFetch<{
+      description?: string;
+      capabilities: string[];
+      tags: string[];
+      instructions?: string;
+    }>("/github/ai-analyze", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+};
+
+// ---------------------------------------------------------------------------
+// Chain reads (BFF — reads on-chain state via API server)
+// ---------------------------------------------------------------------------
+
+export const chainApi = {
+  skill: (tokenId: number) =>
+    apiFetch<{ tokenId: number; owner: string; skillUri: string | null }>(`/chain/skill/${tokenId}`),
+
+  balance: (address: string) =>
+    apiFetch<{ address: string; balanceWei: string; balanceEther: string }>(`/chain/balance/${address}`),
+
+  oracle: (tokenId: number) =>
+    apiFetch<{ tokenId: number; verifiedOwner: string | null; hasClaims: boolean }>(`/chain/oracle/${tokenId}`),
+};
+
+// ---------------------------------------------------------------------------
+// Proofs / skill stats (public)
+// ---------------------------------------------------------------------------
+
+export const proofsApi = {
+  stats: (skillId: string) =>
+    apiFetch<{ skillId: string; invocationCount: number; totalEarnedWei: string }>(`/skills/${skillId}/stats`),
 };
