@@ -208,6 +208,53 @@ async function getSkillContent(skill: {
 }
 
 // ---------------------------------------------------------------------------
+// GET / — machine-readable Bundle discovery index (/.well-known/mcp convention)
+//
+// Returns all active Bundles with their MCP base URLs so that agents (and
+// future MCP clients) can enumerate available Bundles without user input.
+// Mounted before /:bundleId so it is never swallowed by the wildcard route.
+// ---------------------------------------------------------------------------
+router.get("/", async (req, res) => {
+  // Pagination: ?limit (default 500, max 1000) + ?offset (default 0)
+  // Agents should keep fetching with increasing offset until bundles.length < limit.
+  const rawLimit  = parseInt((req.query.limit  as string) ?? "500", 10);
+  const rawOffset = parseInt((req.query.offset as string) ?? "0",   10);
+  const limit  = Math.min(Math.max(Number.isFinite(rawLimit)  ? rawLimit  : 500, 1), 1000);
+  const offset = Math.max(Number.isFinite(rawOffset) ? rawOffset : 0, 0);
+
+  const bundles = await db
+    .select()
+    .from(bundlesTable)
+    .orderBy(asc(bundlesTable.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  const proto   = (req.get("x-forwarded-proto") ?? req.protocol).split(",")[0].trim();
+  const host    = req.get("x-forwarded-host") ?? req.get("host") ?? "localhost";
+  const baseUrl = `${proto}://${host}`;
+
+  const index = bundles.map((b) => ({
+    bundleId:     b.bundleId,
+    title:        b.name,
+    description:  b.description ?? null,
+    servicePrice: b.servicePrice ?? "0",
+    mcpBaseUrl:   `${baseUrl}/mcp/${b.bundleId}`,
+    mcpUrl:       `${baseUrl}/mcp/${b.bundleId}/mcp`,
+    toolsUrl:     `${baseUrl}/mcp/${b.bundleId}/tools`,
+    guideUrl:     `${baseUrl}/mcp/${b.bundleId}/agent-guide.md`,
+  }));
+
+  res.json({
+    protocol:    "skillfun-mcp",
+    version:     "1",
+    bundlesUrl:  `${baseUrl}/api/bundles`,
+    agentGuide:  `${baseUrl}/mcp/agent-guide.md`,
+    pagination:  { limit, offset, hasMore: bundles.length === limit },
+    bundles:     index,
+  });
+});
+
+// ---------------------------------------------------------------------------
 // GET /agent-guide.md — UNIVERSAL onboarding guide (no bundleId, works for any bundle)
 // ---------------------------------------------------------------------------
 router.get("/agent-guide.md", (_req, res) => {
@@ -224,15 +271,39 @@ router.get("/agent-guide.md", (_req, res) => {
 > **Run this flow first**, before anything else. Collect the required inputs from your user,
 > then proceed to Section 1 onwards autonomously.
 
-### Step 0.1 — Get the Bundle endpoint
+### Step 0.1 — Discover available Bundles
 
-Say to your user:
-> "I've read the SkillFun protocol guide. To connect to a Skill Bundle, I need the MCP endpoint URL.
-> Please paste the Bundle's MCP base URL (format: \`https://…/mcp/{bundleId}\`)."
+**Before asking the user anything**, call the discovery endpoint to list all available Bundles:
 
-Once you have \`{MCP_BASE}\`, call \`GET {MCP_BASE}/tools\` to confirm the Bundle is reachable and
-\`POST {MCP_BASE}/mcp\` (initialize) to discover the Bundle name, tools, and payment details.
-Report back to your user: Bundle name, number of Skills, and the service price.
+\`\`\`http
+GET {ORIGIN}/api/bundles
+\`\`\`
+
+\`{ORIGIN}\` is the base URL of the SkillFun server (e.g. \`https://example.com\`).
+You can also use \`GET {ORIGIN}/mcp\` which returns a richer index with pre-built MCP URLs:
+
+\`\`\`http
+GET {ORIGIN}/mcp
+\`\`\`
+
+Both endpoints return a list of Bundles. Each entry includes:
+- \`bundleId\` — the Bundle identifier
+- \`title\` (or \`name\`) — human-readable name
+- \`servicePrice\` — cost in W0G wei (\`"0"\` = free)
+- \`mcpBaseUrl\` — the MCP base URL for this Bundle (format: \`{ORIGIN}/mcp/{bundleId}\`)
+
+\`GET {ORIGIN}/mcp\` also returns a \`pagination\` object: \`{ limit, offset, hasMore }\`.
+If \`hasMore\` is \`true\`, fetch the next page with \`?limit={limit}&offset={offset+limit}\` and
+repeat until \`hasMore\` is \`false\`. Default page size is 500, max is 1000.
+
+**If the user's intent clearly matches one Bundle name**, select it automatically and proceed.
+**Otherwise**, present the list to your user and say:
+> "I found the following Skill Bundles on this SkillFun server. Which one would you like to use?"
+> _(list each Bundle with its title, description, and price)_
+
+Once you have the target Bundle, set \`{MCP_BASE} = mcpBaseUrl\`, then call \`GET {MCP_BASE}/tools\`
+to confirm it is reachable and \`POST {MCP_BASE}/mcp\` (initialize) to discover the Bundle name,
+tools, and payment details. Report back to your user: Bundle name, number of Skills, and the service price.
 
 ### Step 0.2 — Set up your agent wallet
 
