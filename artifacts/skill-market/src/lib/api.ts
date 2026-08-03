@@ -354,6 +354,7 @@ export interface DbClaim {
   githubUsername: string;
   walletAddress:  string;
   status:         ClaimStatus;
+  txHash:         string | null;
   createdAt:      string;
   updatedAt:      string;
 }
@@ -366,6 +367,12 @@ export const claimsApi = {
       body: JSON.stringify({ tokenId }),
     }),
   mine: () => apiFetch<{ claims: DbClaim[] }>("/claims/mine"),
+  complete: (claimId: string, txHash: string, sigHeader: string) =>
+    apiFetch<{ claim: DbClaim }>(`/claims/${claimId}/complete`, {
+      method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify({ txHash }),
+    }),
 };
 
 // ---------------------------------------------------------------------------

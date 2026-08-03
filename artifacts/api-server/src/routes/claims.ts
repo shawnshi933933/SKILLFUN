@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { pendingClaimsTable, githubVerificationsTable } from "@workspace/db";
+import { pendingClaimsTable, githubVerificationsTable, skillsTable } from "@workspace/db";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
@@ -220,6 +220,84 @@ router.patch("/claims/:id", authMiddleware("admin:update-claim"), async (req, re
   }
 
   logger.info({ claimId, status }, "claim status updated");
+  res.json({ claim: updated });
+});
+
+// POST /api/claims/:id/complete — creator calls this after the on-chain claim() succeeds
+//
+// Security model:
+// - EIP-712 wallet signature proves the caller controls the wallet.
+// - The wallet must match the walletAddress recorded on the claim (set when the claim
+//   was submitted), so only the intended recipient can mark it completed.
+// - completed is a terminal state — the endpoint is idempotent for the same txHash.
+router.post("/claims/:id/complete", authMiddleware("complete-claim"), async (req, res) => {
+  const callerWallet = req.walletAddress!;
+  const claimId = req.params.id as string;
+  const { txHash } = req.body as { txHash?: string };
+
+  if (!txHash || typeof txHash !== "string" || !txHash.startsWith("0x")) {
+    apiError(res, ErrorCode.INVALID_INPUT, "txHash is required and must be a 0x-prefixed hex string");
+    return;
+  }
+
+  // Fetch the claim and verify ownership before mutating
+  const [existing] = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.id, claimId))
+    .limit(1);
+
+  if (!existing) {
+    apiError(res, ErrorCode.NOT_FOUND, "Claim not found");
+    return;
+  }
+
+  if (existing.walletAddress.toLowerCase() !== callerWallet.toLowerCase()) {
+    apiError(res, ErrorCode.FORBIDDEN, "Only the claimant wallet can mark a claim complete");
+    return;
+  }
+
+  if (existing.status === "completed") {
+    // Idempotent — already done, return the existing record
+    res.json({ claim: existing });
+    return;
+  }
+
+  if (existing.status !== "approved") {
+    apiError(res, ErrorCode.CONFLICT, `Claim must be 'approved' to complete; current status is '${existing.status}'`);
+    return;
+  }
+
+  const updated = await db.transaction(async (tx) => {
+    const [claim] = await tx
+      .update(pendingClaimsTable)
+      .set({ status: "completed", txHash, updatedAt: new Date() })
+      .where(
+        and(
+          eq(pendingClaimsTable.id, claimId),
+          eq(pendingClaimsTable.status, "approved")
+        )
+      )
+      .returning();
+
+    if (!claim) return null;
+
+    // Also mark the NFT as claimed in the skills table so it no longer shows
+    // as claimable to the frontend.
+    await tx
+      .update(skillsTable)
+      .set({ mintStatus: "claimed", ownerAddress: callerWallet.toLowerCase(), updatedAt: new Date() })
+      .where(eq(skillsTable.tokenId, existing.tokenId));
+
+    return claim;
+  });
+
+  if (!updated) {
+    apiError(res, ErrorCode.CONFLICT, "Claim status changed concurrently; please refresh and retry");
+    return;
+  }
+
+  logger.info({ claimId, txHash, walletAddress: callerWallet }, "claim completed on-chain");
   res.json({ claim: updated });
 });
 

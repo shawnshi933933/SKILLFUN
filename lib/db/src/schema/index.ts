@@ -136,6 +136,7 @@ export const pendingClaimsTable = pgTable(
     githubUsername: text("github_username").notNull(),
     walletAddress:  text("wallet_address").notNull(),
     status:         claimStatusEnum("status").notNull().default("pending"),
+    txHash:         text("tx_hash"),
     createdAt:      timestamp("created_at").notNull().defaultNow(),
     updatedAt:      timestamp("updated_at").notNull().defaultNow(),
   },

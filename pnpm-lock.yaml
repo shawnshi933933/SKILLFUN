@@ -441,6 +441,9 @@ importers:
       '@wagmi/core':
         specifier: ^3.6.4
         version: 3.6.4(@tanstack/query-core@5.90.20)(@types/react@19.2.14)(immer@10.0.2)(react@19.1.0)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.1.0))(viem@2.55.8(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@workspace/abi':
+        specifier: workspace:*
+        version: link:../../packages/abi
       viem:
         specifier: ^2.55.8
         version: 2.55.8(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)

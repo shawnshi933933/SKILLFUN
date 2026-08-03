@@ -12,10 +12,14 @@ import {
   Github, Wallet, CheckCircle, Clock, XCircle,
   ExternalLink, Loader2, Lock, AlertCircle,
 } from "lucide-react";
+import { useAccount, useWriteContract } from "wagmi";
 
 // ---------------------------------------------------------------------------
 // Types / helpers
 // ---------------------------------------------------------------------------
+import { waitForTransactionReceipt } from "@wagmi/core";
+import { wagmiConfig } from "@/lib/wagmi";
+import { SkillNFT_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
 type PageState = "loading" | "no-github" | "no-wallet" | "ready";
 
 function claimStatusBadge(status: DbClaim["status"]) {
@@ -23,7 +27,7 @@ function claimStatusBadge(status: DbClaim["status"]) {
     case "pending":
       return <Badge variant="outline" className="border-amber-500/40 text-amber-400 gap-1"><Clock className="w-3 h-3" />Pending review</Badge>;
     case "approved":
-      return <Badge variant="outline" className="border-blue-500/40 text-blue-400 gap-1"><CheckCircle className="w-3 h-3" />Approved — set Oracle, then call claim()</Badge>;
+      return <Badge variant="outline" className="border-blue-500/40 text-blue-400 gap-1"><CheckCircle className="w-3 h-3" />Approved — ready to claim</Badge>;
     case "rejected":
       return <Badge variant="outline" className="border-red-500/40 text-red-400 gap-1"><XCircle className="w-3 h-3" />Rejected</Badge>;
     case "completed":
@@ -41,13 +45,16 @@ export default function Claim() {
   const { disconnect } = useDisconnect();
   const sign = useEip712Sign();
 
-  const [pageState, setPageState]         = useState<PageState>("loading");
-  const [githubUser, setGithubUser]       = useState<string | null>(null);
-  const [linkedWallet, setLinkedWallet]   = useState<string | null>(null);
-  const [skills, setSkills]               = useState<DbSkill[]>([]);
-  const [myClaims, setMyClaims]           = useState<DbClaim[]>([]);
-  const [linkingWallet, setLinkingWallet] = useState(false);
-  const [submitting, setSubmitting]       = useState<number | null>(null); // tokenId
+  const { writeContractAsync } = useWriteContract();
+
+  const [pageState, setPageState]           = useState<PageState>("loading");
+  const [githubUser, setGithubUser]         = useState<string | null>(null);
+  const [linkedWallet, setLinkedWallet]     = useState<string | null>(null);
+  const [skills, setSkills]                 = useState<DbSkill[]>([]);
+  const [myClaims, setMyClaims]             = useState<DbClaim[]>([]);
+  const [linkingWallet, setLinkingWallet]   = useState(false);
+  const [submitting, setSubmitting]         = useState<number | null>(null); // tokenId
+  const [claimingOnChain, setClaimingOnChain] = useState<number | null>(null); // tokenId
 
   // --------------------------------------------------------------------------
   // Fetch session + data
@@ -131,6 +138,54 @@ export default function Claim() {
       toast({ title: "Link failed", description: (err as Error).message, variant: "destructive" });
     } finally {
       setLinkingWallet(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // Claim on-chain (approved → completed)
+  // --------------------------------------------------------------------------
+  const handleClaimOnChain = async (claim: DbClaim) => {
+    if (!isConnected || !address) {
+      toast({ title: "Connect your wallet first", variant: "destructive" });
+      return;
+    }
+    if (address.toLowerCase() !== linkedWallet?.toLowerCase()) {
+      toast({ title: "Wrong wallet", description: `Connect the linked wallet (${linkedWallet?.slice(0, 8)}…) to claim`, variant: "destructive" });
+      return;
+    }
+    setClaimingOnChain(claim.tokenId);
+    try {
+      const addresses = getAddresses(ZEROG_MAINNET.id);
+      const txHash = await writeContractAsync({
+        address: addresses.SkillNFT as `0x${string}`,
+        abi: SkillNFT_ABI,
+        functionName: "claim",
+        args: [BigInt(claim.tokenId)],
+      });
+      toast({ title: "Transaction sent", description: "Waiting for confirmation…" });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const receipt = await waitForTransactionReceipt(wagmiConfig as any, {
+        hash: txHash,
+        timeout:         300_000,
+        pollingInterval: 3_000,
+      });
+
+      if (receipt.status !== "success") {
+        throw new Error(`Transaction reverted: ${txHash}`);
+      }
+
+      // Notify the backend so status → completed
+      const sigHeader = await sign("complete-claim");
+      const { claim: updated } = await claimsApi.complete(claim.id, txHash, sigHeader);
+      setMyClaims((prev) => [updated, ...prev.filter((c) => c.id !== claim.id)]);
+      // Remove the skill from the claimable list since it is now claimed
+      setSkills((prev) => prev.filter((s) => s.tokenId !== claim.tokenId));
+      toast({ title: "NFT claimed!", description: "The Skill NFT has been transferred to your wallet." });
+    } catch (err: unknown) {
+      toast({ title: "On-chain claim failed", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setClaimingOnChain(null);
     }
   };
 
@@ -352,24 +407,47 @@ export default function Claim() {
                         <div className="shrink-0">
                           {existing ? (
                             existing.status === "approved" ? (
-                              <Button
-                                size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5"
-                                onClick={() =>
-                                  window.open(
-                                    `https://chainscan.0g.ai/address/${skill.ownerAddress}`,
-                                    "_blank"
-                                  )
-                                }
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                View on Explorer
-                              </Button>
+                              <div className="flex flex-col items-end gap-2">
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5"
+                                  onClick={() => handleClaimOnChain(existing)}
+                                  disabled={
+                                    claimingOnChain === skill.tokenId ||
+                                    !isConnected ||
+                                    address?.toLowerCase() !== linkedWallet?.toLowerCase()
+                                  }
+                                >
+                                  {claimingOnChain === skill.tokenId ? (
+                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" />Claiming…</>
+                                  ) : (
+                                    <><CheckCircle className="w-3.5 h-3.5" />Claim on-chain</>
+                                  )}
+                                </Button>
+                                {isConnected && address?.toLowerCase() !== linkedWallet?.toLowerCase() && (
+                                  <p className="text-[10px] text-amber-400 max-w-[160px] text-right">
+                                    Switch to linked wallet to claim
+                                  </p>
+                                )}
+                              </div>
                             ) : existing.status === "completed" ? (
-                              <Button size="sm" variant="outline" className="border-white/10 gap-1.5" disabled>
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                                Claimed
-                              </Button>
+                              <div className="flex flex-col items-end gap-1.5">
+                                <Button size="sm" variant="outline" className="border-emerald-500/30 text-emerald-400 gap-1.5" disabled>
+                                  <CheckCircle className="w-3.5 h-3.5" />
+                                  Claimed
+                                </Button>
+                                {existing.txHash && (
+                                  <a
+                                    href={`https://chainscan.0g.ai/tx/${existing.txHash}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    View tx
+                                  </a>
+                                )}
+                              </div>
                             ) : (
                               <Button size="sm" variant="outline" className="border-white/10" disabled>
                                 <Clock className="w-3.5 h-3.5 mr-1.5" />
@@ -411,6 +489,43 @@ export default function Claim() {
                           </div>
                           {claimStatusBadge(claim.status)}
                         </div>
+                        {/* Show on-chain claim button for approved past-claims too */}
+                        {claim.status === "approved" && (
+                          <div className="flex flex-col items-end gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5"
+                              onClick={() => handleClaimOnChain(claim)}
+                              disabled={
+                                claimingOnChain === claim.tokenId ||
+                                !isConnected ||
+                                address?.toLowerCase() !== linkedWallet?.toLowerCase()
+                              }
+                            >
+                              {claimingOnChain === claim.tokenId ? (
+                                <><Loader2 className="w-3.5 h-3.5 animate-spin" />Claiming…</>
+                              ) : (
+                                <><CheckCircle className="w-3.5 h-3.5" />Claim on-chain</>
+                              )}
+                            </Button>
+                            {isConnected && address?.toLowerCase() !== linkedWallet?.toLowerCase() && (
+                              <p className="text-[10px] text-amber-400 text-right max-w-[160px]">
+                                Switch to linked wallet to claim
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {claim.status === "completed" && claim.txHash && (
+                          <a
+                            href={`https://chainscan.0g.ai/tx/${claim.txHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            View tx
+                          </a>
+                        )}
                       </div>
                     </div>
                   ))}
