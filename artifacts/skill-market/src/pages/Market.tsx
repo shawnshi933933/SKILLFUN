@@ -49,7 +49,7 @@ function adaptBundle(b: DbBundle & { skillCount?: number }) {
     skillCount:          b.skillCount ?? 0,
     apy:                 (meta.apy as number | undefined) ?? 0,
     stakerPool:          (meta.stakerPool as number | undefined) ?? 0,
-    invocations:         0, // real analytics live on bundle detail page
+    invocations:         b.invocations ?? 0,
     curatorMarkup:       (meta.curatorMarkup as number | undefined) ?? 10,
     tags:                (meta.tags as string[] | undefined) ?? [],
     isLive:              true,

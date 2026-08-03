@@ -17,21 +17,31 @@ router.get("/bundles", async (_req, res) => {
     .orderBy(desc(bundlesTable.createdAt))
     .limit(100);
 
-  // Fetch skill counts for all bundles in one query
   const bundleIds = bundles.map((b) => b.bundleId);
-  const skillCounts: Record<string, number> = {};
+  const skillCounts:      Record<string, number> = {};
+  const invocationCounts: Record<string, number> = {};
+
   if (bundleIds.length > 0) {
-    const rows = await db
-      .select({ bundleId: bundleSkillsTable.bundleId, cnt: count() })
-      .from(bundleSkillsTable)
-      .where(inArray(bundleSkillsTable.bundleId, bundleIds))
-      .groupBy(bundleSkillsTable.bundleId);
-    for (const row of rows) skillCounts[row.bundleId] = Number(row.cnt);
+    const [skillRows, invokeRows] = await Promise.all([
+      db
+        .select({ bundleId: bundleSkillsTable.bundleId, cnt: count() })
+        .from(bundleSkillsTable)
+        .where(inArray(bundleSkillsTable.bundleId, bundleIds))
+        .groupBy(bundleSkillsTable.bundleId),
+      db
+        .select({ bundleId: paymentProofsTable.bundleId, cnt: count() })
+        .from(paymentProofsTable)
+        .where(inArray(paymentProofsTable.bundleId, bundleIds))
+        .groupBy(paymentProofsTable.bundleId),
+    ]);
+    for (const row of skillRows)  skillCounts[row.bundleId]      = Number(row.cnt);
+    for (const row of invokeRows) invocationCounts[row.bundleId] = Number(row.cnt);
   }
 
   const bundlesWithCount = bundles.map((b) => ({
     ...b,
-    skillCount: skillCounts[b.bundleId] ?? 0,
+    skillCount:  skillCounts[b.bundleId]      ?? 0,
+    invocations: invocationCounts[b.bundleId] ?? 0,
   }));
 
   res.json({ bundles: bundlesWithCount });
@@ -139,16 +149,26 @@ router.get("/bundles/:id/analytics", async (req, res) => {
     };
   });
 
+  // Revenue = invocations × bundle servicePrice (W0G wei → W0G decimal).
+  // We use servicePrice rather than meta.basePrice because that's what agents
+  // actually pay per proof. Fall back to meta.basePrice only when servicePrice
+  // is not set (free bundles still might charge per-skill).
+  const servicePriceW0G = bundle.servicePrice
+    ? Number(BigInt(bundle.servicePrice)) / 1e18
+    : null;
+
   const skillBreakdown = countsBySkill.map((row) => {
-    const skill      = skillMap[row.skillId];
-    const meta       = (skill?.meta as Record<string, unknown>) ?? {};
-    const basePrice  = (meta.basePrice as number | undefined) ?? 0;
-    const skillName  = (meta.name as string | undefined) ?? row.skillId;
+    const skill     = skillMap[row.skillId];
+    const meta      = (skill?.meta as Record<string, unknown>) ?? {};
+    const skillName = (meta.name as string | undefined) ?? row.skillId;
+    // Per-invocation price: prefer bundle servicePrice, fall back to skill basePrice
+    const priceW0G  = servicePriceW0G
+      ?? ((meta.basePrice as number | undefined) ?? 0);
     return {
       skillId:     row.skillId,
       skillName,
       invocations: row.total,
-      revenueW0G:  row.total * basePrice,
+      revenueW0G:  row.total * priceW0G,
     };
   });
 
