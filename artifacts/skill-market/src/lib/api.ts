@@ -452,4 +452,15 @@ export const adminApi = {
       headers: { "X-Wallet-Signature": sigHeader },
       body: JSON.stringify({ status }),
     }),
+
+  /** Write Oracle verification on-chain via the backend deployer key. */
+  writeOracle: (claimId: string, sigHeader: string) =>
+    apiFetch<{ txHash: string }>(`/claims/${claimId}/write-oracle`, {
+      method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+    }),
+
+  /** Fetch platform config (deployer address) — used to gate admin UI. */
+  getConfig: () =>
+    apiFetch<{ deployerAddress: string }>("/admin/config"),
 };

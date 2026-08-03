@@ -8,12 +8,12 @@
  * write verification on-chain directly via wagmi — no CLI step needed.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
   Shield, Loader2, CheckCircle2, XCircle, Clock, RefreshCw,
@@ -22,49 +22,24 @@ import {
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
 import type { DbClaim } from "@/lib/api";
-import { SkillFunOracle_ABI } from "@workspace/abi";
 
 // ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const ORACLE_ADDRESS = "0x8071937558Ed2fD56AcE1d925B6f70BB40E09743" as const;
-
-// ---------------------------------------------------------------------------
-// Write Oracle button — self-contained per claim row
+// Write Oracle button — calls backend; no cold-wallet key needed in MetaMask
 // ---------------------------------------------------------------------------
 
 interface WriteOracleButtonProps {
-  tokenId: number;
-  walletAddress: string;
+  claimId: string;
   isDeployer: boolean;
   onSuccess: () => void;
+  sign: (action: string) => Promise<string>;
 }
 
-function WriteOracleButton({ tokenId, walletAddress, isDeployer, onSuccess }: WriteOracleButtonProps) {
+function WriteOracleButton({ claimId, isDeployer, onSuccess, sign }: WriteOracleButtonProps) {
   const { toast } = useToast();
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
 
-  const {
-    writeContract,
-    data: txHash,
-    isPending: isSigning,
-    error: writeError,
-    reset,
-  } = useWriteContract();
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
-
-  // Surface write errors as toasts
-  if (writeError && !isSigning) {
-    const msg = (writeError as Error).message ?? "Transaction failed";
-    toast({ title: "Oracle write failed", description: msg.slice(0, 120), variant: "destructive" });
-    reset();
-  }
-
-  if (isConfirmed) {
-    onSuccess();
+  if (done) {
     return (
       <Badge
         variant="outline"
@@ -75,7 +50,21 @@ function WriteOracleButton({ tokenId, walletAddress, isDeployer, onSuccess }: Wr
     );
   }
 
-  const busy = isSigning || isConfirming;
+  const handleClick = async () => {
+    setBusy(true);
+    try {
+      const sigHeader = await sign("admin:update-claim");
+      const { txHash } = await adminApi.writeOracle(claimId, sigHeader);
+      toast({ title: "Oracle written", description: `tx: ${txHash.slice(0, 18)}…` });
+      setDone(true);
+      onSuccess();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Oracle write failed";
+      toast({ title: "Oracle write failed", description: msg.slice(0, 120), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Button
@@ -83,22 +72,11 @@ function WriteOracleButton({ tokenId, walletAddress, isDeployer, onSuccess }: Wr
       variant="outline"
       className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/60 h-8 px-3 text-xs"
       disabled={!isDeployer || busy}
-      title={!isDeployer ? "Only the deployer wallet can write the Oracle" : undefined}
-      onClick={() =>
-        writeContract({
-          address: ORACLE_ADDRESS,
-          abi: SkillFunOracle_ABI,
-          functionName: "setVerifiedClaims",
-          args: [[BigInt(tokenId)], [walletAddress as `0x${string}`]],
-        })
-      }
+      title={!isDeployer ? "Connect the deployer wallet to write the Oracle" : undefined}
+      onClick={handleClick}
     >
-      {busy ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-      ) : (
-        <Zap className="w-3.5 h-3.5 mr-1" />
-      )}
-      {isSigning ? "Confirm in wallet…" : isConfirming ? "Writing…" : "Write Oracle"}
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Zap className="w-3.5 h-3.5 mr-1" />}
+      {busy ? "Writing…" : "Write Oracle"}
     </Button>
   );
 }
@@ -112,9 +90,10 @@ interface ClaimRowProps {
   isDeployer: boolean;
   onAction: (claimId: string, status: "approved" | "rejected") => Promise<void>;
   actionLoading: string | null; // claimId currently in flight
+  sign: (action: string) => Promise<string>;
 }
 
-function ClaimRow({ claim, isDeployer, onAction, actionLoading }: ClaimRowProps) {
+function ClaimRow({ claim, isDeployer, onAction, actionLoading, sign }: ClaimRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [oracleWritten, setOracleWritten] = useState(false);
   const isLoading = actionLoading === claim.id;
@@ -218,10 +197,10 @@ function ClaimRow({ claim, isDeployer, onAction, actionLoading }: ClaimRowProps)
           {/* Write Oracle button for approved claims */}
           {claim.status === "approved" && !oracleWritten && (
             <WriteOracleButton
-              tokenId={claim.tokenId}
-              walletAddress={claim.walletAddress}
+              claimId={claim.id}
               isDeployer={isDeployer}
               onSuccess={() => setOracleWritten(true)}
+              sign={sign}
             />
           )}
 
@@ -283,20 +262,19 @@ export default function AdminClaims() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [deployerAddress, setDeployerAddress] = useState<string | null>(null);
 
-  // Read the Oracle cold wallet address to determine deployer
-  const { data: coldWalletRaw } = useReadContract({
-    address: ORACLE_ADDRESS,
-    abi: SkillFunOracle_ABI,
-    functionName: "coldWallet",
-  });
-
-  const coldWallet = coldWalletRaw as string | undefined;
+  // Fetch the platform deployer address from the API (not from Oracle contract)
+  useEffect(() => {
+    adminApi.getConfig()
+      .then(({ deployerAddress: da }) => setDeployerAddress(da.toLowerCase()))
+      .catch(() => {/* non-fatal */});
+  }, []);
 
   const isDeployer =
     !!address &&
-    !!coldWallet &&
-    address.toLowerCase() === coldWallet.toLowerCase();
+    !!deployerAddress &&
+    address.toLowerCase() === deployerAddress;
 
   const fetchClaims = useCallback(async () => {
     if (!isConnected) return;
@@ -379,7 +357,7 @@ export default function AdminClaims() {
               <span className="font-mono text-foreground">
                 {address?.slice(0, 6)}…{address?.slice(-4)}
               </span>
-              {coldWallet && (
+              {deployerAddress && (
                 <span className={`ml-2 text-xs font-medium ${isDeployer ? "text-purple-400" : "text-amber-400"}`}>
                   · {isDeployer ? "Deployer wallet" : "Not deployer — read-only"}
                 </span>
@@ -478,6 +456,7 @@ export default function AdminClaims() {
                   isDeployer={isDeployer}
                   onAction={handleAction}
                   actionLoading={actionLoading}
+                  sign={sign}
                 />
               ))}
             </div>
@@ -489,7 +468,7 @@ export default function AdminClaims() {
                 <span className="text-sm font-medium text-muted-foreground">Oracle contract</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                <span className="font-mono text-foreground/70">{ORACLE_ADDRESS}</span>
+                <span className="font-mono text-foreground/70">0x8071937558Ed2fD56AcE1d925B6f70BB40E09743</span>
                 {" "}·{" "}
                 <span className="font-mono">setVerifiedClaims(uint256[],address[])</span>
                 {" "}— connect the deployer wallet and click "Write Oracle" on any approved claim.

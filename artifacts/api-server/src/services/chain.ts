@@ -188,6 +188,37 @@ export async function mintSkillOnChain(
   });
 }
 
+/**
+ * Write Oracle verification on-chain using the deployer private key (server-side).
+ * Calls SkillFunOracle.setVerifiedClaims([tokenId], [walletAddress]).
+ */
+export async function writeOracleVerification(
+  tokenId: number,
+  walletAddress: string
+): Promise<{ txHash: string }> {
+  return rpcCall("writeOracleVerification", async () => {
+    const walletClient = getWalletClient();
+    const publicCl     = getPublicClient();
+
+    const txHash = await walletClient.writeContract({
+      address: addresses.SkillFunOracle as `0x${string}`,
+      abi: SkillFunOracle_ABI,
+      functionName: "setVerifiedClaims",
+      args: [[BigInt(tokenId)], [walletAddress as `0x${string}`]],
+    });
+
+    logger.info({ txHash, tokenId, walletAddress }, "setVerifiedClaims tx submitted");
+    const receipt = await publicCl.waitForTransactionReceipt({ hash: txHash, timeout: 60_000 });
+
+    if (receipt.status !== "success") {
+      throw new Error(`setVerifiedClaims reverted — tx: ${txHash}`);
+    }
+
+    logger.info({ txHash, tokenId }, "Oracle verification written on-chain");
+    return { txHash };
+  });
+}
+
 export async function getOracleVerifiedOwner(tokenId: number) {
   const key = cacheKey(CHAIN_ID, "getOracleVerifiedOwner", tokenId);
   return cached(key, TTL.ORACLE, () =>

@@ -5,7 +5,7 @@ import { eq, desc, inArray, and } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { getSkillOnChain } from "../services/chain.js";
+import { getSkillOnChain, writeOracleVerification } from "../services/chain.js";
 import { logger } from "../lib/logger.js";
 
 const PLATFORM_OWNER = process.env.DEPLOYER_ADDRESS?.toLowerCase();
@@ -221,6 +221,49 @@ router.patch("/claims/:id", authMiddleware("admin:update-claim"), async (req, re
 
   logger.info({ claimId, status }, "claim status updated");
   res.json({ claim: updated });
+});
+
+// GET /api/admin/config — returns platform config visible to the admin UI
+router.get("/admin/config", (_req, res) => {
+  res.json({ deployerAddress: (process.env.DEPLOYER_ADDRESS ?? "").toLowerCase() });
+});
+
+// POST /api/claims/:id/write-oracle — write Oracle verification using the deployer key (server-side)
+router.post("/claims/:id/write-oracle", authMiddleware("admin:update-claim"), async (req, res) => {
+  if (!PLATFORM_OWNER || req.walletAddress?.toLowerCase() !== PLATFORM_OWNER) {
+    apiError(res, ErrorCode.FORBIDDEN, "Platform owner access required");
+    return;
+  }
+
+  const claimId = req.params.id as string;
+  const [claim] = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.id, claimId))
+    .limit(1);
+
+  if (!claim) {
+    apiError(res, ErrorCode.NOT_FOUND, "Claim not found");
+    return;
+  }
+  if (claim.status !== "approved") {
+    apiError(res, ErrorCode.CONFLICT, `Claim must be 'approved' to write Oracle; current status is '${claim.status}'`);
+    return;
+  }
+  if (!claim.walletAddress) {
+    apiError(res, ErrorCode.CONFLICT, "Claim has no wallet address set");
+    return;
+  }
+
+  try {
+    const { txHash } = await writeOracleVerification(claim.tokenId, claim.walletAddress);
+    logger.info({ claimId, txHash, tokenId: claim.tokenId }, "Oracle written via backend");
+    res.json({ txHash });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Oracle write failed";
+    logger.error({ claimId, err }, "Oracle write failed");
+    apiError(res, ErrorCode.INTERNAL, msg);
+  }
 });
 
 // POST /api/claims/:id/complete — creator calls this after the on-chain claim() succeeds
