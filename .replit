@@ -30,6 +30,8 @@ ZEROG_CHAIN_ID = "16661"
 ZEROG_RPC_URL = "https://evmrpc.0g.ai"
 SKILLFUN_VERIFIER_ADDRESS = "0x97F8f4a20d279B58Ebf8a13aB4cE856BbA8bb0f8"
 ZEROG_AI_BASE_URL = "https://router-api.0g.ai"
+API_BASE_URL = "https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev"
+FRONTEND_URL = "https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev"
 
 [nix]
 channel = "stable-25_05"
