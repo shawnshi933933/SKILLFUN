@@ -13,37 +13,64 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { SkillFunOracle_ABI } from "@workspace/abi";
 import {
   Shield, Loader2, CheckCircle2, XCircle, Clock, RefreshCw,
-  Copy, Terminal, ChevronDown, ChevronUp, AlertTriangle, Zap,
+  ChevronDown, ChevronUp, AlertTriangle, Zap, Terminal,
 } from "lucide-react";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
 import type { DbClaim } from "@/lib/api";
 
-// Oracle contract address (0G Mainnet chainId 16661)
-const ORACLE_ADDRESS = "0x8071937558Ed2fD56AcE1d925B6f70BB40E09743" as const;
+// New SkillFunOracle (Ownable + operators, deployed 2026-08-03)
+const ORACLE_ADDRESS = "0xbcf97897300c3cAF412142b973FF4a86Afd99CB8" as const;
 
 // ---------------------------------------------------------------------------
-// Write Oracle button — calls backend; no cold-wallet key needed in MetaMask
+// Write Oracle button — MetaMask signs setVerifiedClaims directly
+// (owner or operator of the new Ownable Oracle)
 // ---------------------------------------------------------------------------
 
 interface WriteOracleButtonProps {
-  claimId: string;
-  isDeployer: boolean;
+  tokenId: number;
+  walletAddress: string;
+  isAuthorized: boolean;
   onSuccess: () => void;
-  sign: (action: string) => Promise<string>;
 }
 
-function WriteOracleButton({ claimId, isDeployer, onSuccess, sign }: WriteOracleButtonProps) {
+function WriteOracleButton({ tokenId, walletAddress, isAuthorized, onSuccess }: WriteOracleButtonProps) {
   const { toast } = useToast();
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
 
-  if (done) {
+  const {
+    writeContract,
+    data: txHash,
+    isPending: isSigning,
+    error: writeError,
+    reset,
+  } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  // Show error toast and reset wagmi state — must not run during render
+  useEffect(() => {
+    if (writeError) {
+      const msg = (writeError as Error).message ?? "Transaction failed";
+      toast({ title: "Oracle write failed", description: msg.slice(0, 120), variant: "destructive" });
+      reset();
+    }
+  }, [writeError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Notify parent after on-chain confirmation — must not run during render
+  useEffect(() => {
+    if (isConfirmed) {
+      onSuccess();
+    }
+  }, [isConfirmed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isConfirmed) {
     return (
       <Badge
         variant="outline"
@@ -54,33 +81,30 @@ function WriteOracleButton({ claimId, isDeployer, onSuccess, sign }: WriteOracle
     );
   }
 
-  const handleClick = async () => {
-    setBusy(true);
-    try {
-      const sigHeader = await sign("admin:update-claim");
-      const { txHash } = await adminApi.writeOracle(claimId, sigHeader);
-      toast({ title: "Oracle written", description: `tx: ${txHash.slice(0, 18)}…` });
-      setDone(true);
-      onSuccess();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Oracle write failed";
-      toast({ title: "Oracle write failed", description: msg.slice(0, 120), variant: "destructive" });
-    } finally {
-      setBusy(false);
-    }
-  };
+  const busy = isSigning || isConfirming;
 
   return (
     <Button
       size="sm"
       variant="outline"
       className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/60 h-8 px-3 text-xs"
-      disabled={!isDeployer || busy}
-      title={!isDeployer ? "Connect the deployer wallet to write the Oracle" : undefined}
-      onClick={handleClick}
+      disabled={!isAuthorized || busy}
+      title={!isAuthorized ? "Only the Oracle owner or an operator can write on-chain" : undefined}
+      onClick={() =>
+        writeContract({
+          address: ORACLE_ADDRESS,
+          abi: SkillFunOracle_ABI as readonly object[],
+          functionName: "setVerifiedClaims",
+          args: [[BigInt(tokenId)], [walletAddress as `0x${string}`]],
+        })
+      }
     >
-      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Zap className="w-3.5 h-3.5 mr-1" />}
-      {busy ? "Writing…" : "Write Oracle"}
+      {busy ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+      ) : (
+        <Zap className="w-3.5 h-3.5 mr-1" />
+      )}
+      {isSigning ? "Confirm in wallet…" : isConfirming ? "Writing…" : "Write Oracle"}
     </Button>
   );
 }
@@ -91,13 +115,12 @@ function WriteOracleButton({ claimId, isDeployer, onSuccess, sign }: WriteOracle
 
 interface ClaimRowProps {
   claim: DbClaim;
-  isDeployer: boolean;
+  isAuthorized: boolean;
   onAction: (claimId: string, status: "approved" | "rejected") => Promise<void>;
   actionLoading: string | null; // claimId currently in flight
-  sign: (action: string) => Promise<string>;
 }
 
-function ClaimRow({ claim, isDeployer, onAction, actionLoading, sign }: ClaimRowProps) {
+function ClaimRow({ claim, isAuthorized, onAction, actionLoading }: ClaimRowProps) {
   // Approved claims auto-expand on mount so the Oracle write prompt is immediately visible
   const [expanded, setExpanded] = useState(claim.status === "approved");
   // Optimistic local state — set immediately after a successful Write Oracle call
@@ -218,10 +241,10 @@ function ClaimRow({ claim, isDeployer, onAction, actionLoading, sign }: ClaimRow
           {/* Write Oracle button for approved claims */}
           {claim.status === "approved" && !oracleWritten && (
             <WriteOracleButton
-              claimId={claim.id}
-              isDeployer={isDeployer}
+              tokenId={claim.tokenId}
+              walletAddress={claim.walletAddress}
+              isAuthorized={isAuthorized}
               onSuccess={() => setOracleWrittenLocal(true)}
-              sign={sign}
             />
           )}
 
@@ -283,19 +306,29 @@ export default function AdminClaims() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
-  const [deployerAddress, setDeployerAddress] = useState<string | null>(null);
 
-  // Fetch the platform deployer address from the API (not from Oracle contract)
-  useEffect(() => {
-    adminApi.getConfig()
-      .then(({ deployerAddress: da }) => setDeployerAddress(da.toLowerCase()))
-      .catch(() => {/* non-fatal */});
-  }, []);
+  // Read on-chain owner() and operators(address) to gate write access.
+  // Both owner and approved operators may call setVerifiedClaims.
+  const { data: oracleOwnerRaw } = useReadContract({
+    address: ORACLE_ADDRESS,
+    abi: SkillFunOracle_ABI as readonly object[],
+    functionName: "owner",
+    query: { enabled: isConnected },
+  });
+  const oracleOwner = oracleOwnerRaw as string | undefined;
 
-  const isDeployer =
-    !!address &&
-    !!deployerAddress &&
-    address.toLowerCase() === deployerAddress;
+  const { data: isOperatorRaw } = useReadContract({
+    address: ORACLE_ADDRESS,
+    abi: SkillFunOracle_ABI as readonly object[],
+    functionName: "operators",
+    args: [address as `0x${string}`],
+    query: { enabled: isConnected && !!address },
+  });
+  const isOperator = !!isOperatorRaw;
+
+  const isOwner = !!address && !!oracleOwner && address.toLowerCase() === oracleOwner.toLowerCase();
+  /** True when the connected wallet can call setVerifiedClaims (owner or operator). */
+  const isAuthorized = isOwner || isOperator;
 
   const fetchClaims = useCallback(async () => {
     if (!isConnected) return;
@@ -378,9 +411,9 @@ export default function AdminClaims() {
               <span className="font-mono text-foreground">
                 {address?.slice(0, 6)}…{address?.slice(-4)}
               </span>
-              {deployerAddress && (
-                <span className={`ml-2 text-xs font-medium ${isDeployer ? "text-purple-400" : "text-amber-400"}`}>
-                  · {isDeployer ? "Deployer wallet" : "Not deployer — read-only"}
+              {oracleOwner && (
+                <span className={`ml-2 text-xs font-medium ${isAuthorized ? "text-purple-400" : "text-amber-400"}`}>
+                  · {isAuthorized ? (isOwner ? "Oracle owner — can write" : "Oracle operator — can write") : "Not authorized — read-only"}
                 </span>
               )}
               {lastFetched && (
@@ -492,10 +525,9 @@ export default function AdminClaims() {
                 <ClaimRow
                   key={claim.id}
                   claim={claim}
-                  isDeployer={isDeployer}
+                  isAuthorized={isAuthorized}
                   onAction={handleAction}
                   actionLoading={actionLoading}
-                  sign={sign}
                 />
               ))}
             </div>
@@ -507,10 +539,10 @@ export default function AdminClaims() {
                 <span className="text-sm font-medium text-muted-foreground">Oracle contract</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                <span className="font-mono text-foreground/70">0x8071937558Ed2fD56AcE1d925B6f70BB40E09743</span>
+                <span className="font-mono text-foreground/70">{ORACLE_ADDRESS}</span>
                 {" "}·{" "}
                 <span className="font-mono">setVerifiedClaims(uint256[],address[])</span>
-                {" "}— connect the deployer wallet and click "Write Oracle" on any approved claim.
+                {" "}— connect the Oracle owner (or operator) wallet and click "Write Oracle" on any approved claim.
               </p>
             </div>
           </>

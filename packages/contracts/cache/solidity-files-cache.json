@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/runner/workspace/packages/contracts/contracts/SkillFunOracle.sol": {
-      "lastModificationDate": 1785219747388,
-      "contentHash": "14ee65f71e42bd75a60ac44fbbef0beb",
+      "lastModificationDate": 1785738638502,
+      "contentHash": "9c24c17283cb28e023c53395b74dc7f1",
       "sourceName": "contracts/SkillFunOracle.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -29,7 +29,9 @@
           }
         }
       },
-      "imports": [],
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
       "versionPragmas": [
         "^0.8.24"
       ],

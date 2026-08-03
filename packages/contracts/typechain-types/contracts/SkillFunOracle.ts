@@ -26,27 +26,48 @@ import type {
 export interface SkillFunOracleInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "addOperator"
       | "clearVerifiedClaim"
-      | "coldWallet"
+      | "operators"
+      | "owner"
+      | "removeOperator"
+      | "renounceOwnership"
       | "setSkillNFT"
       | "setVerifiedClaims"
       | "skillNFT"
+      | "transferOwnership"
       | "verifiedOwner"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "OperatorAdded"
+      | "OperatorRemoved"
+      | "OwnershipTransferred"
       | "SkillNFTSet"
       | "VerifiedClaimCleared"
       | "VerifiedClaimsSet"
   ): EventFragment;
 
   encodeFunctionData(
+    functionFragment: "addOperator",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "clearVerifiedClaim",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "coldWallet",
+    functionFragment: "operators",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "removeOperator",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -59,15 +80,32 @@ export interface SkillFunOracleInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "skillNFT", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "verifiedOwner",
     values: [BigNumberish]
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "addOperator",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "clearVerifiedClaim",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "coldWallet", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "operators", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "removeOperator",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "renounceOwnership",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "setSkillNFT",
     data: BytesLike
@@ -78,9 +116,50 @@ export interface SkillFunOracleInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "skillNFT", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "verifiedOwner",
     data: BytesLike
   ): Result;
+}
+
+export namespace OperatorAddedEvent {
+  export type InputTuple = [operator: AddressLike];
+  export type OutputTuple = [operator: string];
+  export interface OutputObject {
+    operator: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OperatorRemovedEvent {
+  export type InputTuple = [operator: AddressLike];
+  export type OutputTuple = [operator: string];
+  export interface OutputObject {
+    operator: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferredEvent {
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
+  export interface OutputObject {
+    previousOwner: string;
+    newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace SkillNFTSetEvent {
@@ -163,13 +242,29 @@ export interface SkillFunOracle extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  addOperator: TypedContractMethod<
+    [operator: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   clearVerifiedClaim: TypedContractMethod<
     [tokenId: BigNumberish],
     [void],
     "nonpayable"
   >;
 
-  coldWallet: TypedContractMethod<[], [string], "view">;
+  operators: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+
+  owner: TypedContractMethod<[], [string], "view">;
+
+  removeOperator: TypedContractMethod<
+    [operator: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
   setSkillNFT: TypedContractMethod<
     [_skillNFT: AddressLike],
@@ -185,6 +280,12 @@ export interface SkillFunOracle extends BaseContract {
 
   skillNFT: TypedContractMethod<[], [string], "view">;
 
+  transferOwnership: TypedContractMethod<
+    [newOwner: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   verifiedOwner: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -192,11 +293,23 @@ export interface SkillFunOracle extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "addOperator"
+  ): TypedContractMethod<[operator: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "clearVerifiedClaim"
   ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "coldWallet"
+    nameOrSignature: "operators"
+  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "removeOperator"
+  ): TypedContractMethod<[operator: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "renounceOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "setSkillNFT"
   ): TypedContractMethod<[_skillNFT: AddressLike], [void], "nonpayable">;
@@ -211,9 +324,33 @@ export interface SkillFunOracle extends BaseContract {
     nameOrSignature: "skillNFT"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "transferOwnership"
+  ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "verifiedOwner"
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
+  getEvent(
+    key: "OperatorAdded"
+  ): TypedContractEvent<
+    OperatorAddedEvent.InputTuple,
+    OperatorAddedEvent.OutputTuple,
+    OperatorAddedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OperatorRemoved"
+  ): TypedContractEvent<
+    OperatorRemovedEvent.InputTuple,
+    OperatorRemovedEvent.OutputTuple,
+    OperatorRemovedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OwnershipTransferred"
+  ): TypedContractEvent<
+    OwnershipTransferredEvent.InputTuple,
+    OwnershipTransferredEvent.OutputTuple,
+    OwnershipTransferredEvent.OutputObject
+  >;
   getEvent(
     key: "SkillNFTSet"
   ): TypedContractEvent<
@@ -237,6 +374,39 @@ export interface SkillFunOracle extends BaseContract {
   >;
 
   filters: {
+    "OperatorAdded(address)": TypedContractEvent<
+      OperatorAddedEvent.InputTuple,
+      OperatorAddedEvent.OutputTuple,
+      OperatorAddedEvent.OutputObject
+    >;
+    OperatorAdded: TypedContractEvent<
+      OperatorAddedEvent.InputTuple,
+      OperatorAddedEvent.OutputTuple,
+      OperatorAddedEvent.OutputObject
+    >;
+
+    "OperatorRemoved(address)": TypedContractEvent<
+      OperatorRemovedEvent.InputTuple,
+      OperatorRemovedEvent.OutputTuple,
+      OperatorRemovedEvent.OutputObject
+    >;
+    OperatorRemoved: TypedContractEvent<
+      OperatorRemovedEvent.InputTuple,
+      OperatorRemovedEvent.OutputTuple,
+      OperatorRemovedEvent.OutputObject
+    >;
+
+    "OwnershipTransferred(address,address)": TypedContractEvent<
+      OwnershipTransferredEvent.InputTuple,
+      OwnershipTransferredEvent.OutputTuple,
+      OwnershipTransferredEvent.OutputObject
+    >;
+    OwnershipTransferred: TypedContractEvent<
+      OwnershipTransferredEvent.InputTuple,
+      OwnershipTransferredEvent.OutputTuple,
+      OwnershipTransferredEvent.OutputObject
+    >;
+
     "SkillNFTSet(address)": TypedContractEvent<
       SkillNFTSetEvent.InputTuple,
       SkillNFTSetEvent.OutputTuple,

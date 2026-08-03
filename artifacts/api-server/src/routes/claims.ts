@@ -5,10 +5,23 @@ import { eq, desc, inArray, and } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { getSkillOnChain, writeOracleVerification } from "../services/chain.js";
+import { getSkillOnChain } from "../services/chain.js";
 import { logger } from "../lib/logger.js";
 
 const PLATFORM_OWNER = process.env.DEPLOYER_ADDRESS?.toLowerCase();
+// Oracle owner wallet — the address that received ownership during deploy.
+// Accepted alongside PLATFORM_OWNER so the Oracle owner can manage claims
+// even if DEPLOYER_ADDRESS was not updated in the environment.
+const ORACLE_OWNER = (
+  process.env.ORACLE_OWNER_ADDRESS || "0xc56f7063fd6d199ccc443dbbf4283be602d46343"
+).toLowerCase();
+
+/** Returns true if the wallet is an authorised admin (deployer OR Oracle owner). */
+function isAdminWallet(walletAddress: string | undefined): boolean {
+  if (!walletAddress) return false;
+  const w = walletAddress.toLowerCase();
+  return (!!PLATFORM_OWNER && w === PLATFORM_OWNER) || w === ORACLE_OWNER;
+}
 
 const router = Router();
 
@@ -70,12 +83,12 @@ router.post("/claims", authMiddleware("submit-claim"), async (req, res) => {
   let claim;
   try {
     claim = await db.transaction(async (tx) => {
-      // Read the existing row (if any) with a row-level lock intent
-  const [existing] = await db
-    .select()
-    .from(pendingClaimsTable)
-    .where(eq(pendingClaimsTable.id, claimId))
-    .limit(1);
+      // Read the existing row (if any) inside the transaction for consistency
+      const [existing] = await tx
+        .select()
+        .from(pendingClaimsTable)
+        .where(eq(pendingClaimsTable.tokenId, tokenId))
+        .limit(1);
 
       if (existing) {
         if (existing.status === "pending" || existing.status === "approved") {
@@ -86,17 +99,17 @@ router.post("/claims", authMiddleware("submit-claim"), async (req, res) => {
         // still in a terminal state (another concurrent request may have already
         // re-opened it, flipping it back to pending before this update runs).
         // The WHERE clause makes the update a no-op in that race, returning 0 rows.
-  const [updated] = await db
-    .update(pendingClaimsTable)
-    .set({ status, updatedAt: new Date() })
-    .where(
-      and(
-        eq(pendingClaimsTable.id, claimId),
-        // completed is immutable — block any transition out of it
-        inArray(pendingClaimsTable.status, ["pending", "approved"])
-      )
-    )
-    .returning();
+        const [updated] = await tx
+          .update(pendingClaimsTable)
+          .set({ status: "pending", updatedAt: new Date() })
+          .where(
+            and(
+              eq(pendingClaimsTable.tokenId, tokenId),
+              // Only allow transition from terminal states — not from pending/approved
+              inArray(pendingClaimsTable.status, ["rejected", "completed"])
+            )
+          )
+          .returning();
         // If 0 rows matched, another request already re-opened — treat as conflict
         if (!updated) return null;
         return updated;
@@ -157,7 +170,7 @@ router.get("/claims/mine", async (req, res) => {
 // Returning both statuses ensures the admin sees approved claims that still need
 // an Oracle write even after a page refresh — they are not "lost" between sessions.
 router.get("/claims/pending", authMiddleware("admin:list-claims"), async (req, res) => {
-  if (!PLATFORM_OWNER || req.walletAddress?.toLowerCase() !== PLATFORM_OWNER) {
+  if (!isAdminWallet(req.walletAddress)) {
     apiError(res, ErrorCode.FORBIDDEN, "Platform owner access required");
     return;
   }
@@ -178,7 +191,7 @@ router.get("/claims/pending", authMiddleware("admin:list-claims"), async (req, r
 //   approved → rejected  (e.g. if oracle update hasn't happened yet)
 //   completed is immutable — the token has already transferred on-chain.
 router.patch("/claims/:id", authMiddleware("admin:update-claim"), async (req, res) => {
-  if (!PLATFORM_OWNER || req.walletAddress?.toLowerCase() !== PLATFORM_OWNER) {
+  if (!isAdminWallet(req.walletAddress)) {
     apiError(res, ErrorCode.FORBIDDEN, "Platform owner access required");
     return;
   }
@@ -227,45 +240,10 @@ router.patch("/claims/:id", authMiddleware("admin:update-claim"), async (req, re
 
 // GET /api/admin/config — returns platform config visible to the admin UI
 router.get("/admin/config", (_req, res) => {
-  res.json({ deployerAddress: (process.env.DEPLOYER_ADDRESS ?? "").toLowerCase() });
-});
-
-// POST /api/claims/:id/write-oracle — write Oracle verification using the deployer key (server-side)
-router.post("/claims/:id/write-oracle", authMiddleware("admin:update-claim"), async (req, res) => {
-  if (!PLATFORM_OWNER || req.walletAddress?.toLowerCase() !== PLATFORM_OWNER) {
-    apiError(res, ErrorCode.FORBIDDEN, "Platform owner access required");
-    return;
-  }
-
-  const claimId = req.params.id as string;
-  const [claim] = await db
-    .select()
-    .from(pendingClaimsTable)
-    .where(eq(pendingClaimsTable.id, claimId))
-    .limit(1);
-
-  if (!claim) {
-    apiError(res, ErrorCode.NOT_FOUND, "Claim not found");
-    return;
-  }
-  if (claim.status !== "approved") {
-    apiError(res, ErrorCode.CONFLICT, `Claim must be 'approved' to write Oracle; current status is '${claim.status}'`);
-    return;
-  }
-  if (!claim.walletAddress) {
-    apiError(res, ErrorCode.CONFLICT, "Claim has no wallet address set");
-    return;
-  }
-
-  try {
-  const { txHash } = req.body as { txHash?: string };
-    logger.info({ claimId, txHash, tokenId: claim.tokenId }, "Oracle written via backend");
-    res.json({ txHash });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Oracle write failed";
-    logger.error({ claimId, err }, "Oracle write failed");
-    apiError(res, ErrorCode.INTERNAL, msg);
-  }
+  res.json({
+    deployerAddress: (process.env.DEPLOYER_ADDRESS ?? "").toLowerCase(),
+    oracleAddress: "0xbcf97897300c3cAF412142b973FF4a86Afd99CB8",
+  });
 });
 
 // POST /api/claims/:id/complete — creator calls this after the on-chain claim() succeeds
