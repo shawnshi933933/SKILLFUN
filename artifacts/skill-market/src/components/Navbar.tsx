@@ -13,6 +13,7 @@ export default function Navbar() {
     { href: "/app/market", label: "Skills", external: false },
     { href: "/app/market?tab=bundles", label: "Bundles", external: false },
     { href: "/app/curator/skills", label: "Curator", external: false },
+    { href: "/app/claim", label: "Claim", external: false },
     { href: "/app/stake", label: "Stake", external: false },
     { href: "/mcp/agent-guide.md", label: "Agent Guide", external: true },
     { href: "/app/kol", label: "KOL", external: false },
