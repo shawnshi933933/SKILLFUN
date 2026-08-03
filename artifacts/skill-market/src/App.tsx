@@ -16,7 +16,6 @@ import Stake from "@/pages/Stake";
 import Distill from "@/pages/Distill";
 import Claim from "@/pages/Claim";
 import Flywheel from "@/pages/Flywheel";
-import AgentApi from "@/pages/AgentApi";
 import Profile from "@/pages/Profile";
 import CuratorSkills from "@/pages/CuratorSkills";
 
@@ -44,7 +43,6 @@ function Router() {
       <Route path="/app/kol" component={Distill} />
       <Route path="/app/claim" component={Claim} />
       <Route path="/app/flywheel" component={Flywheel} />
-      <Route path="/app/agent-api" component={AgentApi} />
       <Route path="/app/profile" component={Profile} />
       <Route path="/app/curator/skills" component={CuratorSkills} />
       <Route component={NotFound} />

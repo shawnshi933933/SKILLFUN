@@ -45,7 +45,7 @@ export default function Landing() {
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8" onClick={() => setLocation("/app/market")} data-testid="button-launch-app">
               Browse Market <ArrowRight className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="lg" className="border-white/20 hover:bg-white/5 gap-2" onClick={() => setLocation("/app/agent-api")} data-testid="button-agent-api">
+            <Button variant="outline" size="lg" className="border-white/20 hover:bg-white/5 gap-2" onClick={() => window.open("/mcp/agent-guide.md", "_blank")} data-testid="button-agent-api">
               <Bot className="w-4 h-4" /> For Agents
             </Button>
           </div>
@@ -224,7 +224,7 @@ export default function Landing() {
               { icon: <Coins className="w-5 h-5" />, role: "Owner", color: "text-blue-400 bg-blue-500/10 border-blue-500/20", earn: "90% of base price / call", cta: "Browse Market", href: "/app/market" },
               { icon: <Layers className="w-5 h-5" />, role: "Curator", color: "text-accent bg-accent/10 border-accent/20", earn: "50% of markup fees", cta: "Create Bundle", href: "/app/create-bundle" },
               { icon: <TrendingUp className="w-5 h-5" />, role: "Staker", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", earn: "50% of markup as yield", cta: "Stake SKILL", href: "/app/stake" },
-              { icon: <Bot className="w-5 h-5" />, role: "Agent", color: "text-amber-400 bg-amber-500/10 border-amber-500/20", earn: "Autonomous skill access", cta: "View API", href: "/app/agent-api" },
+              { icon: <Bot className="w-5 h-5" />, role: "Agent", color: "text-amber-400 bg-amber-500/10 border-amber-500/20", earn: "Autonomous skill access", cta: "Agent Guide", href: "/mcp/agent-guide.md" },
             ].map((r) => (
               <div key={r.role} className="bg-card border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center">
                 <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${r.color}`}>{r.icon}</div>

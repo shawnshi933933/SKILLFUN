@@ -10,12 +10,12 @@ export default function Navbar() {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   const navLinks = [
-    { href: "/app/market", label: "Skills" },
-    { href: "/app/market?tab=bundles", label: "Bundles" },
-    { href: "/app/curator/skills", label: "Curator" },
-    { href: "/app/stake", label: "Stake" },
-    { href: "/app/agent-api", label: "Agent API" },
-    { href: "/app/kol", label: "KOL" },
+    { href: "/app/market", label: "Skills", external: false },
+    { href: "/app/market?tab=bundles", label: "Bundles", external: false },
+    { href: "/app/curator/skills", label: "Curator", external: false },
+    { href: "/app/stake", label: "Stake", external: false },
+    { href: "/mcp/agent-guide.md", label: "Agent Guide", external: true },
+    { href: "/app/kol", label: "KOL", external: false },
   ];
 
   const isActive = (href: string) => location === href || location.startsWith(href.split("?")[0] + "/");
@@ -43,17 +43,25 @@ export default function Navbar() {
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} data-testid={`link-nav-${link.label.toLowerCase().replace(/\s+/g, "-")}`}>
-                <span
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                    isActive(link.href)
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  }`}
-                >
-                  {link.label}
-                </span>
-              </Link>
+              link.external ? (
+                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" data-testid={`link-nav-${link.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <span className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer text-muted-foreground hover:text-foreground hover:bg-white/5">
+                    {link.label}
+                  </span>
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href} data-testid={`link-nav-${link.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <span
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                      isActive(link.href)
+                        ? "bg-primary/20 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    }`}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              )
             ))}
           </div>
 
@@ -117,22 +125,26 @@ export default function Navbar() {
         <div className="md:hidden border-t border-white/10 bg-background/95 backdrop-blur-md" data-testid="mobile-menu">
           <div className="px-4 py-3 space-y-1">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                data-testid={`link-mobile-nav-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
-              >
-                <div
-                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                    isActive(link.href)
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  }`}
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {link.label}
-                </div>
-              </Link>
+              link.external ? (
+                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" data-testid={`link-mobile-nav-${link.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <div className="flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer text-muted-foreground hover:text-foreground hover:bg-white/5" onClick={() => setShowMobileMenu(false)}>
+                    {link.label}
+                  </div>
+                </a>
+              ) : (
+                <Link key={link.href} href={link.href} data-testid={`link-mobile-nav-${link.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <div
+                    className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
+                      isActive(link.href)
+                        ? "bg-primary/20 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    }`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    {link.label}
+                  </div>
+                </Link>
+              )
             ))}
             <Link href="/app/create">
               <div className="flex items-center px-4 py-3 rounded-xl text-sm font-medium border border-primary/20 text-primary mt-2 cursor-pointer" onClick={() => setShowMobileMenu(false)}>
