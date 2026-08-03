@@ -2,10 +2,10 @@
  * Admin Claims Review Panel
  * Route: /app/admin/claims
  *
- * Wallet-gated to the platform deployer address.
+ * Wallet-gated to the Oracle owner or an approved operator.
  * Shows all pending Skill claims; admin can approve or reject each one.
- * After approval, a "Write Oracle" button lets the connected deployer wallet
- * write verification on-chain directly via wagmi — no CLI step needed.
+ * After approval, the connected wallet can write verification on-chain via
+ * wagmi (per-row or as a single batch transaction).
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -18,7 +18,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { SkillFunOracle_ABI } from "@workspace/abi";
 import {
   Shield, Loader2, CheckCircle2, XCircle, Clock, RefreshCw,
-  ChevronDown, ChevronUp, AlertTriangle, Zap, Terminal,
+  Terminal, ChevronDown, ChevronUp, AlertTriangle, Zap, Layers,
 } from "lucide-react";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
@@ -118,9 +118,11 @@ interface ClaimRowProps {
   isAuthorized: boolean;
   onAction: (claimId: string, status: "approved" | "rejected") => Promise<void>;
   actionLoading: string | null; // claimId currently in flight
+  /** Set to true when a batch write has covered this claim */
+  batchWritten?: boolean;
 }
 
-function ClaimRow({ claim, isAuthorized, onAction, actionLoading }: ClaimRowProps) {
+function ClaimRow({ claim, isAuthorized, onAction, actionLoading, batchWritten = false }: ClaimRowProps) {
   // Approved claims auto-expand on mount so the Oracle write prompt is immediately visible
   const [expanded, setExpanded] = useState(claim.status === "approved");
   // Optimistic local state — set immediately after a successful Write Oracle call
@@ -136,8 +138,9 @@ function ClaimRow({ claim, isAuthorized, onAction, actionLoading }: ClaimRowProp
     query: { enabled: claim.status === "approved" },
   });
 
-  // Oracle is written if local optimistic state OR on-chain address matches claim wallet
+  // Oracle is written if batch covered it, local optimistic state, or on-chain address matches
   const oracleWritten =
+    batchWritten ||
     oracleWrittenLocal ||
     (typeof onChainOwner === "string" &&
       onChainOwner.toLowerCase() === claim.walletAddress.toLowerCase());
@@ -306,6 +309,8 @@ export default function AdminClaims() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  // Tracks claim IDs covered by a successful batch Oracle write
+  const [batchWrittenIds, setBatchWrittenIds] = useState<Set<string>>(new Set());
 
   // Read on-chain owner() and operators(address) to gate write access.
   // Both owner and approved operators may call setVerifiedClaims.
@@ -329,6 +334,61 @@ export default function AdminClaims() {
   const isOwner = !!address && !!oracleOwner && address.toLowerCase() === oracleOwner.toLowerCase();
   /** True when the connected wallet can call setVerifiedClaims (owner or operator). */
   const isAuthorized = isOwner || isOperator;
+
+  // Batch write via wagmi
+  const {
+    writeContract: batchWriteContract,
+    data: batchTxHash,
+    isPending: batchSigning,
+    error: batchWriteError,
+    reset: resetBatch,
+  } = useWriteContract();
+
+  const { isLoading: batchConfirming, isSuccess: batchConfirmed } = useWaitForTransactionReceipt({
+    hash: batchTxHash,
+  });
+
+  const batchWriting = batchSigning || batchConfirming;
+
+  // Error toast for batch write
+  useEffect(() => {
+    if (batchWriteError) {
+      const msg = (batchWriteError as Error).message ?? "Batch transaction failed";
+      toast({ title: "Batch Oracle write failed", description: msg.slice(0, 120), variant: "destructive" });
+      resetBatch();
+    }
+  }, [batchWriteError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On batch confirmation, mark all currently-approved claims as oracle-written
+  useEffect(() => {
+    if (batchConfirmed && claims && batchTxHash) {
+      const approvedIds = claims.filter(c => c.status === "approved").map(c => c.id);
+      setBatchWrittenIds(prev => {
+        const next = new Set(prev);
+        approvedIds.forEach(id => next.add(id));
+        return next;
+      });
+      toast({
+        title: "Batch Oracle write confirmed",
+        description: `${approvedIds.length} claim${approvedIds.length === 1 ? "" : "s"} verified · tx: ${batchTxHash.slice(0, 18)}…`,
+      });
+    }
+  }, [batchConfirmed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleBatchWriteOracle = useCallback(() => {
+    if (!claims) return;
+    const approvedClaims = claims.filter(c => c.status === "approved" && c.walletAddress);
+    if (approvedClaims.length === 0) return;
+    batchWriteContract({
+      address: ORACLE_ADDRESS,
+      abi: SkillFunOracle_ABI as readonly object[],
+      functionName: "setVerifiedClaims",
+      args: [
+        approvedClaims.map(c => BigInt(c.tokenId)),
+        approvedClaims.map(c => c.walletAddress as `0x${string}`),
+      ],
+    });
+  }, [claims, batchWriteContract]);
 
   const fetchClaims = useCallback(async () => {
     if (!isConnected) return;
@@ -482,7 +542,7 @@ export default function AdminClaims() {
             {claims!.filter(c => c.status === "approved").length > 0 && (
               <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 mb-6">
                 <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-amber-400">
                     {claims!.filter(c => c.status === "approved").length === 1
                       ? "1 approved claim is awaiting Oracle verification"
@@ -490,9 +550,27 @@ export default function AdminClaims() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     These claims have been approved but the on-chain Oracle write has not yet been confirmed.
-                    Connect the deployer wallet and click <span className="text-foreground/70 font-medium">Write Oracle</span> on each highlighted row below.
+                    {claims!.filter(c => c.status === "approved").length >= 2
+                      ? " Use the button to batch all into one transaction, or write them individually below."
+                      : <> Connect the Oracle owner wallet and click <span className="text-foreground/70 font-medium">Write Oracle</span> on the highlighted row below.</>}
                   </p>
                 </div>
+                {/* Batch button — only shown when 2+ approved claims exist */}
+                {claims!.filter(c => c.status === "approved").length >= 2 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/60 shrink-0 h-8 px-3 text-xs"
+                    disabled={!isAuthorized || batchWriting}
+                    title={!isAuthorized ? "Only the Oracle owner or an operator can write on-chain" : "Write all approved claims in one transaction"}
+                    onClick={handleBatchWriteOracle}
+                  >
+                    {batchWriting
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                      : <Layers className="w-3.5 h-3.5 mr-1" />}
+                    {batchSigning ? "Confirm in wallet…" : batchConfirming ? "Writing…" : "Write all approved"}
+                  </Button>
+                )}
               </div>
             )}
 
@@ -528,6 +606,7 @@ export default function AdminClaims() {
                   isAuthorized={isAuthorized}
                   onAction={handleAction}
                   actionLoading={actionLoading}
+                  batchWritten={batchWrittenIds.has(claim.id)}
                 />
               ))}
             </div>

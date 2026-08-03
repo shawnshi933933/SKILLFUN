@@ -196,7 +196,21 @@ export async function writeOracleVerification(
   tokenId: number,
   walletAddress: string
 ): Promise<{ txHash: string }> {
-  return rpcCall("writeOracleVerification", async () => {
+  return writeOracleBatch([tokenId], [walletAddress]);
+}
+
+/**
+ * Batch-write Oracle verifications in a single on-chain transaction.
+ * Calls SkillFunOracle.setVerifiedClaims(tokenIds[], walletAddresses[]).
+ */
+export async function writeOracleBatch(
+  tokenIds: number[],
+  walletAddresses: string[]
+): Promise<{ txHash: string }> {
+  if (tokenIds.length === 0) throw new Error("No token IDs provided");
+  if (tokenIds.length !== walletAddresses.length) throw new Error("tokenIds and walletAddresses must have the same length");
+
+  return rpcCall("writeOracleBatch", async () => {
     const walletClient = getWalletClient();
     const publicCl     = getPublicClient();
 
@@ -204,17 +218,17 @@ export async function writeOracleVerification(
       address: addresses.SkillFunOracle as `0x${string}`,
       abi: SkillFunOracle_ABI,
       functionName: "setVerifiedClaims",
-      args: [[BigInt(tokenId)], [walletAddress as `0x${string}`]],
+      args: [tokenIds.map(BigInt), walletAddresses.map(a => a as `0x${string}`)],
     });
 
-    logger.info({ txHash, tokenId, walletAddress }, "setVerifiedClaims tx submitted");
+    logger.info({ txHash, tokenIds, walletAddresses }, "setVerifiedClaims batch tx submitted");
     const receipt = await publicCl.waitForTransactionReceipt({ hash: txHash, timeout: 60_000 });
 
     if (receipt.status !== "success") {
       throw new Error(`setVerifiedClaims reverted — tx: ${txHash}`);
     }
 
-    logger.info({ txHash, tokenId }, "Oracle verification written on-chain");
+    logger.info({ txHash, count: tokenIds.length }, "Oracle batch verification written on-chain");
     return { txHash };
   });
 }

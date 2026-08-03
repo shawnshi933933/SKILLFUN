@@ -7,6 +7,7 @@ import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { getSkillOnChain } from "../services/chain.js";
 import { logger } from "../lib/logger.js";
+import { getSkillOnChain, writeOracleVerification, writeOracleBatch } from "../services/chain.js";
 
 const PLATFORM_OWNER = process.env.DEPLOYER_ADDRESS?.toLowerCase();
 // Oracle owner wallet — optional secondary admin address sourced purely from env.
@@ -82,11 +83,16 @@ router.post("/claims", authMiddleware("submit-claim"), async (req, res) => {
   try {
     claim = await db.transaction(async (tx) => {
       // Read the existing row (if any) inside the transaction for consistency
-      const [existing] = await tx
-        .select()
-        .from(pendingClaimsTable)
-        .where(eq(pendingClaimsTable.tokenId, tokenId))
-        .limit(1);
+  const [existing] = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.id, claimId))
+    .limit(1);
+
+  const approvedClaims = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.status, "approved"));
 
       if (existing) {
         if (existing.status === "pending" || existing.status === "approved") {
@@ -97,17 +103,17 @@ router.post("/claims", authMiddleware("submit-claim"), async (req, res) => {
         // still in a terminal state (another concurrent request may have already
         // re-opened it, flipping it back to pending before this update runs).
         // The WHERE clause makes the update a no-op in that race, returning 0 rows.
-        const [updated] = await tx
-          .update(pendingClaimsTable)
-          .set({ status: "pending", updatedAt: new Date() })
-          .where(
-            and(
-              eq(pendingClaimsTable.tokenId, tokenId),
-              // Only allow transition from terminal states — not from pending/approved
-              inArray(pendingClaimsTable.status, ["rejected", "completed"])
-            )
-          )
-          .returning();
+  const [updated] = await db
+    .update(pendingClaimsTable)
+    .set({ status, updatedAt: new Date() })
+    .where(
+      and(
+        eq(pendingClaimsTable.id, claimId),
+        // completed is immutable — block any transition out of it
+        inArray(pendingClaimsTable.status, ["pending", "approved"])
+      )
+    )
+    .returning();
         // If 0 rows matched, another request already re-opened — treat as conflict
         if (!updated) return null;
         return updated;
@@ -224,6 +230,11 @@ router.patch("/claims/:id", authMiddleware("admin:update-claim"), async (req, re
     .where(eq(pendingClaimsTable.id, claimId))
     .limit(1);
 
+  const approvedClaims = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.status, "approved"));
+
     if (!existing) {
       apiError(res, ErrorCode.NOT_FOUND, "Claim not found");
     } else {
@@ -267,6 +278,11 @@ router.post("/claims/:id/complete", authMiddleware("complete-claim"), async (req
     .from(pendingClaimsTable)
     .where(eq(pendingClaimsTable.id, claimId))
     .limit(1);
+
+  const approvedClaims = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.status, "approved"));
 
   if (!existing) {
     apiError(res, ErrorCode.NOT_FOUND, "Claim not found");
@@ -323,3 +339,11 @@ router.post("/claims/:id/complete", authMiddleware("complete-claim"), async (req
 });
 
 export default router;
+
+  const claimIds      = writable.map(c => c.id);
+
+  const writable = approvedClaims.filter(c => !!c.walletAddress);
+
+  const tokenIds      = writable.map(c => c.tokenId);
+
+  const walletAddrs   = writable.map(c => c.walletAddress!);
