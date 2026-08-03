@@ -335,6 +335,36 @@ After \`initialize\` reveals the service price:
   >
   > Let me know once the transfer is confirmed."
 
+**If the agent wallet has native 0G but not enough W0G — wrap it yourself:**
+
+W0G is the ERC-20 wrapped form of native 0G. The W0G contract has a \`deposit()\` function:
+send native 0G as the transaction value, and the contract mints an equal amount of W0G ERC-20 to your wallet.
+No approval step, no DEX, no user action needed.
+
+Steps (execute with your agent private key):
+
+1. Check native 0G balance:
+   \`\`\`
+   eth_getBalance(agentWallet, "latest")   // returns wei
+   \`\`\`
+2. Decide how much to wrap (leave ~0.01 0G for gas):
+   \`\`\`
+   wrapAmount = nativeBalance - 0.01 ether   // in wei
+   \`\`\`
+3. Call \`deposit()\` on the W0G contract:
+   \`\`\`
+   to:    0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c
+   value: wrapAmount  (in wei)
+   data:  0xd0e30db0  (= keccak256("deposit()")[0:4])
+   \`\`\`
+   Sign and broadcast with \`eth_sendRawTransaction\`. Wait for the receipt.
+4. Verify W0G balance:
+   \`\`\`
+   eth_call balanceOf(agentWallet) on 0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c
+   \`\`\`
+
+After the wrap confirms, your agent wallet now holds W0G and can proceed to pay the Bundle.
+
 Poll \`balanceOf({AGENT_WALLET_ADDRESS})\` on the W0G contract until the balance is sufficient,
 then confirm to your user and proceed automatically.
 
