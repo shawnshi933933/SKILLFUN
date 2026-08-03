@@ -20,10 +20,10 @@ import { useLocation } from "wouter";
 import {
   Shield, AlertTriangle, CheckCircle2, Clock, RefreshCw,
   ExternalLink, Loader2, ChevronDown, ChevronRight, Layers, RotateCcw, Info,
-  Package, Globe, ZapOff, Pencil, Check, X, Coins,
+  Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins,
 } from "lucide-react";
 import { useCuratorAuthorizations, useAuthorizeSkill, type AuthorizePhase } from "@/hooks/use-curator";
-import { bundlesApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
+import { bundlesApi, skillsApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { formatUnits } from "viem";
 
@@ -230,6 +230,250 @@ function SkillRow({ skill }: { skill: CuratorAuthorization }) {
 }
 
 // ---------------------------------------------------------------------------
+// Inline skill-picker panel — add skills to a bundle without leaving the page
+// ---------------------------------------------------------------------------
+
+interface AddSkillsPanelProps {
+  bundleId: string;
+  onClose:  () => void;
+  /** Called after a successful save so the parent can refresh */
+  onSaved:  () => void;
+}
+
+function AddSkillsPanel({ bundleId, onClose, onSaved }: AddSkillsPanelProps) {
+  const { toast }       = useToast();
+  const sign            = useEip712Sign();
+  const queryClient     = useQueryClient();
+  const [search,   setSearch]   = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [saving,   setSaving]   = useState(false);
+
+  // Fetch the bundle's current skills (authoritative list from DB).
+  // Save is BLOCKED until this succeeds — updateSkills is a full-replace PUT,
+  // so proceeding without the existing list would silently drop them.
+  const {
+    data:       bundleData,
+    isLoading:  loadingBundle,
+    isError:    bundleError,
+    refetch:    refetchBundle,
+  } = useQuery({
+    queryKey: ["bundle", bundleId],
+    queryFn:  () => bundlesApi.get(bundleId),
+    staleTime: 30_000,
+    retry: 2,
+  });
+
+  // Fetch all minted + claimed skills from the platform
+  const { data: mintedData,  isLoading: loadingMinted }  = useQuery({
+    queryKey: ["all-minted-skills"],
+    queryFn:  () => skillsApi.list({ status: "minted" }),
+    staleTime: 30_000,
+  });
+  const { data: claimedData, isLoading: loadingClaimed } = useQuery({
+    queryKey: ["all-claimed-skills"],
+    queryFn:  () => skillsApi.list({ status: "claimed" }),
+    staleTime: 30_000,
+  });
+
+  const isLoading = loadingBundle || loadingMinted || loadingClaimed;
+
+  // Existing skill IDs — only set when bundleData has successfully loaded.
+  // Keeping this undefined while loading/errored lets handleSave guard against
+  // accidentally submitting an empty list.
+  const existingSkillIds: string[] | undefined = bundleData
+    ? bundleData.skills.map(s => s.skillId)
+    : undefined;
+
+  // Combine + deduplicate; exclude skills already in this bundle.
+  // When existingSkillIds is still undefined (bundle not loaded), show nothing.
+  const existingSet = new Set(existingSkillIds ?? []);
+  const allAvailable = existingSkillIds === undefined ? [] : [
+    ...(mintedData?.skills  ?? []),
+    ...(claimedData?.skills ?? []),
+  ].filter((s, idx, arr) =>
+    s.tokenId !== null &&
+    !existingSet.has(s.skillId) &&
+    arr.findIndex(x => x.skillId === s.skillId) === idx   // deduplicate
+  );
+
+  // Filter by search query
+  const query = search.trim().toLowerCase();
+  const displayed = query
+    ? allAvailable.filter(s => {
+        const name = ((s.meta as Record<string, unknown>)?.name as string ?? "").toLowerCase();
+        return name.includes(query) || s.repoUrl.toLowerCase().includes(query);
+      })
+    : allAvailable;
+
+  const toggle = (skillId: string) =>
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(skillId) ? next.delete(skillId) : next.add(skillId);
+      return next;
+    });
+
+  const handleSave = async () => {
+    // Hard guard: never call updateSkills without the authoritative existing list.
+    // existingSkillIds is undefined while loading or when the bundle fetch failed.
+    if (existingSkillIds === undefined) {
+      toast({
+        title:       "Cannot save yet",
+        description: "Bundle data is still loading. Please wait and try again.",
+        variant:     "destructive",
+      });
+      return;
+    }
+    if (selected.size === 0) { onClose(); return; }
+    setSaving(true);
+    try {
+      const sigHeader = await sign("update-bundle-skills");
+      // Defensive merge: deduplicate in case existingSkillIds already contains
+      // any of the newly selected IDs (e.g. concurrent edits).
+      const merged = Array.from(new Set([...existingSkillIds, ...Array.from(selected)]));
+      await bundlesApi.updateSkills(bundleId, merged, sigHeader);
+      toast({
+        title:       "Bundle updated",
+        description: `${selected.size} skill${selected.size !== 1 ? "s" : ""} added.`,
+      });
+      void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+      void queryClient.invalidateQueries({ queryKey: ["bundles-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["bundle", bundleId] });
+      onSaved();
+    } catch (err) {
+      toast({
+        title:       "Failed to update skills",
+        description: (err as Error).message,
+        variant:     "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+      {/* Panel header */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-primary/90 flex items-center gap-1.5">
+          <Plus className="w-4 h-4" /> Add Skills to Bundle
+        </span>
+        <button
+          onClick={onClose}
+          className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+          aria-label="Close skill picker"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40 pointer-events-none" />
+        <input
+          type="text"
+          placeholder="Search skills…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-white/10 bg-white/5 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+        />
+      </div>
+
+      {/* Bundle fetch error — block the entire panel so the user can't save */}
+      {bundleError && (
+        <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-red-500/30 bg-red-500/5 text-xs text-red-400">
+          <span className="flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            Could not load bundle skills. Saving is disabled to prevent data loss.
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 px-2 text-[10px] border-red-500/30 text-red-400 hover:bg-red-500/10"
+            onClick={() => void refetchBundle()}
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />Retry
+          </Button>
+        </div>
+      )}
+
+      {/* Skill list */}
+      <div className="max-h-64 overflow-y-auto space-y-1.5 pr-0.5">
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground text-xs">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading skills…
+          </div>
+        ) : displayed.length === 0 ? (
+          <div className="py-6 text-center text-xs text-muted-foreground/50">
+            {allAvailable.length === 0
+              ? "All available skills are already in this bundle."
+              : "No skills match your search."}
+          </div>
+        ) : (
+          displayed.map(skill => {
+            const meta     = (skill.meta as Record<string, unknown>) ?? {};
+            const name     = (meta.name as string | undefined) ?? skill.repoUrl;
+            const checked  = selected.has(skill.skillId);
+            return (
+              <button
+                key={skill.skillId}
+                onClick={() => toggle(skill.skillId)}
+                className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
+                  checked
+                    ? "border-primary/40 bg-primary/10"
+                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/20 hover:bg-white/5"
+                }`}
+              >
+                {/* Checkbox indicator */}
+                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                  checked ? "border-primary bg-primary" : "border-white/20"
+                }`}>
+                  {checked && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                </div>
+
+                {/* Skill info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-medium truncate">{name}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground/50">#{skill.tokenId}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground/50 font-mono truncate block">{skill.repoUrl}</span>
+                </div>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer actions */}
+      <div className="flex items-center justify-between pt-1 border-t border-white/[0.06]">
+        <span className="text-[11px] text-muted-foreground/50">
+          {selected.size > 0
+            ? `${selected.size} skill${selected.size !== 1 ? "s" : ""} selected`
+            : "Select skills to add"}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" className="text-xs h-7 px-2" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            className="text-xs h-7 px-3 bg-primary hover:bg-primary/90"
+            onClick={handleSave}
+            disabled={saving || selected.size === 0 || existingSkillIds === undefined}
+            title={existingSkillIds === undefined ? "Waiting for bundle data to load…" : undefined}
+          >
+            {saving
+              ? <><Loader2 className="w-3 h-3 animate-spin mr-1" />Saving…</>
+              : <><Plus className="w-3 h-3 mr-1" />Add {selected.size > 0 ? selected.size : ""} Skill{selected.size !== 1 ? "s" : ""}</>
+            }
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Auth pill — compact colored count chip
 // ---------------------------------------------------------------------------
 
@@ -280,7 +524,8 @@ interface BundleCardProps {
 }
 
 function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
-  const [expanded, setExpanded] = useState(defaultOpen);
+  const [expanded,    setExpanded]    = useState(defaultOpen);
+  const [pickerOpen,  setPickerOpen]  = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { address } = useAccount();
@@ -326,6 +571,9 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
     e.stopPropagation();
     setEditingPrice(false);
   };
+
+  const openPicker  = (e: React.MouseEvent) => { e.stopPropagation(); setExpanded(true); setPickerOpen(true); };
+  const closePicker = () => setPickerOpen(false);
 
   const active      = skills.filter((s) => s.status === "active").length;
   const needsReauth = skills.filter((s) => s.status === "needs_reauth").length;
@@ -478,17 +726,28 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
 
           {/* Skill rows */}
           {sortedSkills.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground/50 space-y-2">
+            <div className="py-8 text-center text-sm text-muted-foreground/50 space-y-3">
               <ZapOff className="w-7 h-7 mx-auto opacity-30" />
               <p>No skills in this bundle yet.</p>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-white/20 text-xs"
-                onClick={() => setLocation(`/app/bundle/${bundle.bundleId}`)}
-              >
-                Manage bundle skills
-              </Button>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1"
+                  onClick={openPicker}
+                  data-testid={`button-add-skills-${bundle.bundleId}`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Skills
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-white/20 text-xs"
+                  onClick={() => setLocation(`/app/bundle/${bundle.bundleId}`)}
+                >
+                  Manage bundle skills
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
@@ -498,11 +757,30 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
             </div>
           )}
 
-          {/* Footer link */}
-          <div className="flex justify-end pt-1">
+          {/* Inline skill picker */}
+          {pickerOpen && (
+            <AddSkillsPanel
+              bundleId={bundle.bundleId}
+              onClose={closePicker}
+              onSaved={closePicker}
+            />
+          )}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-1">
+            {!pickerOpen && (
+              <button
+                onClick={openPicker}
+                className="text-xs text-muted-foreground/40 hover:text-primary flex items-center gap-1 transition-colors"
+                data-testid={`button-add-skills-footer-${bundle.bundleId}`}
+              >
+                <Plus className="w-3 h-3" />
+                Add skills
+              </button>
+            )}
             <button
               onClick={() => setLocation(`/app/bundle/${bundle.bundleId}`)}
-              className="text-xs text-muted-foreground/40 hover:text-muted-foreground flex items-center gap-1 transition-colors"
+              className="text-xs text-muted-foreground/40 hover:text-muted-foreground flex items-center gap-1 transition-colors ml-auto"
             >
               <ExternalLink className="w-3 h-3" />
               View bundle details
