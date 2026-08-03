@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect, useWriteContract } from "wagmi";
+import { waitForTransactionReceipt } from "@wagmi/core";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -12,14 +13,12 @@ import {
   Github, Wallet, CheckCircle, Clock, XCircle,
   ExternalLink, Loader2, Lock, AlertCircle,
 } from "lucide-react";
-import { useAccount, useWriteContract } from "wagmi";
+import { wagmiConfig } from "@/lib/wagmi";
+import { SkillNFT_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
 
 // ---------------------------------------------------------------------------
 // Types / helpers
 // ---------------------------------------------------------------------------
-import { waitForTransactionReceipt } from "@wagmi/core";
-import { wagmiConfig } from "@/lib/wagmi";
-import { SkillNFT_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
 type PageState = "loading" | "no-github" | "no-wallet" | "ready";
 
 function claimStatusBadge(status: DbClaim["status"]) {
