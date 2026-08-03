@@ -154,11 +154,26 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
       setPhase("uploading"); // backend does fetch+upload atomically; show uploading after brief delay
       const sigHeader = await sign("user:update-content");
       setPhase("uploading");
-      const { newRootHash: rh } = await creatorApi.updateContent(
+      const result = await creatorApi.updateContent(
         skill.skillId,
         { fromGithub: true },
         sigHeader,
       );
+
+      // If content hasn't changed, skip the on-chain step entirely
+      if (result.noChange) {
+        const existingHash = result.rootHash ?? "";
+        setNewRootHash(existingHash || null);
+        setPhase("done");
+        toast({
+          title: "Already up to date",
+          description: "The content on 0G matches your GitHub repo — no on-chain update needed.",
+        });
+        onSuccess();
+        return;
+      }
+
+      const rh = result.newRootHash!;
       setNewRootHash(rh);
 
       // Step 2: Call updateDataHash on-chain

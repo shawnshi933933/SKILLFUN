@@ -459,10 +459,13 @@ export const creatorApi = {
     sigHeader: string,
   ) =>
     apiFetch<{
-      newRootHash:       string;
-      newSkillUri:       string;
-      newContentVersion: number;
-      curatorsMarked:    number;
+      newRootHash?:      string;
+      newSkillUri?:      string;
+      newContentVersion?: number;
+      curatorsMarked?:   number;
+      noChange?:         boolean;
+      message?:          string;
+      rootHash?:         string;
     }>(`/skills/${skillId}/update-content`, {
       method:  "POST",
       headers: { "X-Wallet-Signature": sigHeader },

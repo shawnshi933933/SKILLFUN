@@ -728,7 +728,20 @@ router.post("/skills/:id/update-content", async (req, res) => {
   };
 
   const { rootHash: newRootHash, skillUri: newSkillUri, aesKey: newAesKey } =
-    await uploadSkillManifest(skill.skillId, skill.repoUrl, manifest, content.trim());
+    await uploadSkillManifest(skill.skillId, skill.repoUrl, manifest, resolvedContent.trim());
+
+  // If content is identical to what's already on-chain, skip DB write and auth invalidation.
+  if (newRootHash === skill.rootHash) {
+    logger.info({ skillId, rootHash: newRootHash }, "update-content: no change detected, skipping");
+    res.json({
+      skillId,
+      rootHash:      newRootHash,
+      contentVersion: skill.contentVersion ?? 1,
+      noChange:      true,
+      message:       "Content is identical to the current on-chain version — no update needed.",
+    });
+    return;
+  }
 
   const newContentVersion = (skill.contentVersion ?? 1) + 1;
 
