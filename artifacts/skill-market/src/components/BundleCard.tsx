@@ -3,20 +3,21 @@ import { Badge } from "@/components/ui/badge";
 import { Bot, Layers, Coins } from "lucide-react";
 
 export interface BundleCardData {
-  id:                  string;
-  name:                string;
-  description:         string;
-  curatorAddress:      string;
-  constituentSkillIds: string[];
-  apy:                 number;
-  stakerPool:          number;
-  invocations:         number;
-  curatorMarkup:       number;
-  tags:                string[];
-  isLive:              boolean;
-  skillNames?:         string[];
+  id:             string;
+  name:           string;
+  description:    string;
+  curatorAddress: string;
+  /** Real skill count from DB join — replaces stale meta.skillIds */
+  skillCount:     number;
+  apy:            number;
+  stakerPool:     number;
+  invocations:    number;
+  curatorMarkup:  number;
+  tags:           string[];
+  isLive:         boolean;
+  skillNames?:    string[];
   /** W0G wei (integer string) agents pay per proof. null/undefined = free. */
-  servicePrice?:       string | null;
+  servicePrice?:  string | null;
 }
 
 /** Format a wei string as a human-readable W0G amount, e.g. "0.1 W0G" or "Free". */
@@ -34,7 +35,7 @@ function formatServicePrice(wei: string | null | undefined): string {
 
 export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
   const tags       = bundle.tags ?? [];
-  const skillCount = bundle.constituentSkillIds?.length ?? 0;
+  const skillCount = bundle.skillCount ?? 0;
 
   return (
     <Link href={`/app/bundle/${bundle.id}`} data-testid={`card-bundle-${bundle.id}`}>

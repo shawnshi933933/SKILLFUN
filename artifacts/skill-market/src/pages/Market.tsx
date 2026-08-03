@@ -39,17 +39,17 @@ function adaptSkill(s: DbSkill) {
 }
 
 /** Adapt a DbBundle to the shape BundleCard expects */
-function adaptBundle(b: DbBundle) {
+function adaptBundle(b: DbBundle & { skillCount?: number }) {
   const meta = b.meta as Record<string, unknown>;
   return {
     id:                  b.bundleId,
     name:                b.name,
     description:         b.description ?? "",
     curatorAddress:      b.ownerAddress,
-    constituentSkillIds: (meta.skillIds as string[] | undefined) ?? [],
+    skillCount:          b.skillCount ?? 0,
     apy:                 (meta.apy as number | undefined) ?? 0,
     stakerPool:          (meta.stakerPool as number | undefined) ?? 0,
-    invocations:         (meta.invocations as number | undefined) ?? 0,
+    invocations:         0, // real analytics live on bundle detail page
     curatorMarkup:       (meta.curatorMarkup as number | undefined) ?? 10,
     tags:                (meta.tags as string[] | undefined) ?? [],
     isLive:              true,

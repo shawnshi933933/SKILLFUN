@@ -16,7 +16,25 @@ router.get("/bundles", async (_req, res) => {
     .from(bundlesTable)
     .orderBy(desc(bundlesTable.createdAt))
     .limit(100);
-  res.json({ bundles });
+
+  // Fetch skill counts for all bundles in one query
+  const bundleIds = bundles.map((b) => b.bundleId);
+  const skillCounts: Record<string, number> = {};
+  if (bundleIds.length > 0) {
+    const rows = await db
+      .select({ bundleId: bundleSkillsTable.bundleId, cnt: count() })
+      .from(bundleSkillsTable)
+      .where(inArray(bundleSkillsTable.bundleId, bundleIds))
+      .groupBy(bundleSkillsTable.bundleId);
+    for (const row of rows) skillCounts[row.bundleId] = Number(row.cnt);
+  }
+
+  const bundlesWithCount = bundles.map((b) => ({
+    ...b,
+    skillCount: skillCounts[b.bundleId] ?? 0,
+  }));
+
+  res.json({ bundles: bundlesWithCount });
 });
 
 // GET /api/bundles/:id

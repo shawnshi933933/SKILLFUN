@@ -101,6 +101,16 @@ export default function Claim() {
     refreshSession();
   }, [refreshSession]);
 
+  // When the user switches wallets in their browser extension, drop back to
+  // the "Link wallet" step so they can sign again with the new address.
+  useEffect(() => {
+    if (!address || pageState !== "ready" || !linkedWallet) return;
+    if (address.toLowerCase() !== linkedWallet.toLowerCase()) {
+      setLinkedWallet(null);
+      setPageState("no-wallet");
+    }
+  }, [address, pageState, linkedWallet]);
+
   // --------------------------------------------------------------------------
   // Link wallet
   // --------------------------------------------------------------------------
