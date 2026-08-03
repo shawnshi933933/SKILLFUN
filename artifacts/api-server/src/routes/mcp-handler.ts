@@ -208,7 +208,343 @@ async function getSkillContent(skill: {
 }
 
 // ---------------------------------------------------------------------------
-// GET /:bundleId/agent-guide.md — human/agent-readable onboarding document
+// GET /agent-guide.md — UNIVERSAL onboarding guide (no bundleId, works for any bundle)
+// ---------------------------------------------------------------------------
+router.get("/agent-guide.md", (_req, res) => {
+  const md = `# SkillFun MCP — Universal Agent Guide
+
+> **Read this once.** After reading, you can work with any SkillFun Bundle — just give a Bundle's
+> MCP endpoint URL and you'll know exactly what to do. All Bundle-specific details (price, who to
+> pay, which tools exist) are self-described by the MCP server itself.
+
+---
+
+## 1. What Is SkillFun?
+
+SkillFun is a Web3 AI Skill Marketplace on 0G Chain (chainId 16661). Skills are encrypted
+documents (instructions, prompts, configs, data) stored on-chain. Curators package Skills into
+Bundles and expose them over the Model Context Protocol (MCP).
+
+**Key properties:**
+- Skills are encrypted at rest on 0G decentralized storage — only paying agents decrypt them.
+- Payment is a direct ERC-20 W0G transfer to the Curator wallet. No smart-contract interaction, no approve step.
+- Pay once per content version. Call unlimited times until the creator updates the Skill.
+- Free Skills exist too — only a wallet signature is required (no transfer).
+
+---
+
+## 2. The Four Endpoints (same for every Bundle)
+
+Given any Bundle MCP base URL \`{MCP_BASE}\` (e.g. \`https://example.com/mcp/bd_abc123\`):
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| \`{MCP_BASE}/mcp\` | POST | MCP JSON-RPC 2.0 — initialize · tools/list · tools/call |
+| \`{MCP_BASE}/tools\` | GET | Free tools list shortcut (no auth) |
+| \`{BASE_URL}/api/mcp/payment/prove\` | POST | Exchange payment evidence for a reusable proof token |
+| \`{MCP_BASE}/agent-guide.md\` | GET | Bundle-specific version of this guide (pre-filled values) |
+
+\`{BASE_URL}\` is the origin part of \`{MCP_BASE}\` (e.g. \`https://example.com\`).
+
+---
+
+## 3. Step 0 — Discover Everything via \`initialize\`
+
+Always start with an \`initialize\` call. The response tells you the Bundle name, workflow
+instructions, and exactly how to pay.
+
+\`\`\`http
+POST {MCP_BASE}/mcp
+Content-Type: application/json
+
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}
+\`\`\`
+
+Response (excerpt):
+\`\`\`json
+{
+  "result": {
+    "serverInfo": { "name": "{BUNDLE_NAME}" },
+    "_skillfun": {
+      "bundleId":    "{BUNDLE_ID}",
+      "workflow":    "... Curator's orchestration instructions ...",
+      "paymentInfo": {
+        "method":       "erc20-transfer",
+        "currency":     "W0G",
+        "tokenAddress": "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c",
+        "payTo":        "{CURATOR_WALLET}",
+        "proveEndpoint":"{BASE_URL}/api/mcp/payment/prove"
+      }
+    }
+  }
+}
+\`\`\`
+
+Save \`_skillfun.bundleId\`, \`paymentInfo.payTo\`, and \`paymentInfo.proveEndpoint\` — you'll need them.
+
+---
+
+## 4. Step 1 — List Tools (free)
+
+\`\`\`
+GET {MCP_BASE}/tools
+\`\`\`
+
+Response:
+\`\`\`json
+{
+  "tools": [
+    {
+      "name": "{TOOL_NAME}",
+      "_skillfun": { "tokenId": 0 }
+    }
+  ]
+}
+\`\`\`
+
+Tool names follow the format \`{bundle-slug}:{tokenId}\`. Save \`_skillfun.tokenId\` for each tool.
+
+---
+
+## 5. Step 2 — Call a Tool (first attempt → HTTP 402)
+
+\`\`\`http
+POST {MCP_BASE}/mcp
+Content-Type: application/json
+
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"{TOOL_NAME}","arguments":{}}}
+\`\`\`
+
+If a proof token is missing or stale, the server returns **HTTP 402**:
+
+\`\`\`json
+{
+  "error": "Payment required",
+  "accepts": [{
+    "scheme":       "exact",
+    "network":      "0g-mainnet",
+    "currency":     "W0G",
+    "tokenAddress": "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c",
+    "amount":       "{AMOUNT_WEI}",
+    "payTo":        "{CURATOR_WALLET}",
+    "method":       "erc20-transfer",
+    "tokenId":      0,
+    "bundleId":     "{BUNDLE_ID}"
+  }],
+  "proveEndpoint": "/api/mcp/payment/prove"
+}
+\`\`\`
+
+Check \`accepts[0].amount\`:
+- \`"0"\` or missing → **Free flow** (Section 6A)
+- Any other value → **Paid flow** (Section 6B)
+
+---
+
+## 6A. Free Flow — sign a message, get proof, retry
+
+**Sign this EIP-191 message with your agent wallet:**
+\`\`\`
+SkillFun free access: {BUNDLE_ID}:{TOKEN_ID}:{YOUR_WALLET_ADDRESS}
+\`\`\`
+
+**POST to prove endpoint:**
+\`\`\`http
+POST {BASE_URL}/api/mcp/payment/prove
+Content-Type: application/json
+
+{
+  "tokenId":     {TOKEN_ID},
+  "bundleId":    "{BUNDLE_ID}",
+  "agentWallet": "{YOUR_WALLET_ADDRESS}",
+  "signature":   "{YOUR_SIGNATURE}"
+}
+\`\`\`
+
+Response: \`{ "proof": "abc123...", "skillId": "...", "contentVersion": 1 }\`
+
+**Retry tools/call with proof headers:**
+\`\`\`http
+POST {MCP_BASE}/mcp
+Content-Type: application/json
+X-402-Payment-Proof: {proof}
+X-402-Agent-Wallet:  {YOUR_WALLET_ADDRESS}
+
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"{TOOL_NAME}","arguments":{}}}
+\`\`\`
+
+---
+
+## 6B. Paid Flow — transfer W0G, sign, get proof, retry
+
+**Transfer W0G on 0G Chain:**
+- Token: \`0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c\` (W0G ERC-20)
+- Recipient: \`{CURATOR_WALLET}\` (from \`payTo\` in the 402 response)
+- Amount: \`{AMOUNT_WEI}\` wei (from \`amount\` in the 402 response)
+- Chain ID: 16661 · RPC: \`https://evmrpc.0g.ai\`
+- Standard \`transfer(address, uint256)\` — no approve, no contract call
+
+Wait for confirmation and save the \`txHash\`.
+
+**Sign this EIP-191 message:**
+\`\`\`
+SkillFun payment proof: {txHash}
+\`\`\`
+
+**POST to prove endpoint:**
+\`\`\`http
+POST {BASE_URL}/api/mcp/payment/prove
+Content-Type: application/json
+
+{
+  "txHash":      "{txHash}",
+  "tokenId":     {TOKEN_ID},
+  "bundleId":    "{BUNDLE_ID}",
+  "agentWallet": "{YOUR_WALLET_ADDRESS}",
+  "signature":   "{YOUR_SIGNATURE}"
+}
+\`\`\`
+
+**Retry tools/call** — same as Free Flow step above, using the \`proof\` from the response.
+
+---
+
+## 7. Required Headers Summary
+
+| Header | Required for | Value |
+|--------|-------------|-------|
+| \`Content-Type\` | All POST requests | \`application/json\` |
+| \`X-402-Payment-Proof\` | tools/call | The \`proof\` string from /prove |
+| \`X-402-Agent-Wallet\` | tools/call | Your wallet address (EIP-55 checksum) |
+
+---
+
+## 8. Proof Lifetime
+
+- A proof covers **(skillId + bundleId + contentVersion)**.
+- **No expiry** unless the response includes a non-null \`expiresAt\`.
+- **Reusable**: call the same tool unlimited times with the same proof.
+- **Invalidated** only when the Skill creator updates the on-chain content (new \`contentVersion\`).
+  The server returns \`stale_version\` — pay again for the new version.
+- **/prove is idempotent**: sending the same txHash or free-signature again returns the same proof (\`reissued: true\`). Safe to retry on network failure.
+
+---
+
+## 9. Universal TypeScript Template
+
+\`\`\`typescript
+import { createWalletClient, createPublicClient, http, parseAbi } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const MCP_BASE = "https://YOUR_DOMAIN/mcp/YOUR_BUNDLE_ID"; // ← only thing you change
+const account  = privateKeyToAccount("0xYOUR_PRIVATE_KEY");
+const chain    = { id: 16661, name: "0G Mainnet",
+  nativeCurrency: { name: "0G", symbol: "A0GI", decimals: 18 },
+  rpcUrls: { default: { http: ["https://evmrpc.0g.ai"] } } };
+const pub    = createPublicClient({ chain, transport: http("https://evmrpc.0g.ai") });
+const wallet = createWalletClient({ account, chain, transport: http("https://evmrpc.0g.ai") });
+const erc20  = parseAbi(["function transfer(address,uint256) returns (bool)"]);
+
+const sign = (msg: string) => account.signMessage({ message: msg });
+
+// ── 0. Initialize — discover bundle info ─────────────────────────────────────
+const init = await fetch(MCP_BASE + "/mcp", {
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 0, method: "initialize", params: {} }),
+}).then(r => r.json());
+const { bundleId, paymentInfo } = init.result._skillfun;
+const BASE_URL   = new URL(MCP_BASE).origin;
+const PROVE_URL  = BASE_URL + "/api/mcp/payment/prove";
+
+// ── 1. List tools ─────────────────────────────────────────────────────────────
+const { tools } = await fetch(MCP_BASE + "/tools").then(r => r.json());
+const tool    = tools[0]; // pick the tool you need
+const toolName = tool.name;
+const tokenId  = tool._skillfun.tokenId;
+
+// ── 2. First call → expect 402 ────────────────────────────────────────────────
+const r1 = await fetch(MCP_BASE + "/mcp", {
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
+    params: { name: toolName, arguments: {} } }),
+});
+const data402 = r1.status === 402 ? await r1.json() : null;
+
+// ── 3. Get proof ──────────────────────────────────────────────────────────────
+let proof: string;
+if (!data402 || data402.accepts[0].amount === "0") {
+  // Free flow
+  const sig = await sign(\`SkillFun free access: \${bundleId}:\${tokenId}:\${account.address}\`);
+  const p = await fetch(PROVE_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tokenId, bundleId, agentWallet: account.address, signature: sig }) }).then(r => r.json());
+  proof = p.proof;
+} else {
+  // Paid flow
+  const { amount, payTo } = data402.accepts[0];
+  const txHash = await wallet.writeContract({
+    address: "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c",
+    abi: erc20, functionName: "transfer", args: [payTo, BigInt(amount)],
+  });
+  await pub.waitForTransactionReceipt({ hash: txHash });
+  const sig = await sign(\`SkillFun payment proof: \${txHash}\`);
+  const p = await fetch(PROVE_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ txHash, tokenId, bundleId, agentWallet: account.address, signature: sig }) }).then(r => r.json());
+  proof = p.proof;
+}
+
+// ── 4. Call with proof ────────────────────────────────────────────────────────
+const result = await fetch(MCP_BASE + "/mcp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json",
+    "X-402-Payment-Proof": proof, "X-402-Agent-Wallet": account.address },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call",
+    params: { name: toolName, arguments: {} } }),
+}).then(r => r.json());
+
+console.log(result.result.content[0].text);
+\`\`\`
+
+---
+
+## 10. Troubleshooting
+
+| Error / Status | Cause | Fix |
+|----------------|-------|-----|
+| HTTP 402 \`missing_proof\` | \`X-402-Payment-Proof\` header absent | Complete steps 6A or 6B to obtain a proof |
+| \`unknown_token\` | Proof string not found in DB | Re-run the /prove step |
+| \`wallet_mismatch\` | \`X-402-Agent-Wallet\` differs from signing wallet | Use the same address in both the signature and the header |
+| \`wrong_bundle\` | Proof issued for a different bundleId | Prove for the correct bundleId |
+| \`stale_version\` | Creator updated Skill content on-chain | Pay again to get a fresh proof for the new version |
+| \`not_authorized\` | Curator hasn't authorized this Skill on-chain | Contact the Bundle Curator |
+| \`unknown_tool\` | Tool name not in this bundle | Fetch \`GET {MCP_BASE}/tools\` and pick an exact name |
+| HTTP 400 \`tokenId … required\` | Missing fields in /prove body | Include all: \`tokenId\`, \`bundleId\`, \`agentWallet\`, \`signature\` (+ \`txHash\` for paid) |
+| \`W0G transfer … less than required\` | Sent wrong amount | Use the exact \`amount\` value (in wei) from the 402 response |
+| \`No valid W0G Transfer found\` | Wrong txHash, wrong token, or wrong recipient | Verify the tx transfers W0G (\`0x1cd0…\`) to the address in \`payTo\` |
+| \`Transaction not found or still pending\` | Tx not yet confirmed | Wait a few seconds and retry /prove |
+
+---
+
+## 11. Network & Contract Reference
+
+| | |
+|-|-|
+| **Chain**     | 0G Mainnet (chainId 16661) |
+| **RPC**       | \`https://evmrpc.0g.ai\` |
+| **W0G token** | \`0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c\` |
+| **SkillNFT**  | \`0xF119d7FB60f897D79b10b23C843ED706bFB59F79\` |
+| **Explorer**  | https://chainscan.0g.ai |
+
+---
+
+*SkillFun Universal Agent Guide · protocol v1 · [Source](https://github.com/skillfun)*
+`;
+
+  res.type("text/markdown; charset=utf-8").send(md);
+});
+
+// ---------------------------------------------------------------------------
+// GET /:bundleId/agent-guide.md — bundle-specific onboarding document
 // ---------------------------------------------------------------------------
 router.get("/:bundleId/agent-guide.md", async (req, res) => {
   const bundleId = req.params.bundleId as string;

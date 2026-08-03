@@ -507,7 +507,7 @@ if (attempt.status === 402) {
                   <button
                     onClick={async () => {
                       try {
-                        const guideUrl = `${mcpBaseUrl}/agent-guide.md`;
+                        const guideUrl = `https://${devDomain}/mcp/agent-guide.md`;
                         await navigator.clipboard.writeText(guideUrl);
                         toast({ title: "Link copied!", description: "Paste this URL into your agent — it will read the guide automatically." });
                       } catch {
