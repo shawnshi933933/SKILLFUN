@@ -71,11 +71,11 @@ router.post("/claims", authMiddleware("submit-claim"), async (req, res) => {
   try {
     claim = await db.transaction(async (tx) => {
       // Read the existing row (if any) with a row-level lock intent
-      const [existing] = await tx
-        .select()
-        .from(pendingClaimsTable)
-        .where(eq(pendingClaimsTable.tokenId, tokenId))
-        .limit(1);
+  const [existing] = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.id, claimId))
+    .limit(1);
 
       if (existing) {
         if (existing.status === "pending" || existing.status === "approved") {
@@ -86,18 +86,17 @@ router.post("/claims", authMiddleware("submit-claim"), async (req, res) => {
         // still in a terminal state (another concurrent request may have already
         // re-opened it, flipping it back to pending before this update runs).
         // The WHERE clause makes the update a no-op in that race, returning 0 rows.
-        const [updated] = await tx
-          .update(pendingClaimsTable)
-          .set({ id: generateId("cl"), githubUsername, walletAddress, status: "pending", updatedAt: new Date() })
-          .where(
-            and(
-              eq(pendingClaimsTable.tokenId, tokenId),
-              // Only rejected claims may be re-submitted; completed = token
-              // already transferred on-chain, so never re-open.
-              inArray(pendingClaimsTable.status, ["rejected"])
-            )
-          )
-          .returning();
+  const [updated] = await db
+    .update(pendingClaimsTable)
+    .set({ status, updatedAt: new Date() })
+    .where(
+      and(
+        eq(pendingClaimsTable.id, claimId),
+        // completed is immutable — block any transition out of it
+        inArray(pendingClaimsTable.status, ["pending", "approved"])
+      )
+    )
+    .returning();
         // If 0 rows matched, another request already re-opened — treat as conflict
         if (!updated) return null;
         return updated;
@@ -148,12 +147,15 @@ router.get("/claims/mine", async (req, res) => {
   const claims = await db
     .select()
     .from(pendingClaimsTable)
-    .where(eq(pendingClaimsTable.githubUsername, githubUsername))
+    .where(inArray(pendingClaimsTable.status, ["pending", "approved"]))
     .orderBy(desc(pendingClaimsTable.createdAt));
   res.json({ claims });
 });
 
-// GET /api/claims/pending — list pending claims (platform owner only)
+// GET /api/claims/pending — list pending AND approved-but-not-yet-completed claims (platform owner only)
+//
+// Returning both statuses ensures the admin sees approved claims that still need
+// an Oracle write even after a page refresh — they are not "lost" between sessions.
 router.get("/claims/pending", authMiddleware("admin:list-claims"), async (req, res) => {
   if (!PLATFORM_OWNER || req.walletAddress?.toLowerCase() !== PLATFORM_OWNER) {
     apiError(res, ErrorCode.FORBIDDEN, "Platform owner access required");
@@ -163,7 +165,7 @@ router.get("/claims/pending", authMiddleware("admin:list-claims"), async (req, r
   const claims = await db
     .select()
     .from(pendingClaimsTable)
-    .where(eq(pendingClaimsTable.status, "pending"))
+    .where(inArray(pendingClaimsTable.status, ["pending", "approved"]))
     .orderBy(desc(pendingClaimsTable.createdAt));
 
   res.json({ claims });
@@ -205,11 +207,11 @@ router.patch("/claims/:id", authMiddleware("admin:update-claim"), async (req, re
 
   if (!updated) {
     // Distinguish "not found" from "completed (immutable)"
-    const [existing] = await db
-      .select({ status: pendingClaimsTable.status })
-      .from(pendingClaimsTable)
-      .where(eq(pendingClaimsTable.id, claimId))
-      .limit(1);
+  const [existing] = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.id, claimId))
+    .limit(1);
 
     if (!existing) {
       apiError(res, ErrorCode.NOT_FOUND, "Claim not found");
@@ -256,7 +258,7 @@ router.post("/claims/:id/write-oracle", authMiddleware("admin:update-claim"), as
   }
 
   try {
-    const { txHash } = await writeOracleVerification(claim.tokenId, claim.walletAddress);
+  const { txHash } = req.body as { txHash?: string };
     logger.info({ claimId, txHash, tokenId: claim.tokenId }, "Oracle written via backend");
     res.json({ txHash });
   } catch (err) {

@@ -94,7 +94,8 @@ interface ClaimRowProps {
 }
 
 function ClaimRow({ claim, isDeployer, onAction, actionLoading, sign }: ClaimRowProps) {
-  const [expanded, setExpanded] = useState(false);
+  // Approved claims auto-expand on mount so the Oracle write prompt is immediately visible
+  const [expanded, setExpanded] = useState(claim.status === "approved");
   const [oracleWritten, setOracleWritten] = useState(false);
   const isLoading = actionLoading === claim.id;
 
@@ -424,6 +425,24 @@ export default function AdminClaims() {
         {/* Claims list */}
         {hasClaims && !loading && (
           <>
+            {/* Persistent banner: approved claims awaiting Oracle write */}
+            {claims!.filter(c => c.status === "approved").length > 0 && (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 mb-6">
+                <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-400">
+                    {claims!.filter(c => c.status === "approved").length === 1
+                      ? "1 approved claim is awaiting Oracle verification"
+                      : `${claims!.filter(c => c.status === "approved").length} approved claims are awaiting Oracle verification`}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    These claims have been approved but the on-chain Oracle write has not yet been confirmed.
+                    Connect the deployer wallet and click <span className="text-foreground/70 font-medium">Write Oracle</span> on each highlighted row below.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Stats bar */}
             <div className="flex gap-4 mb-6">
               {(["pending", "approved", "rejected"] as const).map(s => {
