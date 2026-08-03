@@ -11,6 +11,7 @@ import githubRouter       from "./github.js";
 import mcpRouter          from "./mcp.js";
 import curatorRouter      from "./curator.js";
 import assetsRouter       from "./assets.js";
+import creatorRouter      from "./creator.js";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(githubRouter);
 router.use(mcpRouter);
 router.use(curatorRouter);
 router.use(assetsRouter);
+router.use(creatorRouter);
 
 export default router;

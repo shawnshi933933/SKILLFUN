@@ -118,6 +118,9 @@ function computeStatus(
   isPending: boolean
 ): AuthStatus {
   if (isPending)      return "pending";
+  // authEpoch === -1 is a sentinel set by the creator update-content endpoint to
+  // force re-authorization after new skill content is pushed (Task #88).
+  if (storedEpoch === -1) return "needs_reauth";
   if (isAuthorized)   return "active";
   if (revokedAt)      return "revoked";
   // Not authorized + no explicit revoke → epoch must have reset

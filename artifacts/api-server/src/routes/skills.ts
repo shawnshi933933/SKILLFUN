@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { skillsTable, paymentProofsTable } from "@workspace/db";
-import { eq, desc, and, SQL, count } from "drizzle-orm";
+import { skillsTable, paymentProofsTable, curatorAuthorizationsTable } from "@workspace/db";
+import { eq, desc, and, SQL, count, isNull } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
@@ -624,6 +624,121 @@ router.patch("/skills/:id", authMiddleware("update-skill"), async (req, res) => 
   }
 
   res.json({ skill: updated });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/skills/:id/update-content
+//
+// Creator uploads new skill.md content for a minted skill they own.
+// Flow:
+//   1. Verify caller is on-chain NFT owner via EIP-712 sig
+//   2. Upload new content to 0G Storage (generates new AES key + rootHash)
+//   3. Increment contentVersion + update rootHash/skillUri/aesKey in DB
+//   4. Mark active curator_authorizations as needs_reauth (authEpoch = -1)
+//   5. Return new rootHash — frontend then calls updateDataHash(tokenId, hash, 0) on-chain
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/skills/:id/update-content", async (req, res) => {
+  const skillId   = req.params.id as string;
+  const sigHeader = req.headers["x-wallet-signature"] as string | undefined;
+
+  if (!sigHeader) {
+    apiError(res, ErrorCode.UNAUTHORIZED, "X-Wallet-Signature header required");
+    return;
+  }
+
+  let callerAddress: string;
+  try {
+    callerAddress = await verifyWalletSignature(sigHeader, "user:update-content");
+  } catch (err) {
+    apiError(res, ErrorCode.UNAUTHORIZED, "Invalid wallet signature");
+    return;
+  }
+
+  // Fetch skill
+  const [skill] = await db
+    .select()
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!skill) {
+    apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+    return;
+  }
+  if (skill.mintStatus !== "minted" && skill.mintStatus !== "claimed") {
+    apiError(res, ErrorCode.INVALID_INPUT, "Skill must be minted before content can be updated");
+    return;
+  }
+  if (skill.tokenId == null) {
+    apiError(res, ErrorCode.INVALID_INPUT, "Skill has no tokenId");
+    return;
+  }
+
+  // Verify caller is the live on-chain NFT owner
+  const onChainOwner = await getOnChainOwner(skill.tokenId);
+  if (!onChainOwner || onChainOwner.toLowerCase() !== callerAddress.toLowerCase()) {
+    apiError(res, ErrorCode.FORBIDDEN, "Caller is not the on-chain NFT owner");
+    return;
+  }
+
+  const { content } = req.body as { content?: string };
+  if (!content || typeof content !== "string" || !content.trim()) {
+    apiError(res, ErrorCode.INVALID_INPUT, "content (string) is required in request body");
+    return;
+  }
+
+  // Upload new content to 0G Storage
+  const meta = (skill.meta as Record<string, unknown>) ?? {};
+  const manifest: Record<string, unknown> = {
+    skillId:   skill.skillId,
+    repoUrl:   skill.repoUrl,
+    name:      meta.name ?? skill.repoUrl.split("/").pop(),
+    ...meta,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const { rootHash: newRootHash, skillUri: newSkillUri, aesKey: newAesKey } =
+    await uploadSkillManifest(skill.skillId, skill.repoUrl, manifest, content.trim());
+
+  const newContentVersion = (skill.contentVersion ?? 1) + 1;
+
+  // Update skill in DB: new rootHash, skillUri, aesKey, incremented contentVersion
+  const [updatedSkill] = await db
+    .update(skillsTable)
+    .set({
+      rootHash:       newRootHash,
+      skillUri:       newSkillUri,
+      aesKey:         newAesKey ?? skill.aesKey,
+      contentVersion: newContentVersion,
+      updatedAt:      new Date(),
+    })
+    .where(eq(skillsTable.skillId, skillId))
+    .returning();
+
+  // Mark all active (non-revoked) curator authorizations as needs_reauth
+  // by setting authEpoch = -1 (sentinel value checked in computeStatus)
+  const { rowCount } = await db
+    .update(curatorAuthorizationsTable)
+    .set({ authEpoch: -1 })
+    .where(
+      and(
+        eq(curatorAuthorizationsTable.tokenId, skill.tokenId),
+        isNull(curatorAuthorizationsTable.revokedAt),
+      )
+    );
+
+  logger.info(
+    { skillId, tokenId: skill.tokenId, newRootHash, newContentVersion, curatorsMarked: rowCount ?? 0 },
+    "skill content updated — curator authorizations flagged for re-review"
+  );
+
+  res.json({
+    skill:          updatedSkill,
+    newRootHash,
+    newSkillUri,
+    newContentVersion,
+    curatorsMarked: rowCount ?? 0,
+  });
 });
 
 export default router;

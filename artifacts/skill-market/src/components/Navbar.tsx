@@ -12,6 +12,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/app/market", label: "Skills", external: false },
     { href: "/app/market?tab=bundles", label: "Bundles", external: false },
+    { href: "/app/creator/skills", label: "Creator", external: false },
     { href: "/app/curator/skills", label: "Curator", external: false },
     { href: "/app/claim", label: "Claim", external: false },
     { href: "/app/stake", label: "Stake", external: false },

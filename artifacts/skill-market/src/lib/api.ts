@@ -421,6 +421,55 @@ export const curatorApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Creator skill management
+// ---------------------------------------------------------------------------
+
+export interface CreatorSkill {
+  skillId:        string;
+  tokenId:        number;
+  repoUrl:        string;
+  skillName:      string;
+  mintStatus:     string;
+  contentVersion: number;
+  rootHash:       string | null;
+  /** On-chain base price in W0G wei (decimal string) */
+  basePrice:      string;
+  isOwner:        boolean;
+  nftOwner:       string | null;
+  isClaimed:      boolean;
+  meta:           Record<string, unknown>;
+}
+
+export const creatorApi = {
+  /** List all minted Skill NFTs currently owned by the given wallet (live on-chain check). */
+  listOwned: (wallet: string) =>
+    apiFetch<{ skills: CreatorSkill[]; wallet: string }>(
+      `/creator/skills?wallet=${encodeURIComponent(wallet)}`
+    ),
+
+  /**
+   * Upload new skill.md content to 0G Storage, increment contentVersion in DB,
+   * and mark curator_authorizations for this tokenId as needs_reauth.
+   * Returns the new rootHash — the caller must then submit updateDataHash on-chain.
+   */
+  updateContent: (
+    skillId:   string,
+    content:   string,
+    sigHeader: string,
+  ) =>
+    apiFetch<{
+      newRootHash:       string;
+      newSkillUri:       string;
+      newContentVersion: number;
+      curatorsMarked:    number;
+    }>(`/skills/${skillId}/update-content`, {
+      method:  "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body:    JSON.stringify({ content }),
+    }),
+};
+
+// ---------------------------------------------------------------------------
 // Admin (deployer-wallet only)
 // ---------------------------------------------------------------------------
 export const adminApi = {
