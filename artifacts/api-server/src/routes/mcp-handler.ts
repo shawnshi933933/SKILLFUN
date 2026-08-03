@@ -219,6 +219,64 @@ router.get("/agent-guide.md", (_req, res) => {
 
 ---
 
+## 0. Onboarding Flow — What to Ask Your User
+
+> **Run this flow first**, before anything else. Collect the required inputs from your user,
+> then proceed to Section 1 onwards autonomously.
+
+### Step 0.1 — Get the Bundle endpoint
+
+Say to your user:
+> "I've read the SkillFun protocol guide. To connect to a Skill Bundle, I need the MCP endpoint URL.
+> Please paste the Bundle's MCP base URL (format: \`https://…/mcp/{bundleId}\`)."
+
+Once you have \`{MCP_BASE}\`, call \`GET {MCP_BASE}/tools\` to confirm the Bundle is reachable and
+\`POST {MCP_BASE}/mcp\` (initialize) to discover the Bundle name, tools, and payment details.
+Report back to your user: Bundle name, number of Skills, and the service price.
+
+### Step 0.2 — Set up your agent wallet
+
+You need an EVM-compatible wallet on 0G Chain (chainId 16661) to sign proofs and, for paid
+Bundles, send W0G transfers. Choose **one** of these options and tell your user which you chose:
+
+**Option A — User provides a private key**
+> "Do you have a dedicated agent wallet private key I can use? If so, please share it securely.
+> I will use it only for SkillFun proof signing and W0G transfers on 0G Chain."
+
+**Option B — Generate a new wallet (recommended for isolation)**
+> "I can generate a fresh wallet for this session. I'll display the address so you can fund it.
+> Note: keep the private key secret and only fund it with the amount needed."
+
+If generating: derive a wallet, display the address, and move to Step 0.3.
+
+### Step 0.3 — Fund the wallet (paid Bundles only)
+
+After \`initialize\` reveals the service price:
+
+- If **servicePrice = 0 (Free)**: no funding needed. Skip to Step 0.4.
+- If **servicePrice > 0 (Paid)**: tell your user:
+  > "This Bundle charges **{PRICE_W0G} W0G** per Skill access proof.
+  > Please send at least **{PRICE_W0G} W0G** (plus a small amount for gas) to my wallet:
+  >
+  > \`{AGENT_WALLET_ADDRESS}\`
+  >
+  > Network: 0G Mainnet (chainId 16661) · Token: W0G (\`0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c\`)
+  >
+  > Let me know once the transfer is confirmed."
+
+Poll \`balanceOf({AGENT_WALLET_ADDRESS})\` on the W0G contract until the balance is sufficient,
+then confirm to your user and proceed automatically.
+
+### Step 0.4 — Confirm and proceed
+
+Once wallet is funded (or Bundle is free), tell your user:
+> "Setup complete. I'm now connecting to the Bundle and retrieving the Skill content.
+> You don't need to do anything else — I'll handle signing, payment, and proof verification."
+
+Then execute Sections 3–6 (initialize → list tools → prove → call) fully autonomously.
+
+---
+
 ## 1. What Is SkillFun?
 
 SkillFun is a Web3 AI Skill Marketplace on 0G Chain (chainId 16661). Skills are encrypted
