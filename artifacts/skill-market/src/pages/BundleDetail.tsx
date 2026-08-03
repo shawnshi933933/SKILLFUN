@@ -508,16 +508,15 @@ if (attempt.status === 402) {
                     onClick={async () => {
                       try {
                         const guideUrl = `${mcpBaseUrl}/agent-guide.md`;
-                        const md = await fetch(guideUrl).then(r => r.text());
-                        await navigator.clipboard.writeText(md);
-                        toast({ title: "Agent guide copied!", description: "Paste it directly into your agent's context window." });
+                        await navigator.clipboard.writeText(guideUrl);
+                        toast({ title: "Link copied!", description: "Paste this URL into your agent — it will read the guide automatically." });
                       } catch {
                         toast({ title: "Copy failed", variant: "destructive" });
                       }
                     }}
                     className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 border border-emerald-500/30 rounded-md px-2 py-1 hover:bg-emerald-500/10 transition-colors"
                   >
-                    <Copy className="w-3 h-3" /> Copy Guide
+                    <Copy className="w-3 h-3" /> Copy Link
                   </button>
                 </div>
                 <div className="text-xs text-muted-foreground/70 leading-relaxed">

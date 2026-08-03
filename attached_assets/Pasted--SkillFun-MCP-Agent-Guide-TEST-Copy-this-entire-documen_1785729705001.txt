@@ -1,0 +1,244 @@
+# SkillFun MCP Agent Guide — TEST
+
+> **Copy this entire document and paste it into your agent's context window.**
+> After reading, your agent knows exactly how to discover, pay for, and call every Skill in this Bundle.
+
+---
+
+## 1. What Is This?
+
+**SkillFun** is a Web3 AI Skill Marketplace built on 0G Chain (chainId 16661).
+Skills are encrypted documents (instructions, configs, data) stored on-chain.
+This Bundle — **TEST** (`bd_4AlAev0UiAtjcZy5g7dr`) — exposes 1 Skill(s) through a single MCP endpoint.
+
+**Payment model:** **0.05 W0G** per proof (ERC-20 transfer to Curator wallet). Pay once, call unlimited times until the creator updates the Skill.
+
+---
+
+## 2. Endpoints
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/mcp/bd_4AlAev0UiAtjcZy5g7dr/mcp`          | POST | MCP JSON-RPC 2.0 (initialize · tools/list · tools/call) |
+| `/mcp/bd_4AlAev0UiAtjcZy5g7dr/tools`        | GET  | Free tools list (no auth required) |
+| `/api/mcp/payment/prove`        | POST | Exchange payment proof for access token |
+| `/mcp/bd_4AlAev0UiAtjcZy5g7dr/agent-guide.md` | GET  | This document (always up-to-date) |
+
+**Base URL:** `https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev`
+
+---
+
+## 3. Available Skills (Tools)
+
+| Tool Name | Skill | Description |
+|-----------|-------|-------------|
+| `test-4lq8:0` | Test Contract | TEST |
+
+Tool names use the format `{bundle-slug}:{tokenId}`.
+
+---
+
+## 4. Step-by-Step: Paid Skill Access (x402)
+
+### Paid Flow — transfer W0G, sign a message, get a proof, call the skill
+
+**Step 1 — List tools (optional, already shown above)**
+```
+GET https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/mcp/bd_4AlAev0UiAtjcZy5g7dr/tools
+```
+
+**Step 2 — Call a tool (first attempt → HTTP 402)**
+```http
+POST https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/mcp/bd_4AlAev0UiAtjcZy5g7dr/mcp
+Content-Type: application/json
+
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"test-4lq8:0","arguments":{}}}
+```
+The 402 response body:
+```json
+{
+  "error": "Payment required",
+  "accepts": [{
+    "scheme": "exact",
+    "network": "0g-mainnet",
+    "currency": "W0G",
+    "tokenAddress": "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c",
+    "amount": "50000000000000000",
+    "payTo": "0xc56f7063fd6d199ccc443dbbf4283be602d46343",
+    "method": "erc20-transfer",
+    "tokenId": 0,
+    "bundleId": "bd_4AlAev0UiAtjcZy5g7dr"
+  }],
+  "proveEndpoint": "/api/mcp/payment/prove"
+}
+```
+
+**Step 3 — Send ERC-20 W0G transfer on 0G Chain**
+- **Token contract:** `0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c` (W0G)
+- **Recipient (Curator wallet):** `0xc56f7063fd6d199ccc443dbbf4283be602d46343`
+- **Amount:** `50000000000000000` wei = **0.05 W0G**
+- **Chain ID:** 16661 · RPC: `https://evmrpc.0g.ai`
+- This is a direct `transfer(address, uint256)` ERC-20 call. No `approve` step, no contract interaction.
+
+Wait for the transaction to be mined. Save the `txHash`.
+
+**Step 4 — Sign the payment proof message (EIP-191 personal_sign)**
+```
+Message: "SkillFun payment proof: {txHash}"
+```
+Replace `{txHash}` with the actual transaction hash from Step 3.
+
+**Step 5 — POST to prove endpoint**
+```http
+POST https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/api/mcp/payment/prove
+Content-Type: application/json
+
+{
+  "txHash":      "{txHash}",
+  "tokenId":     0,
+  "bundleId":    "bd_4AlAev0UiAtjcZy5g7dr",
+  "agentWallet": "{YOUR_WALLET_ADDRESS}",
+  "signature":   "{YOUR_SIGNATURE}"
+}
+```
+Response:
+```json
+{ "proof": "abc123...", "skillId": "sk_...", "contentVersion": 1, "expiresAt": null }
+```
+
+**Step 6 — Retry tools/call with proof headers**
+```http
+POST https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/mcp/bd_4AlAev0UiAtjcZy5g7dr/mcp
+Content-Type: application/json
+X-402-Payment-Proof: {proof}
+X-402-Agent-Wallet:  {YOUR_WALLET_ADDRESS}
+
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"test-4lq8:0","arguments":{}}}
+```
+Server decrypts the Skill content from 0G Storage and returns it as MCP TextContent.
+
+---
+
+## 5. Required HTTP Headers Summary
+
+| Header | Required when | Value |
+|--------|--------------|-------|
+| `Content-Type` | All POST requests | `application/json` |
+| `X-402-Payment-Proof` | tools/call | The `proof` string from /prove |
+| `X-402-Agent-Wallet` | tools/call | Your agent wallet address (EIP-55 checksum) |
+
+---
+
+## 6. Proof Token Lifetime
+
+- A proof is scoped to **(skillId, bundleId, contentVersion)**.
+- It is valid **indefinitely** — no expiry — unless `expiresAt` is set in the response.
+- It is **reusable**: call the same tool unlimited times with the same proof.
+- It becomes **stale** (`stale_version` error) only when the Skill creator updates the encrypted content on-chain (new contentVersion). You must pay again to get a fresh proof.
+- Calling `/prove` multiple times with the same txHash (or free signature) is **idempotent** — you get the same proof back (`reissued: true`). Safe to retry on network failure.
+
+---
+
+## 7. Full TypeScript Example
+
+```typescript
+import { createWalletClient, createPublicClient, http, parseAbi } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+
+const account  = privateKeyToAccount("0xYOUR_PRIVATE_KEY");
+const chain    = {
+  id: 16661, name: "0G Mainnet",
+  nativeCurrency: { name: "0G", symbol: "A0GI", decimals: 18 },
+  rpcUrls: { default: { http: ["https://evmrpc.0g.ai"] } },
+};
+const pubClient    = createPublicClient({ chain, transport: http("https://evmrpc.0g.ai") });
+const walletClient = createWalletClient({ account, chain, transport: http("https://evmrpc.0g.ai") });
+
+const MCP_URL   = "https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/mcp/bd_4AlAev0UiAtjcZy5g7dr/mcp";
+const PROVE_URL = "https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/api/mcp/payment/prove";
+const BUNDLE_ID = "bd_4AlAev0UiAtjcZy5g7dr";
+const TOKEN_ID  = 0;
+const TOOL_NAME = "test-4lq8:0";
+const W0G       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c";
+const PAY_TO    = "0xc56f7063fd6d199ccc443dbbf4283be602d46343";
+const AMOUNT    = 50000000000000000n; // 0.05 W0G
+
+// Helper: sign EIP-191 message
+const sign = (msg: string) => account.signMessage({ message: msg });
+
+async function callSkill() {
+  // 1. First attempt (will 402)
+  const r1 = await fetch(MCP_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
+      params: { name: TOOL_NAME, arguments: {} } }),
+  });
+  if (r1.status !== 402) throw new Error("Expected 402");
+
+  // 2. Send W0G transfer
+  const erc20 = parseAbi(["function transfer(address to, uint256 amount) returns (bool)"]);
+  const txHash = await walletClient.writeContract({
+    address: W0G, abi: erc20, functionName: "transfer", args: [PAY_TO, AMOUNT],
+  });
+  await pubClient.waitForTransactionReceipt({ hash: txHash });
+
+  // 3. Prove payment
+  const paidSig = await sign(`SkillFun payment proof: ${txHash}`);
+  const prove = await fetch(PROVE_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ txHash, tokenId: TOKEN_ID, bundleId: BUNDLE_ID,
+      agentWallet: account.address, signature: paidSig }),
+  }).then(r => r.json());
+
+  // 4. Retry with proof
+  const r2 = await fetch(MCP_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-402-Payment-Proof": prove.proof,
+      "X-402-Agent-Wallet":  account.address,
+    },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call",
+      params: { name: TOOL_NAME, arguments: {} } }),
+  }).then(r => r.json());
+
+  console.log(r2.result.content[0].text);
+}
+
+callSkill().catch(console.error);
+```
+
+---
+
+## 8. Troubleshooting
+
+| Error / Status | Cause | Fix |
+|----------------|-------|-----|
+| HTTP 402 `missing_proof` | `X-402-Payment-Proof` header absent | Complete steps 3–5 (free) or 3–6 (paid) to get a proof |
+| `unknown_token` | Proof string not in DB | Re-run the /prove step |
+| `wallet_mismatch` | `X-402-Agent-Wallet` differs from wallet that signed | Use exactly the same address in both the signature and the header |
+| `wrong_bundle` | Proof was issued for a different bundleId | Get a new proof for `bd_4AlAev0UiAtjcZy5g7dr` |
+| `stale_version` | Skill creator updated content on-chain | Pay again — the content version changed |
+| `not_authorized` | Curator hasn't authorized this Skill on-chain | Contact the Bundle curator (`0xc56f7063fd6d199ccc443dbbf4283be602d46343`) |
+| `unknown_tool` | Tool name not found in this bundle | Fetch `GET https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/mcp/bd_4AlAev0UiAtjcZy5g7dr/tools` and pick an exact tool name |
+| HTTP 400 `tokenId … required` | Missing fields in /prove body | Include all fields: `tokenId`, `bundleId`, `agentWallet`, `signature` (+ `txHash` for paid) |
+| HTTP 400 `W0G transfer … less than required` | Sent less W0G than servicePrice | Transfer exactly `50000000000000000` wei (`0.05 W0G`) |
+| `No valid W0G Transfer found` | txHash belongs to a different tx or wrong token | Verify the txHash is for a W0G (`0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c`) transfer to `0xc56f7063fd6d199ccc443dbbf4283be602d46343` |
+| `Transaction not found or still pending` | Tx not yet mined | Wait a few seconds and retry /prove |
+
+---
+
+## 9. Network & Contract Reference
+
+| | |
+|-|--|
+| **Chain**          | 0G Mainnet (chainId 16661) |
+| **RPC**            | `https://evmrpc.0g.ai` |
+| **W0G token**      | `0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c` |
+| **SkillNFT**       | `0xF119d7FB60f897D79b10b23C843ED706bFB59F79` |
+| **Curator wallet** | `0xc56f7063fd6d199ccc443dbbf4283be602d46343` |
+| **Explorer**       | https://chainscan.0g.ai |
+
+---
+
+*Generated by SkillFun · Bundle `bd_4AlAev0UiAtjcZy5g7dr` · 2026-08-03 · [Refresh](https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pike.replit.dev/mcp/bd_4AlAev0UiAtjcZy5g7dr/agent-guide.md)*
