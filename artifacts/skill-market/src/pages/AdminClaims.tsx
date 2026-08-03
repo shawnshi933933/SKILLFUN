@@ -4,7 +4,8 @@
  *
  * Wallet-gated to the platform deployer address.
  * Shows all pending Skill claims; admin can approve or reject each one.
- * After approval, displays the pre-filled `cast send` command to write the Oracle.
+ * After approval, a "Write Oracle" button lets the connected deployer wallet
+ * write verification on-chain directly via wagmi — no CLI step needed.
  */
 
 import { useState, useCallback } from "react";
@@ -12,73 +13,93 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useAccount } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
   Shield, Loader2, CheckCircle2, XCircle, Clock, RefreshCw,
-  Copy, Terminal, ChevronDown, ChevronUp, AlertTriangle,
+  Copy, Terminal, ChevronDown, ChevronUp, AlertTriangle, Zap,
 } from "lucide-react";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
 import type { DbClaim } from "@/lib/api";
+import { SkillFunOracle_ABI } from "@workspace/abi";
 
 // ---------------------------------------------------------------------------
-// Oracle command builder
+// Constants
 // ---------------------------------------------------------------------------
 
-const ORACLE_ADDRESS = "0x8071937558Ed2fD56AcE1d925B6f70BB40E09743";
-const RPC_URL       = "https://evmrpc-testnet.0g.ai";
+const ORACLE_ADDRESS = "0x8071937558Ed2fD56AcE1d925B6f70BB40E09743" as const;
 
-function buildCastCommand(tokenId: number, walletAddress: string): string {
-  return (
-    `cast send ${ORACLE_ADDRESS} ` +
-    `"setVerifiedClaims(uint256[],address[])" ` +
-    `"[${tokenId}]" "[${walletAddress}]" ` +
-    `--rpc-url ${RPC_URL} ` +
-    `--private-key <COLD_WALLET_PRIVATE_KEY>`
-  );
+// ---------------------------------------------------------------------------
+// Write Oracle button — self-contained per claim row
+// ---------------------------------------------------------------------------
+
+interface WriteOracleButtonProps {
+  tokenId: number;
+  walletAddress: string;
+  isDeployer: boolean;
+  onSuccess: () => void;
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
+function WriteOracleButton({ tokenId, walletAddress, isDeployer, onSuccess }: WriteOracleButtonProps) {
+  const { toast } = useToast();
 
-function CastCommand({ tokenId, walletAddress }: { tokenId: number; walletAddress: string }) {
-  const [copied, setCopied] = useState(false);
-  const cmd = buildCastCommand(tokenId, walletAddress);
+  const {
+    writeContract,
+    data: txHash,
+    isPending: isSigning,
+    error: writeError,
+    reset,
+  } = useWriteContract();
 
-  const copy = useCallback(() => {
-    navigator.clipboard.writeText(cmd).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, [cmd]);
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  // Surface write errors as toasts
+  if (writeError && !isSigning) {
+    const msg = (writeError as Error).message ?? "Transaction failed";
+    toast({ title: "Oracle write failed", description: msg.slice(0, 120), variant: "destructive" });
+    reset();
+  }
+
+  if (isConfirmed) {
+    onSuccess();
+    return (
+      <Badge
+        variant="outline"
+        className="border-purple-500/40 text-purple-300 bg-purple-500/10 flex items-center gap-1 text-xs"
+      >
+        <CheckCircle2 className="w-3 h-3" /> Oracle written
+      </Badge>
+    );
+  }
+
+  const busy = isSigning || isConfirming;
 
   return (
-    <div className="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-        <span className="text-xs font-medium text-emerald-400">
-          Run this from your cold wallet to write the Oracle
-        </span>
-      </div>
-      <div className="flex items-start gap-2">
-        <code className="flex-1 text-xs font-mono text-emerald-300/90 break-all leading-relaxed">
-          {cmd}
-        </code>
-        <button
-          onClick={copy}
-          className="shrink-0 mt-0.5 p-1 rounded text-muted-foreground hover:text-emerald-400 transition-colors"
-          title="Copy command"
-        >
-          {copied ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          ) : (
-            <Copy className="w-4 h-4" />
-          )}
-        </button>
-      </div>
-    </div>
+    <Button
+      size="sm"
+      variant="outline"
+      className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/60 h-8 px-3 text-xs"
+      disabled={!isDeployer || busy}
+      title={!isDeployer ? "Only the deployer wallet can write the Oracle" : undefined}
+      onClick={() =>
+        writeContract({
+          address: ORACLE_ADDRESS,
+          abi: SkillFunOracle_ABI,
+          functionName: "setVerifiedClaims",
+          args: [[BigInt(tokenId)], [walletAddress as `0x${string}`]],
+        })
+      }
+    >
+      {busy ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+      ) : (
+        <Zap className="w-3.5 h-3.5 mr-1" />
+      )}
+      {isSigning ? "Confirm in wallet…" : isConfirming ? "Writing…" : "Write Oracle"}
+    </Button>
   );
 }
 
@@ -88,15 +109,24 @@ function CastCommand({ tokenId, walletAddress }: { tokenId: number; walletAddres
 
 interface ClaimRowProps {
   claim: DbClaim;
+  isDeployer: boolean;
   onAction: (claimId: string, status: "approved" | "rejected") => Promise<void>;
   actionLoading: string | null; // claimId currently in flight
 }
 
-function ClaimRow({ claim, onAction, actionLoading }: ClaimRowProps) {
+function ClaimRow({ claim, isDeployer, onAction, actionLoading }: ClaimRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const [oracleWritten, setOracleWritten] = useState(false);
   const isLoading = actionLoading === claim.id;
 
   const statusBadge = () => {
+    if (claim.status === "approved" && oracleWritten) {
+      return (
+        <Badge variant="outline" className="border-purple-500/40 text-purple-300 bg-purple-500/10 flex items-center gap-1 text-xs">
+          <CheckCircle2 className="w-3 h-3" /> Oracle written
+        </Badge>
+      );
+    }
     switch (claim.status) {
       case "pending":
         return (
@@ -184,6 +214,27 @@ function ClaimRow({ claim, onAction, actionLoading }: ClaimRowProps) {
               </Button>
             </>
           )}
+
+          {/* Write Oracle button for approved claims */}
+          {claim.status === "approved" && !oracleWritten && (
+            <WriteOracleButton
+              tokenId={claim.tokenId}
+              walletAddress={claim.walletAddress}
+              isDeployer={isDeployer}
+              onSuccess={() => setOracleWritten(true)}
+            />
+          )}
+
+          {/* Oracle written badge (inline, mirrors the status badge for mobile) */}
+          {claim.status === "approved" && oracleWritten && (
+            <Badge
+              variant="outline"
+              className="border-purple-500/40 text-purple-300 bg-purple-500/10 flex items-center gap-1 text-xs sm:hidden"
+            >
+              <CheckCircle2 className="w-3 h-3" /> Oracle written
+            </Badge>
+          )}
+
           {(claim.status === "approved" || claim.status === "rejected") && (
             <button
               onClick={() => setExpanded(v => !v)}
@@ -196,10 +247,15 @@ function ClaimRow({ claim, onAction, actionLoading }: ClaimRowProps) {
         </div>
       </div>
 
-      {/* Expanded: cast send command for approved claims */}
+      {/* Expanded: detail for approved claims */}
       {expanded && claim.status === "approved" && (
-        <div className="px-5 pb-4 border-t border-white/5">
-          <CastCommand tokenId={claim.tokenId} walletAddress={claim.walletAddress} />
+        <div className="px-5 pb-4 border-t border-white/5 pt-3">
+          <p className="text-xs text-muted-foreground">
+            Token <span className="font-mono text-foreground/70">#{claim.tokenId}</span> approved.
+            {oracleWritten
+              ? " Oracle verification has been written on-chain."
+              : " Use the Write Oracle button above to write verification on-chain."}
+          </p>
         </div>
       )}
 
@@ -207,18 +263,6 @@ function ClaimRow({ claim, onAction, actionLoading }: ClaimRowProps) {
       {expanded && claim.status === "rejected" && (
         <div className="px-5 pb-4 border-t border-white/5 pt-3">
           <p className="text-xs text-muted-foreground">This claim was rejected. The creator may re-submit.</p>
-        </div>
-      )}
-
-      {/* Auto-expand cast command immediately after approving */}
-      {claim.status === "approved" && !expanded && (
-        <div className="px-5 pb-4">
-          <button
-            onClick={() => setExpanded(true)}
-            className="text-xs text-emerald-400/70 hover:text-emerald-400 flex items-center gap-1 transition-colors"
-          >
-            <Terminal className="w-3 h-3" /> Show Oracle command
-          </button>
         </div>
       )}
     </div>
@@ -239,6 +283,20 @@ export default function AdminClaims() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
+
+  // Read the Oracle cold wallet address to determine deployer
+  const { data: coldWalletRaw } = useReadContract({
+    address: ORACLE_ADDRESS,
+    abi: SkillFunOracle_ABI,
+    functionName: "coldWallet",
+  });
+
+  const coldWallet = coldWalletRaw as string | undefined;
+
+  const isDeployer =
+    !!address &&
+    !!coldWallet &&
+    address.toLowerCase() === coldWallet.toLowerCase();
 
   const fetchClaims = useCallback(async () => {
     if (!isConnected) return;
@@ -270,7 +328,7 @@ export default function AdminClaims() {
         title: status === "approved" ? "Claim approved" : "Claim rejected",
         description:
           status === "approved"
-            ? `Token #${updated.tokenId} approved. Use the Oracle command to write on-chain.`
+            ? `Token #${updated.tokenId} approved. Click "Write Oracle" to verify on-chain.`
             : `Claim for token #${updated.tokenId} rejected.`,
       });
     } catch (err) {
@@ -321,6 +379,11 @@ export default function AdminClaims() {
               <span className="font-mono text-foreground">
                 {address?.slice(0, 6)}…{address?.slice(-4)}
               </span>
+              {coldWallet && (
+                <span className={`ml-2 text-xs font-medium ${isDeployer ? "text-purple-400" : "text-amber-400"}`}>
+                  · {isDeployer ? "Deployer wallet" : "Not deployer — read-only"}
+                </span>
+              )}
               {lastFetched && (
                 <span className="ml-2 text-muted-foreground/60">
                   · Last refreshed {lastFetched.toLocaleTimeString()}
@@ -412,6 +475,7 @@ export default function AdminClaims() {
                 <ClaimRow
                   key={claim.id}
                   claim={claim}
+                  isDeployer={isDeployer}
                   onAction={handleAction}
                   actionLoading={actionLoading}
                 />
@@ -428,7 +492,7 @@ export default function AdminClaims() {
                 <span className="font-mono text-foreground/70">{ORACLE_ADDRESS}</span>
                 {" "}·{" "}
                 <span className="font-mono">setVerifiedClaims(uint256[],address[])</span>
-                {" "}— call this from your cold wallet after approving to write verification on-chain.
+                {" "}— connect the deployer wallet and click "Write Oracle" on any approved claim.
               </p>
             </div>
           </>
