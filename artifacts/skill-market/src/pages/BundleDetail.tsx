@@ -80,15 +80,11 @@ export default function BundleDetail() {
 
   const { bundle, skills } = data;
 
-  const apy           = getMeta<number>(bundle, "apy", 0);
-  const stakerPool    = getMeta<number>(bundle, "stakerPool", 0);
-  const invocations   = analyticsData?.invocations ?? 0;
-  const revenueW0G    = analyticsData?.revenueW0G ?? 0;
-  const curatorMarkup = getMeta<number>(bundle, "curatorMarkup", 10);
-  const tags          = getMeta<string[]>(bundle, "tags", []);
-
-  const totalBasePrice = skills.reduce((s, k) => s + getMeta<number>(k, "basePrice", 0), 0);
-  const bundleTotal    = totalBasePrice * (1 + curatorMarkup / 100);
+  const apy         = getMeta<number>(bundle, "apy", 0);
+  const stakerPool  = getMeta<number>(bundle, "stakerPool", 0);
+  const invocations = analyticsData?.invocations ?? 0;
+  const revenueW0G  = analyticsData?.revenueW0G ?? 0;
+  const tags        = getMeta<string[]>(bundle, "tags", []);
 
   // Owner check — show edit controls only to the bundle owner
   const isOwner = !!address && address.toLowerCase() === bundle.ownerAddress.toLowerCase();
@@ -292,7 +288,7 @@ if (attempt.status === 402) {
                   { label: "Skills", value: String(skills.length) },
                   { label: "Invocations", value: invocations.toLocaleString() },
                   { label: "W0G Earned", value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)} W0G` : "—" },
-                  { label: "Curator Markup", value: `${curatorMarkup}%` },
+                  { label: "Service Price", value: servicePriceW0G ? `${servicePriceW0G} W0G` : "Free" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
