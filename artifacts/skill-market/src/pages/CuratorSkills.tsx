@@ -599,10 +599,13 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
       }`}
       data-testid={`bundle-card-${bundle.bundleId}`}
     >
-      {/* Card header — click to expand/collapse */}
-      <button
-        className="w-full text-left px-5 py-4 flex items-center gap-4"
+      {/* Card header — click to expand/collapse (div to allow nested interactive elements) */}
+      <div
+        role="button"
+        tabIndex={0}
+        className="w-full text-left px-5 py-4 flex items-center gap-4 cursor-pointer select-none"
         onClick={() => !editingPrice && setExpanded((v) => !v)}
+        onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !editingPrice) setExpanded((v) => !v); }}
         data-testid={`bundle-card-toggle-${bundle.bundleId}`}
       >
         {/* Icon */}
@@ -709,7 +712,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
             ? <ChevronDown className="w-4 h-4" />
             : <ChevronRight className="w-4 h-4" />}
         </div>
-      </button>
+      </div>
 
       {/* Expanded panel */}
       {expanded && (

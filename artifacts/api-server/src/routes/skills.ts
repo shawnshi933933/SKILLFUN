@@ -681,10 +681,40 @@ router.post("/skills/:id/update-content", async (req, res) => {
     return;
   }
 
-  const { content } = req.body as { content?: string };
-  if (!content || typeof content !== "string" || !content.trim()) {
-    apiError(res, ErrorCode.INVALID_INPUT, "content (string) is required in request body");
-    return;
+  const { content, fromGithub } = req.body as { content?: string; fromGithub?: boolean };
+
+  let resolvedContent: string;
+
+  if (fromGithub) {
+    // Fetch latest skill file directly from the GitHub repo
+    const parts = skill.repoUrl.replace(/^https?:\/\/github\.com\//, "").split("/");
+    const [owner, repo] = parts;
+    if (!owner || !repo) {
+      apiError(res, ErrorCode.INVALID_INPUT, `Cannot parse repoUrl as owner/repo: ${skill.repoUrl}`);
+      return;
+    }
+    let fetched: string | null = null;
+    outer: for (const branch of ["main", "master"]) {
+      for (const filename of ["skill.md", "skillfun.json", "README.md"]) {
+        try {
+          const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filename}`;
+          const r = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+          if (r.status === 200) { fetched = await r.text(); break outer; }
+        } catch { /* try next */ }
+      }
+    }
+    if (!fetched) {
+      apiError(res, ErrorCode.NOT_FOUND, `Could not fetch skill file from GitHub repo: ${skill.repoUrl}`);
+      return;
+    }
+    resolvedContent = fetched;
+    logger.info({ skillId, repoUrl: skill.repoUrl }, "skill content fetched from GitHub for update");
+  } else {
+    if (!content || typeof content !== "string" || !content.trim()) {
+      apiError(res, ErrorCode.INVALID_INPUT, "Either fromGithub:true or a content string is required");
+      return;
+    }
+    resolvedContent = content.trim();
   }
 
   // Upload new content to 0G Storage

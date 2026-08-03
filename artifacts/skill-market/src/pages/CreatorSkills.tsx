@@ -6,12 +6,11 @@
  * Creators can update the invocation price and push new skill content.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
@@ -25,7 +24,7 @@ import { formatUnits, parseUnits } from "viem";
 import {
   Wand2, DollarSign, RefreshCw, ExternalLink, Loader2,
   ChevronDown, ChevronUp, FileText, CheckCircle2, AlertTriangle,
-  Zap,
+  Zap, Github, RotateCcw,
 } from "lucide-react";
 
 const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT as `0x${string}`;
@@ -114,38 +113,53 @@ function SetPricePanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
 // UpdateContentPanel
 // ---------------------------------------------------------------------------
 
-type UpdatePhase = "idle" | "uploading" | "signing" | "confirming" | "done" | "error";
+type UpdatePhase = "idle" | "fetching" | "uploading" | "signing" | "confirming" | "done" | "error";
+
+const PHASE_LABEL: Record<UpdatePhase, string> = {
+  idle:       "Sync from GitHub",
+  fetching:   "Fetching skill.md…",
+  uploading:  "Uploading to 0G…",
+  signing:    "Confirm in wallet…",
+  confirming: "Waiting for block…",
+  done:       "Synced!",
+  error:      "Retry",
+};
+
+const PHASE_DETAIL: Partial<Record<UpdatePhase, string>> = {
+  fetching:   "Reading latest skill.md from your GitHub repo",
+  uploading:  "Uploading new content to 0G Storage",
+  signing:    "Sign updateDataHash in your wallet",
+  confirming: "Waiting for on-chain confirmation",
+  done:       "Content updated — curators will be prompted to re-authorize",
+};
 
 function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: () => void }) {
   const { toast } = useToast();
   const sign = useEip712Sign();
-  const [content, setContent]   = useState("");
   const [phase, setPhase]       = useState<UpdatePhase>("idle");
   const [errMsg, setErrMsg]     = useState("");
-  const [newRootHash, setNewRootHash] = useState<`0x${string}` | null>(null);
+  const [newRootHash, setNewRootHash] = useState<string | null>(null);
 
   const { writeContractAsync } = useWriteContract();
 
   const busy = phase !== "idle" && phase !== "done" && phase !== "error";
 
-  const handleUpdate = async () => {
-    if (!content.trim()) {
-      toast({ title: "Please paste your updated skill.md content", variant: "destructive" });
-      return;
-    }
-
-    setPhase("uploading");
+  const handleSync = async () => {
+    setPhase("fetching");
     setErrMsg("");
+    setNewRootHash(null);
 
     try {
-      // Step 1: Upload to 0G via backend
+      // Step 1: Backend fetches from GitHub + uploads to 0G
+      setPhase("uploading"); // backend does fetch+upload atomically; show uploading after brief delay
       const sigHeader = await sign("user:update-content");
+      setPhase("uploading");
       const { newRootHash: rh } = await creatorApi.updateContent(
         skill.skillId,
-        content.trim(),
+        { fromGithub: true },
         sigHeader,
       );
-      setNewRootHash(rh as `0x${string}`);
+      setNewRootHash(rh);
 
       // Step 2: Call updateDataHash on-chain
       setPhase("signing");
@@ -164,61 +178,96 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
 
       setPhase("done");
       toast({
-        title: "Content updated",
-        description: `Skill #${skill.tokenId} updated on 0G. Curators will be prompted to re-authorize.`,
+        title: "Content synced",
+        description: `Skill #${skill.tokenId} updated from GitHub. Curators will be prompted to re-authorize.`,
       });
       onSuccess();
     } catch (err) {
-      const msg = (err as Error).message ?? "Update failed";
-      setErrMsg(msg.slice(0, 120));
+      const msg = (err as Error).message ?? "Sync failed";
+      setErrMsg(msg.slice(0, 160));
       setPhase("error");
-      toast({ title: "Update failed", description: msg.slice(0, 120), variant: "destructive" });
+      toast({ title: "Sync failed", description: msg.slice(0, 120), variant: "destructive" });
     }
   };
 
-  const PHASE_LABEL: Record<UpdatePhase, string> = {
-    idle:       "Update Content",
-    uploading:  "Uploading to 0G…",
-    signing:    "Confirm in wallet…",
-    confirming: "Waiting for block…",
-    done:       "Done!",
-    error:      "Retry",
-  };
+  const repoDisplay = skill.repoUrl.replace(/^https?:\/\/github\.com\//, "");
+  const githubUrl   = skill.repoUrl.startsWith("http")
+    ? skill.repoUrl
+    : `https://github.com/${skill.repoUrl}`;
 
   return (
-    <div className="space-y-2">
-      <Textarea
-        value={content}
-        onChange={e => setContent(e.target.value)}
-        placeholder={`Paste your updated skill.md here…\n\n# My Skill\nDescription: …`}
-        rows={6}
-        className="resize-none bg-background border-white/10 text-xs font-mono"
-        disabled={busy}
-      />
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      {/* Source info */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg">
+        <Github className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+        <span className="text-xs font-mono text-muted-foreground/80 flex-1 truncate">{repoDisplay}</span>
+        <a
+          href={githubUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+          title="Open on GitHub"
+        >
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+
+      {/* Phase progress (while active or done) */}
+      {phase !== "idle" && (
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
+          phase === "done"
+            ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+            : phase === "error"
+            ? "bg-destructive/10 border border-destructive/20 text-destructive"
+            : "bg-primary/5 border border-primary/15 text-muted-foreground"
+        }`}>
+          {phase === "done" ? (
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+          ) : phase === "error" ? (
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+          )}
+          <span>{phase === "error" ? errMsg : (PHASE_DETAIL[phase] ?? PHASE_LABEL[phase])}</span>
+          {newRootHash && phase === "done" && (
+            <span className="ml-auto font-mono text-[10px] text-emerald-400/60 truncate max-w-[140px]">
+              {newRootHash.slice(0, 18)}…
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Action button */}
+      <div className="flex items-center gap-2">
         <Button
           size="sm"
-          disabled={busy || !content.trim()}
-          onClick={handleUpdate}
+          disabled={busy}
+          onClick={handleSync}
           className="h-8 px-3 text-xs bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30"
           variant="outline"
           data-testid={`button-update-content-${skill.tokenId}`}
         >
-          {busy ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <FileText className="w-3 h-3 mr-1" />}
+          {busy ? (
+            <Loader2 className="w-3 h-3 animate-spin mr-1" />
+          ) : phase === "done" ? (
+            <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-400" />
+          ) : phase === "error" ? (
+            <RotateCcw className="w-3 h-3 mr-1" />
+          ) : (
+            <Github className="w-3 h-3 mr-1" />
+          )}
           {PHASE_LABEL[phase]}
         </Button>
-        {newRootHash && phase === "done" && (
-          <span className="text-[10px] font-mono text-muted-foreground/60 truncate max-w-[200px]">
-            {newRootHash.slice(0, 20)}…
+        {phase === "idle" && (
+          <span className="text-[10px] text-muted-foreground/50">
+            Fetches the latest <code className="text-primary/70">skill.md</code> from your repo
           </span>
         )}
       </div>
-      {phase === "error" && errMsg && (
-        <p className="text-[10px] text-destructive">{errMsg}</p>
-      )}
-      <p className="text-[10px] text-muted-foreground/60">
-        Uploads to 0G Storage and records the new hash on-chain. Existing curator authorizations
-        will be flagged for re-review.
+
+      <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+        Reads <code className="text-primary/60">skill.md</code> from GitHub, uploads to 0G Storage, and records the new hash on-chain.
+        Existing curator authorizations will be flagged for re-review.
       </p>
     </div>
   );

@@ -448,13 +448,14 @@ export const creatorApi = {
     ),
 
   /**
-   * Upload new skill.md content to 0G Storage, increment contentVersion in DB,
-   * and mark curator_authorizations for this tokenId as needs_reauth.
+   * Sync skill content from GitHub (fromGithub: true) or upload provided content.
+   * Uploads to 0G Storage, increments contentVersion in DB,
+   * and marks curator_authorizations for this tokenId as needs_reauth.
    * Returns the new rootHash — the caller must then submit updateDataHash on-chain.
    */
   updateContent: (
     skillId:   string,
-    content:   string,
+    options:   { fromGithub: true } | { fromGithub?: false; content: string },
     sigHeader: string,
   ) =>
     apiFetch<{
@@ -465,7 +466,7 @@ export const creatorApi = {
     }>(`/skills/${skillId}/update-content`, {
       method:  "POST",
       headers: { "X-Wallet-Signature": sigHeader },
-      body:    JSON.stringify({ content }),
+      body:    JSON.stringify(options),
     }),
 };
 
