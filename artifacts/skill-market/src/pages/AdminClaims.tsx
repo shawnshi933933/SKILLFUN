@@ -13,8 +13,9 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useAccount } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { SkillFunOracle_ABI } from "@workspace/abi";
 import {
   Shield, Loader2, CheckCircle2, XCircle, Clock, RefreshCw,
   Copy, Terminal, ChevronDown, ChevronUp, AlertTriangle, Zap,
@@ -22,6 +23,9 @@ import {
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
 import type { DbClaim } from "@/lib/api";
+
+// Oracle contract address (0G Mainnet chainId 16661)
+const ORACLE_ADDRESS = "0x8071937558Ed2fD56AcE1d925B6f70BB40E09743" as const;
 
 // ---------------------------------------------------------------------------
 // Write Oracle button — calls backend; no cold-wallet key needed in MetaMask
@@ -96,8 +100,24 @@ interface ClaimRowProps {
 function ClaimRow({ claim, isDeployer, onAction, actionLoading, sign }: ClaimRowProps) {
   // Approved claims auto-expand on mount so the Oracle write prompt is immediately visible
   const [expanded, setExpanded] = useState(claim.status === "approved");
-  const [oracleWritten, setOracleWritten] = useState(false);
+  // Optimistic local state — set immediately after a successful Write Oracle call
+  const [oracleWrittenLocal, setOracleWrittenLocal] = useState(false);
   const isLoading = actionLoading === claim.id;
+
+  // Read on-chain verifiedOwner for this token (only for approved claims)
+  const { data: onChainOwner } = useReadContract({
+    address: ORACLE_ADDRESS,
+    abi: SkillFunOracle_ABI as readonly object[],
+    functionName: "verifiedOwner",
+    args: [BigInt(claim.tokenId)],
+    query: { enabled: claim.status === "approved" },
+  });
+
+  // Oracle is written if local optimistic state OR on-chain address matches claim wallet
+  const oracleWritten =
+    oracleWrittenLocal ||
+    (typeof onChainOwner === "string" &&
+      onChainOwner.toLowerCase() === claim.walletAddress.toLowerCase());
 
   const statusBadge = () => {
     if (claim.status === "approved" && oracleWritten) {
@@ -200,7 +220,7 @@ function ClaimRow({ claim, isDeployer, onAction, actionLoading, sign }: ClaimRow
             <WriteOracleButton
               claimId={claim.id}
               isDeployer={isDeployer}
-              onSuccess={() => setOracleWritten(true)}
+              onSuccess={() => setOracleWrittenLocal(true)}
               sign={sign}
             />
           )}
