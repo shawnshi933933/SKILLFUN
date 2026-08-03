@@ -50,6 +50,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      "@workspace/abi": path.resolve(import.meta.dirname, "..", "..", "packages/abi/src/index.ts"),
     },
     dedupe: ["react", "react-dom"],
   },

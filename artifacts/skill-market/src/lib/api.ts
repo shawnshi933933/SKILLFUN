@@ -438,4 +438,18 @@ export const adminApi = {
     apiFetch<{ skills: DbSkill[] }>("/admin/skills", {
       headers: { "X-Wallet-Signature": sigHeader },
     }),
+
+  /** List all pending Skill claims (deployer only). */
+  listClaims: (sigHeader: string) =>
+    apiFetch<{ claims: DbClaim[] }>("/claims/pending", {
+      headers: { "X-Wallet-Signature": sigHeader },
+    }),
+
+  /** Approve or reject a claim (deployer only). */
+  updateClaim: (claimId: string, status: "approved" | "rejected", sigHeader: string) =>
+    apiFetch<{ claim: DbClaim }>(`/claims/${claimId}`, {
+      method: "PATCH",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify({ status }),
+    }),
 };

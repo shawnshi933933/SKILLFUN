@@ -18,6 +18,7 @@ import Claim from "@/pages/Claim";
 import Flywheel from "@/pages/Flywheel";
 import Profile from "@/pages/Profile";
 import CuratorSkills from "@/pages/CuratorSkills";
+import AdminClaims from "@/pages/AdminClaims";
 
 import "@rainbow-me/rainbowkit/styles.css";
 
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/app/flywheel" component={Flywheel} />
       <Route path="/app/profile" component={Profile} />
       <Route path="/app/curator/skills" component={CuratorSkills} />
+      <Route path="/app/admin/claims" component={AdminClaims} />
       <Route component={NotFound} />
     </Switch>
   );
