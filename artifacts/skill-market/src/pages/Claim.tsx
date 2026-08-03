@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { useAccount } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export default function Claim() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const sign = useEip712Sign();
 
   const [pageState, setPageState]         = useState<PageState>("loading");
@@ -264,16 +265,24 @@ export default function Claim() {
               {!isConnected ? (
                 <ConnectButton />
               ) : (
-                <Button
-                  className="gap-2"
-                  onClick={handleLinkWallet}
-                  disabled={linkingWallet}
-                >
-                  {linkingWallet
-                    ? <><Loader2 className="w-4 h-4 animate-spin" />Signing…</>
-                    : <><Lock className="w-4 h-4" />Sign to link {address?.slice(0, 6)}…{address?.slice(-4)}</>
-                  }
-                </Button>
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    className="gap-2"
+                    onClick={handleLinkWallet}
+                    disabled={linkingWallet}
+                  >
+                    {linkingWallet
+                      ? <><Loader2 className="w-4 h-4 animate-spin" />Signing…</>
+                      : <><Lock className="w-4 h-4" />Sign to link {address?.slice(0, 6)}…{address?.slice(-4)}</>
+                    }
+                  </Button>
+                  <button
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                    onClick={() => disconnect()}
+                  >
+                    Use a different wallet
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -296,10 +305,10 @@ export default function Claim() {
                 variant="ghost"
                 size="sm"
                 className="ml-auto text-xs text-muted-foreground hover:text-foreground h-7"
-                onClick={handleLinkWallet}
+                onClick={() => { disconnect(); setLinkedWallet(null); setPageState("no-wallet"); }}
                 disabled={linkingWallet}
               >
-                {linkingWallet ? <Loader2 className="w-3 h-3 animate-spin" /> : "Change wallet"}
+                Change wallet
               </Button>
             </div>
 
@@ -416,15 +425,15 @@ export default function Claim() {
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex gap-3">
               <span className="text-primary font-mono">1.</span>
-              <span>You submit a claim. The server verifies your GitHub username matches the Skill's on-chain <code className="text-xs bg-white/5 px-1 rounded">manifestOwner</code>.</span>
+              <span>Submit a claim. We verify your GitHub username matches the Skill's on-chain owner.</span>
             </div>
             <div className="flex gap-3">
               <span className="text-primary font-mono">2.</span>
-              <span>Admin reviews and writes your wallet to the <strong className="text-foreground">SkillFunOracle</strong> contract using a cold wallet.</span>
+              <span>Admin reviews and approves.</span>
             </div>
             <div className="flex gap-3">
               <span className="text-primary font-mono">3.</span>
-              <span>Once approved, call <code className="text-xs bg-white/5 px-1 rounded">SkillNFT.claim({'{'}tokenId{'}'})</code> from your linked wallet — the NFT transfers automatically, no further admin action required.</span>
+              <span>Once approved, the NFT is transferred to your linked wallet automatically.</span>
             </div>
           </div>
         </div>
