@@ -691,7 +691,7 @@ console.log(result.result.content[0].text);
 | **Chain**     | 0G Mainnet (chainId 16661) |
 | **RPC**       | \`https://evmrpc.0g.ai\` |
 | **W0G token** | \`0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c\` |
-| **SkillNFT**  | \`0xF119d7FB60f897D79b10b23C843ED706bFB59F79\` |
+| **SkillNFT**  | \`0x390e723bAeE68503bB12DC7a8F1264F1A4A23535\` |
 | **Explorer**  | https://chainscan.0g.ai |
 
 ---
@@ -1050,7 +1050,7 @@ callSkill().catch(console.error);
 | **Chain**          | 0G Mainnet (chainId 16661) |
 | **RPC**            | \`https://evmrpc.0g.ai\` |
 | **W0G token**      | \`${W0G_ADDRESS}\` |
-| **SkillNFT**       | \`0xF119d7FB60f897D79b10b23C843ED706bFB59F79\` |
+| **SkillNFT**       | \`0x390e723bAeE68503bB12DC7a8F1264F1A4A23535\` |
 | **Curator wallet** | \`${bundle.ownerAddress}\` |
 | **Explorer**       | https://chainscan.0g.ai |
 

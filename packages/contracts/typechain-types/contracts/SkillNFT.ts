@@ -126,6 +126,7 @@ export interface SkillNFTInterface extends Interface {
       | "selfAuthorize"
       | "setApprovalForAll"
       | "setBasePrice"
+      | "setOracle"
       | "setVerifier"
       | "supportsInterface"
       | "symbol"
@@ -252,6 +253,10 @@ export interface SkillNFTInterface extends Interface {
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "setOracle",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setVerifier",
     values: [AddressLike]
   ): string;
@@ -357,6 +362,7 @@ export interface SkillNFTInterface extends Interface {
     functionFragment: "setBasePrice",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "setOracle", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setVerifier",
     data: BytesLike
@@ -816,6 +822,8 @@ export interface SkillNFT extends BaseContract {
     "nonpayable"
   >;
 
+  setOracle: TypedContractMethod<[_oracle: AddressLike], [void], "nonpayable">;
+
   setVerifier: TypedContractMethod<
     [_verifier: AddressLike],
     [void],
@@ -1014,6 +1022,9 @@ export interface SkillNFT extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "setOracle"
+  ): TypedContractMethod<[_oracle: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "setVerifier"
   ): TypedContractMethod<[_verifier: AddressLike], [void], "nonpayable">;

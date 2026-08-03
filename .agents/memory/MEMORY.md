@@ -1,3 +1,3 @@
 - [SkillFun Architecture](skillfun-arch.md) — core design decisions: ERC-7857 on 0G Chain, Oracle-based claim, two-step flow
 - [0G Storage Mainnet Config](0g-storage-mainnet.md) — indexer DNS is NXDOMAIN; use 4 direct boot node IPs on port 5678 instead
-- [Oracle Ownable Upgrade](oracle-ownable-upgrade.md) — new Oracle at 0xbcf97897… uses Ownable+operators; owner is 0xc56f70…; deployer NOT an operator
+- [Oracle Ownable Upgrade](oracle-ownable-upgrade.md) — V3 Oracle + new SkillNFT deployed; owner is 0xc56f70…; mutable oracle/skillNFT pointers

@@ -1,30 +1,36 @@
 ---
 name: Oracle Ownable Upgrade
-description: New SkillFunOracle (Ownable + operators) deployed 2026-08-03; owner is user's wallet; deployer key is NOT authorized
+description: SkillFunOracle V3 + new SkillNFT deployed 2026-08-03; owner is user's wallet; contracts are fully wired
 ---
 
 # Oracle Ownable Upgrade
 
-## The rule
-The new SkillFunOracle at `0xbcf97897300c3cAF412142b973FF4a86Afd99CB8` uses OpenZeppelin Ownable + an operator whitelist. Only `owner()` or approved operators can call `setVerifiedClaims`.
+## Current live contracts (0G Mainnet, chainId 16661)
 
-**Owner**: `0xC56f7063FD6D199ccc443dbbF4283be602D46343` (user's MetaMask wallet)
-**Deployer** (`0xbb32AD3470290635a852EDc5F2895B75497cA368`): was the initial owner, transferred ownership immediately during deploy. **Was NOT added as an operator** because the deploy script skips `addOperator` when operator == deployer address. The backend `writeOracleVerification` function in `chain.ts` still exists but its signer is no longer authorized.
+| Contract | Address |
+|---|---|
+| SkillFunOracle V3 | `0xD01885aE4E9d30B44C73E8f9B8ceA04869e70167` |
+| SkillNFT | `0x390e723bAeE68503bB12DC7a8F1264F1A4A23535` |
+| SkillFunVerifierStub | `0x3d1FCb4b625fe38C5fbF0b0186A3a319cc5F0b36` |
 
-**Why:** The deploy script `deploy-oracle.ts` has a guard `if (operatorAddr && operatorAddr !== deployer.address)` to avoid wasting gas adding the deployer when they're already the owner. After ownership transfer the deployer becomes an unauthorized address.
+## Key design decisions
 
-**How to apply:**
-- If the backend write-oracle flow needs to be re-enabled, the owner (`0xc56f70…`) must call `addOperator(0xbb32…)` via MetaMask.
-- The admin UI (`AdminClaims.tsx`) reads `owner()` from the Oracle contract to determine if the connected wallet can write claims; this is correct.
-- The old `POST /api/claims/:id/write-oracle` backend route has been removed.
+**Oracle owner**: `0xC56f7063FD6D199ccc443dbbF4283be602D46343` (user's MetaMask wallet). Signs `setVerifiedClaims` directly via MetaMask from the admin panel.
 
-## ABI change summary
-New functions vs old (immutable coldWallet) contract:
-- Removed: `coldWallet()` (immutable)
-- Added: `owner()`, `transferOwnership()`, `renounceOwnership()` (from Ownable)
-- Added: `addOperator(address)`, `removeOperator(address)`, `operators(address)`
+**Deployer** (`0xbb32…`): NOT an operator. If backend write-oracle is ever needed again, the Oracle owner must call `addOperator(0xbb32…)` via MetaMask.
 
-## Addresses
-- Old Oracle (immutable coldWallet): `0x8071937558Ed2fD56AcE1d925B6f70BB40E09743` — still on-chain, abandoned
-- New Oracle (Ownable + operators): `0xbcf97897300c3cAF412142b973FF4a86Afd99CB8` — active
-- SkillNFT (unchanged): `0xF119d7FB60f897D79b10b23C843ED706bFB59F79` — wired to new Oracle
+**`setSkillNFT` is now updateable** (removed one-time restriction). Oracle owner can call it again if SkillNFT is redeployed.
+
+**`setOracle` on SkillNFT**: SkillNFT owner (deployer `0xbb32…`) can call `setOracle(address)` to point SkillNFT at a new Oracle without full redeployment.
+
+**Why:** Previous Oracle had immutable `coldWallet`; SkillNFT had immutable `oracle`. Required full redeploy to change either. Both are now mutable with owner-only access.
+
+## Admin auth (backend)
+
+`artifacts/api-server/src/routes/claims.ts` — `isAdminWallet()` accepts both `DEPLOYER_ADDRESS` and `ORACLE_OWNER_ADDRESS` env vars (no hardcoded fallback). Set `ORACLE_OWNER_ADDRESS=0xc56f70…` in env to allow the Oracle owner to manage claims.
+
+## Abandoned contracts
+
+- Oracle V1 (immutable coldWallet): `0x8071937558Ed2fD56AcE1d925B6f70BB40E09743`
+- Oracle V2 (Ownable, but skillNFT locked): `0xbcf97897300c3cAF412142b973FF4a86Afd99CB8`
+- Old SkillNFT (immutable oracle): `0xF119d7FB60f897D79b10b23C843ED706bFB59F79`

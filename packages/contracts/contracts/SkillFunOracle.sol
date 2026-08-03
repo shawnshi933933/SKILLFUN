@@ -55,7 +55,6 @@ contract SkillFunOracle is Ownable {
     error OnlyAuthorized();
     error OnlySkillNFT();
     error ArrayLengthMismatch();
-    error SkillNFTAlreadySet();
     error ZeroAddress();
 
     // -------------------------------------------------------------------------
@@ -94,15 +93,17 @@ contract SkillFunOracle is Ownable {
     }
 
     // -------------------------------------------------------------------------
-    // Owner: one-time SkillNFT wiring
+    // Owner: SkillNFT wiring (updatable — onlyOwner is sufficient protection)
     // -------------------------------------------------------------------------
 
     /**
-     * @notice Set the SkillNFT contract address. Can only be called once by the owner.
+     * @notice Set or update the SkillNFT contract address.
+     *         Only callable by the owner. Can be updated after initial set so that
+     *         SkillNFT can be redeployed (e.g. when adding new features) without
+     *         requiring a full Oracle redeployment.
      * @param _skillNFT Address of the deployed SkillNFT contract.
      */
     function setSkillNFT(address _skillNFT) external onlyOwner {
-        if (skillNFT != address(0)) revert SkillNFTAlreadySet();
         if (_skillNFT == address(0)) revert ZeroAddress();
         skillNFT = _skillNFT;
         emit SkillNFTSet(_skillNFT);

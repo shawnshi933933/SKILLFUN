@@ -7,6 +7,7 @@ import { useWriteContract, useAccount } from "wagmi";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { wagmiConfig } from "@/lib/wagmi";
 import { curatorApi, type CuratorAuthorization } from "@/lib/api";
+import { getAddresses } from "@workspace/abi";
 
 // ---------------------------------------------------------------------------
 // Query hook — list all authorizations for the connected wallet
@@ -23,7 +24,7 @@ export function useCuratorAuthorizations(wallet: string | undefined) {
 // ---------------------------------------------------------------------------
 // On-chain addresses (0G Mainnet)
 // ---------------------------------------------------------------------------
-const SKILL_NFT_ADDRESS = "0xF119d7FB60f897D79b10b23C843ED706bFB59F79" as const; // v6
+const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT as `0x${string}`;
 const W0G_ADDRESS       = "0x1cd0690ff9a693f5ef2dd976660a8dafc81a109c" as const;
 
 // Minimal ABI fragments

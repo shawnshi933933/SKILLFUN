@@ -44,7 +44,8 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
     // ─────────────────────────────────────────────────────────────────
 
     /// @notice The Oracle that maps tokenId → verified claimer wallet.
-    SkillFunOracle public immutable oracle;
+    ///         Mutable so the platform can upgrade the Oracle without full redeployment.
+    SkillFunOracle public oracle;
 
     /// @notice The ERC-7857 data verifier (stub in POC; real TEE in Step 4).
     IERC7857DataVerifier public verifier;
@@ -168,6 +169,17 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
         }));
 
         emit SkillRegistered(tokenId, repoUrl, skillURI, rootHash);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Admin: Oracle pointer update
+    // ─────────────────────────────────────────────────────────────────
+
+    /// @notice Update the Oracle contract address. Only callable by the owner.
+    ///         Allows upgrading the Oracle without full contract redeployment.
+    function setOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "SkillNFT: zero address");
+        oracle = SkillFunOracle(_oracle);
     }
 
     // ─────────────────────────────────────────────────────────────────

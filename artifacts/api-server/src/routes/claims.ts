@@ -9,18 +9,16 @@ import { getSkillOnChain } from "../services/chain.js";
 import { logger } from "../lib/logger.js";
 
 const PLATFORM_OWNER = process.env.DEPLOYER_ADDRESS?.toLowerCase();
-// Oracle owner wallet — the address that received ownership during deploy.
-// Accepted alongside PLATFORM_OWNER so the Oracle owner can manage claims
-// even if DEPLOYER_ADDRESS was not updated in the environment.
-const ORACLE_OWNER = (
-  process.env.ORACLE_OWNER_ADDRESS || "0xc56f7063fd6d199ccc443dbbf4283be602d46343"
-).toLowerCase();
+// Oracle owner wallet — optional secondary admin address sourced purely from env.
+// Set ORACLE_OWNER_ADDRESS to the wallet that owns the Oracle contract so that
+// wallet can also fetch and approve claims via the admin panel.
+const ORACLE_OWNER = process.env.ORACLE_OWNER_ADDRESS?.toLowerCase();
 
 /** Returns true if the wallet is an authorised admin (deployer OR Oracle owner). */
 function isAdminWallet(walletAddress: string | undefined): boolean {
   if (!walletAddress) return false;
   const w = walletAddress.toLowerCase();
-  return (!!PLATFORM_OWNER && w === PLATFORM_OWNER) || w === ORACLE_OWNER;
+  return (!!PLATFORM_OWNER && w === PLATFORM_OWNER) || (!!ORACLE_OWNER && w === ORACLE_OWNER);
 }
 
 const router = Router();
@@ -242,7 +240,7 @@ router.patch("/claims/:id", authMiddleware("admin:update-claim"), async (req, re
 router.get("/admin/config", (_req, res) => {
   res.json({
     deployerAddress: (process.env.DEPLOYER_ADDRESS ?? "").toLowerCase(),
-    oracleAddress: "0xbcf97897300c3cAF412142b973FF4a86Afd99CB8",
+    oracleAddress: "0xD01885aE4E9d30B44C73E8f9B8ceA04869e70167",
   });
 });
 

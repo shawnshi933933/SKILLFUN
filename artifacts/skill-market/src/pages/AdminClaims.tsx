@@ -24,8 +24,8 @@ import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
 import type { DbClaim } from "@/lib/api";
 
-// New SkillFunOracle (Ownable + operators, deployed 2026-08-03)
-const ORACLE_ADDRESS = "0xbcf97897300c3cAF412142b973FF4a86Afd99CB8" as const;
+// SkillFunOracle V3 (Ownable + operators, updatable skillNFT, deployed 2026-08-03)
+const ORACLE_ADDRESS = "0xD01885aE4E9d30B44C73E8f9B8ceA04869e70167" as const;
 
 // ---------------------------------------------------------------------------
 // Write Oracle button — MetaMask signs setVerifiedClaims directly
