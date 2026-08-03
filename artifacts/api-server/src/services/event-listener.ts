@@ -17,7 +17,7 @@ import {
   skillContentCacheTable,
   skillsTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { ZEROG_MAINNET, SkillNFT_ABI, getAddresses } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
 import { nanoid } from "nanoid";
@@ -128,7 +128,21 @@ async function processRange(fromBlock: bigint, toBlock: bigint): Promise<void> {
         }
       }
 
-      logger.info({ tokenId, newHash }, "event-listener: DataHashUpdated — cache cleared");
+      // Mark all active (non-revoked) curator authorizations as needs_reauth.
+      // authEpoch = -1 is the sentinel checked by computeStatus in curator.ts.
+      // This fires regardless of whether the creator used the API endpoint — it
+      // catches direct on-chain updateDataHash calls too.
+      const { rowCount } = await db
+        .update(curatorAuthorizationsTable)
+        .set({ authEpoch: -1 })
+        .where(
+          eq(curatorAuthorizationsTable.tokenId, tokenId)
+          // isNull check omitted intentionally: we want to re-flag even curators
+          // whose revokedAt was set by a prior AuthorizationsPurged — they should
+          // still see the new content when they choose to re-authorize.
+        );
+
+      logger.info({ tokenId, newHash, curatorsMarked: rowCount ?? 0 }, "event-listener: DataHashUpdated — cache cleared, curator auths flagged for re-review");
     }
 
     const total = authLogs.length + purgedLogs.length + dataLogs.length;

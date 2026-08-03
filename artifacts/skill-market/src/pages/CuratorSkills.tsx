@@ -170,7 +170,9 @@ function SkillRow({ skill }: { skill: CuratorAuthorization }) {
         {skill.status === "needs_reauth" && (
           <div className="text-xs text-amber-400/80 flex items-center gap-1 mt-1">
             <Info className="w-3 h-3" />
-            Epoch reset (was {skill.storedEpoch ?? "?"} → now {skill.onChainEpoch}) — re-authorize to restore access
+            {skill.storedEpoch === -1
+              ? "Content updated by creator — re-authorize to confirm you've reviewed the new version"
+              : `Epoch reset (was ${skill.storedEpoch ?? "?"} → now ${skill.onChainEpoch}) — re-authorize to restore access`}
           </div>
         )}
         {skill.bundleIds.length > 0 && (
@@ -367,7 +369,10 @@ export default function CuratorSkills() {
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="text-sm text-amber-400">
               <strong>{needsReauth} skill{needsReauth > 1 ? "s" : ""} need re-authorization</strong>
-              {" — "}their epoch reset (creator claimed or transferred ownership). Re-authorize to restore agent access.
+              {" — "}
+              {authorizations.some(a => a.status === "needs_reauth" && a.storedEpoch === -1)
+                ? "a creator updated skill content or the authorization epoch reset. Review the latest content and re-authorize to restore agent access."
+                : "their authorization epoch reset (creator claimed or transferred ownership). Re-authorize to restore agent access."}
             </div>
           </div>
         )}
