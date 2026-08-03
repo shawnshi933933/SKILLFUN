@@ -8,21 +8,23 @@
  */
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useLocation } from "wouter";
 import {
-  Shield, Wallet, AlertTriangle, CheckCircle2, Clock, RefreshCw,
+  Shield, AlertTriangle, CheckCircle2, Clock, RefreshCw,
   ExternalLink, Loader2, ChevronDown, ChevronRight, Layers, RotateCcw, Info,
-  Package, Globe, ZapOff,
+  Package, Globe, ZapOff, Pencil, Check, X, Coins,
 } from "lucide-react";
 import { useCuratorAuthorizations, useAuthorizeSkill, type AuthorizePhase } from "@/hooks/use-curator";
 import { bundlesApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
+import { useEip712Sign } from "@/hooks/use-eip712";
 import { formatUnits } from "viem";
 
 // ---------------------------------------------------------------------------
@@ -254,7 +256,21 @@ function AuthPill({ count, label, color }: PillProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Bundle card with accordion
+// Service-price helpers (mirrors BundleCard.tsx formatServicePrice)
+// ---------------------------------------------------------------------------
+
+function formatServicePrice(wei: string | null | undefined): string {
+  if (!wei || wei === "0") return "Free";
+  try {
+    const w0g = Number(BigInt(wei)) / 1e18;
+    return `${w0g.toPrecision(6).replace(/\.?0+$/, "")} W0G`;
+  } catch {
+    return "Free";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bundle card with accordion + inline price editor
 // ---------------------------------------------------------------------------
 
 interface BundleCardProps {
@@ -266,6 +282,50 @@ interface BundleCardProps {
 function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
   const [expanded, setExpanded] = useState(defaultOpen);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const { address } = useAccount();
+  const sign = useEip712Sign();
+  const queryClient = useQueryClient();
+
+  // Price editing state
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceInput,   setPriceInput]   = useState("");
+  const [savingPrice,  setSavingPrice]  = useState(false);
+
+  const isOwner = !!address && address.toLowerCase() === bundle.ownerAddress.toLowerCase();
+
+  const handleEditPrice = (e: React.MouseEvent) => {
+    e.stopPropagation(); // don't toggle accordion
+    const currentW0G = bundle.servicePrice && bundle.servicePrice !== "0"
+      ? (Number(BigInt(bundle.servicePrice)) / 1e18).toFixed(4).replace(/\.?0+$/, "")
+      : "";
+    setPriceInput(currentW0G);
+    setEditingPrice(true);
+  };
+
+  const handleSavePrice = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setSavingPrice(true);
+      const wei = priceInput.trim() === ""
+        ? null
+        : String(BigInt(Math.round(parseFloat(priceInput) * 1e18)));
+      const sigHeader = await sign("update-bundle");
+      await bundlesApi.update(bundle.bundleId, { servicePrice: wei }, sigHeader);
+      await queryClient.invalidateQueries({ queryKey: ["bundles-list"] });
+      setEditingPrice(false);
+      toast({ title: "Price updated" });
+    } catch (err) {
+      toast({ title: "Failed to update price", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setSavingPrice(false);
+    }
+  };
+
+  const handleCancelPrice = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingPrice(false);
+  };
 
   const active      = skills.filter((s) => s.status === "active").length;
   const needsReauth = skills.filter((s) => s.status === "needs_reauth").length;
@@ -280,6 +340,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
   ];
 
   const hasUrgent = needsReauth > 0;
+  const priceLabel = formatServicePrice(bundle.servicePrice);
 
   return (
     <div
@@ -293,7 +354,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
       {/* Card header — click to expand/collapse */}
       <button
         className="w-full text-left px-5 py-4 flex items-center gap-4"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => !editingPrice && setExpanded((v) => !v)}
         data-testid={`bundle-card-toggle-${bundle.bundleId}`}
       >
         {/* Icon */}
@@ -303,7 +364,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
           <Package className={`w-5 h-5 ${hasUrgent ? "text-amber-400" : "text-primary"}`} />
         </div>
 
-        {/* Name + subdomain */}
+        {/* Name + subdomain + price */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold">{bundle.name}</span>
@@ -313,11 +374,70 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground/60">
+          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground/60 flex-wrap">
             <Globe className="w-3 h-3" />
             <span className="font-mono">{bundle.subdomain}</span>
             <span className="text-muted-foreground/30">·</span>
             <span>{skills.length} skill{skills.length !== 1 ? "s" : ""}</span>
+            <span className="text-muted-foreground/30">·</span>
+
+            {/* Inline price display / editor */}
+            {editingPrice ? (
+              <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.0001"
+                  placeholder="0 = Free"
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
+                  className="h-6 w-24 font-mono text-xs bg-background border-white/20 px-2 py-0"
+                  disabled={savingPrice}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void handleSavePrice(e as unknown as React.MouseEvent);
+                    if (e.key === "Escape") handleCancelPrice(e as unknown as React.MouseEvent);
+                  }}
+                />
+                <span className="text-muted-foreground/60">W0G</span>
+                <button
+                  onClick={(e) => void handleSavePrice(e)}
+                  disabled={savingPrice}
+                  className="text-emerald-400 hover:text-emerald-300 disabled:opacity-50 transition-colors"
+                  title="Save price"
+                >
+                  {savingPrice
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Check className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={handleCancelPrice}
+                  disabled={savingPrice}
+                  className="text-muted-foreground/60 hover:text-foreground transition-colors"
+                  title="Cancel"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-muted-foreground/40 text-[10px]">blank = free</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <Coins className="w-3 h-3" />
+                <span className={priceLabel === "Free" ? "text-emerald-400/70" : "text-amber-400/80"}>
+                  {priceLabel}{priceLabel !== "Free" ? " / invoke" : ""}
+                </span>
+                {isOwner && (
+                  <button
+                    onClick={handleEditPrice}
+                    className="text-muted-foreground/30 hover:text-primary transition-colors ml-0.5"
+                    title="Edit service price"
+                    data-testid={`button-edit-price-${bundle.bundleId}`}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </span>
+            )}
           </div>
         </div>
 
