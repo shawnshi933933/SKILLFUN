@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSelfMint, type MintPhase } from "@/hooks/use-self-mint";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { githubApi, type GitHubManifestResult } from "@/lib/api";
+import { githubApi, skillsApi, type GitHubManifestResult, type DbSkill } from "@/lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -99,6 +99,7 @@ export default function CreateSkill() {
   const [step, setStep]   = useState(0);
   const [fs, setFs]       = useState<FormState>(INITIAL_FS);
   const [gh, setGh]       = useState<GitHubState>(INITIAL_GH);
+  const [duplicate, setDuplicate] = useState<DbSkill | null>(null);
 
   // Convenience aliases
   const form     = fs.data;
@@ -136,9 +137,18 @@ export default function CreateSkill() {
     if (gh.status === "found" && gh.fetchedForRepo === repo) return;
 
     setGh({ ...INITIAL_GH, status: "loading", fetchedForRepo: null });
+    setDuplicate(null);
 
     try {
-      const result: GitHubManifestResult = await githubApi.fetchSkillManifest(repo);
+      // Check for an existing registration AND fetch GitHub manifest in parallel
+      const [result, dupCheck] = await Promise.all([
+        githubApi.fetchSkillManifest(repo),
+        skillsApi.list({ repo }).catch(() => ({ skills: [] as DbSkill[] })),
+      ]);
+
+      // If this repo is already registered, surface the existing skill immediately
+      const existing = dupCheck.skills[0] ?? null;
+      setDuplicate(existing);
 
       setGh({
         status:         result.found ? "found" : "not_found",
@@ -232,7 +242,7 @@ export default function CreateSkill() {
   // ── Validation ─────────────────────────────────────────────────────────────
 
   const canNext = () => {
-    if (step === 0) return form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
+    if (step === 0) return !duplicate && form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
     if (step === 1) return !!address;                          // Ownership — wallet must be connected
     if (step === 2) return parseFloat(form.basePrice) >= 0;   // Economics — only shown for "mine"
     return true;
@@ -399,6 +409,7 @@ export default function CreateSkill() {
                       const v = e.target.value.replace(/^https?:\/\/(github\.com\/)?/, "");
                       update("repoUrl", v);
                       setGh(INITIAL_GH);
+                      setDuplicate(null);
                       setAiStatus("idle");
                       setFs((s) => ({ ...s, aiFields: new Set() }));
                     }}
@@ -406,6 +417,29 @@ export default function CreateSkill() {
                   />
                   {/* GitHub fetch status badge */}
                   <GitHubBadge gh={gh} />
+
+                  {/* ── Already registered banner ───────────────────────── */}
+                  {duplicate && (
+                    <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/8 text-xs">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-amber-300 font-medium">This repo is already registered.</span>
+                        <span className="text-muted-foreground ml-1">
+                          {(duplicate.meta as Record<string,unknown>)?.name as string
+                            ? `"${(duplicate.meta as Record<string,unknown>).name as string}" `
+                            : ""}
+                          was minted
+                          {duplicate.tokenId != null ? ` as token #${duplicate.tokenId}` : ""}.
+                        </span>
+                        <a
+                          href={`/app/skill/${duplicate.skillId}`}
+                          className="inline-flex items-center gap-1 ml-2 text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors"
+                        >
+                          View skill <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
                   {/* ✨ AI Analyze button — shown once we have raw content */}
                   {gh.status === "found" && gh.rawContent && (
