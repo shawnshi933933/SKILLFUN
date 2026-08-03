@@ -10,6 +10,7 @@ import adminRouter        from "./admin.js";
 import githubRouter       from "./github.js";
 import mcpRouter          from "./mcp.js";
 import curatorRouter      from "./curator.js";
+import assetsRouter       from "./assets.js";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(adminRouter);
 router.use(githubRouter);
 router.use(mcpRouter);
 router.use(curatorRouter);
+router.use(assetsRouter);
 
 export default router;

@@ -158,7 +158,7 @@ export function buildTokenURI(params: {
     name:         `SkillFun: ${displayName}`,
     description,
     external_url: `https://github.com/${repoUrl}`,
-    image:        "https://skillfun.xyz/logo.png",
+    image:        "https://skillfun.xyz/api/assets/0xb9504b9891ea63e676412f199b951596802da7da19e75b87431eeb0146abdb0e",
     attributes: [
       { trait_type: "Repository",      value: repoUrl },
       { trait_type: "Chain",           value: "0G Mainnet" },
@@ -357,6 +357,75 @@ export async function uploadSkillManifest(
     if (tmpFile) {
       try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
     }
+  }
+}
+
+// ── Raw (unencrypted) upload/download for public assets ──────────────────────
+
+/**
+ * Upload a raw (unencrypted) file to 0G Storage mainnet.
+ * Intended for public assets like images — content is stored as-is.
+ *
+ * @returns rootHash (bytes32 hex) and txSeq, or throws on failure.
+ */
+export async function uploadRawFile(filePath: string): Promise<{ rootHash: `0x${string}`; txSeq: number | null }> {
+  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!privateKey) throw new Error("DEPLOYER_PRIVATE_KEY not set");
+
+  const { ZgFile, StorageNode, Uploader, getFlowContract } = await import("@0gfoundation/0g-storage-ts-sdk");
+  const { ethers } = await import("ethers");
+
+  const zgFile = await ZgFile.fromFilePath(filePath);
+  const [tree, treeErr] = await zgFile.merkleTree();
+  if (treeErr || !tree) {
+    await zgFile.close();
+    throw new Error(`Merkle tree failed: ${treeErr}`);
+  }
+
+  const raw = tree.rootHash() as string;
+  const rootHash: `0x${string}` = raw.startsWith("0x") ? (raw as `0x${string}`) : `0x${raw}`;
+
+  const provider    = new ethers.JsonRpcProvider(EVM_RPC);
+  const signer      = new ethers.Wallet(privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`, provider);
+  const nodeClients = MAINNET_NODES.map((url: string) => new StorageNode(url));
+  const flow        = getFlowContract(MAINNET_FLOW_CONTRACT, signer);
+  const uploader    = new Uploader(nodeClients, EVM_RPC, flow);
+
+  const [tx, uploadErr] = await uploader.splitableUpload(zgFile, {
+    expectedReplica: 1,
+    skipTx:          false,
+    finalityRequired: true,
+    taskSize:        1,
+  });
+  await zgFile.close();
+
+  if (uploadErr) throw new Error(`0G upload failed: ${uploadErr}`);
+
+  const txSeq: number | null = (tx as { txSeq?: number })?.txSeq ?? null;
+  logger.info({ rootHash, txSeq, filePath }, "0G raw asset upload success");
+  return { rootHash, txSeq };
+}
+
+/**
+ * Download a raw (unencrypted) file from 0G Storage mainnet.
+ * Returns the raw bytes — no decryption applied.
+ */
+export async function downloadRawFile(rootHash: string): Promise<Buffer> {
+  const normalizedHash = rootHash.startsWith("0x") ? rootHash : `0x${rootHash}`;
+
+  const { StorageNode, Downloader } = await import("@0gfoundation/0g-storage-ts-sdk");
+  const nodeClients = MAINNET_NODES.map((url: string) => new StorageNode(url));
+  const downloader  = new Downloader(nodeClients);
+
+  const tmpFile = path.join(os.tmpdir(), `skillfun-asset-${Date.now()}.bin`);
+  try {
+    const dlErr = await downloader.downloadFile(normalizedHash, tmpFile, false);
+    if (dlErr) throw new Error(`0G download failed: ${dlErr}`);
+    const data = fs.readFileSync(tmpFile);
+    logger.info({ rootHash: normalizedHash, size: data.length }, "0G raw asset download OK");
+    return data;
+  } finally {
+    try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
   }
 }
 
