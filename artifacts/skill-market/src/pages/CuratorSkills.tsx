@@ -94,9 +94,19 @@ const PHASE_LABEL: Record<AuthorizePhase, string> = {
 // Single skill row component
 // ---------------------------------------------------------------------------
 
-function SkillRow({ skill }: { skill: CuratorAuthorization }) {
+interface SkillRowProps {
+  skill:     CuratorAuthorization;
+  /** When provided, a remove button is shown on the row. */
+  onRemove?: (skillId: string) => Promise<void>;
+}
+
+function SkillRow({ skill, onRemove }: SkillRowProps) {
   const { toast } = useToast();
   const { state, authorize, reset } = useAuthorizeSkill();
+
+  // Remove confirmation state
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing,      setRemoving]      = useState(false);
 
   const isActionable = skill.status === "needs_reauth" || skill.status === "pending" || skill.status === "revoked";
   const isActive = state.phase !== "idle" && state.phase !== "done" && state.phase !== "error";
@@ -129,6 +139,22 @@ function SkillRow({ skill }: { skill: CuratorAuthorization }) {
         description: (err as Error).message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRemoveConfirm = async () => {
+    if (!onRemove) return;
+    setRemoving(true);
+    try {
+      await onRemove(skill.skillId);
+    } catch (err) {
+      toast({
+        title: "Failed to remove skill",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+      setRemoving(false);
+      setConfirmRemove(false);
     }
   };
 
@@ -224,6 +250,46 @@ function SkillRow({ skill }: { skill: CuratorAuthorization }) {
         >
           <ExternalLink className="w-2.5 h-2.5" /> 0G Scan
         </a>
+
+        {/* Remove from bundle */}
+        {onRemove && (
+          <div className="flex items-center gap-1 mt-0.5">
+            {confirmRemove ? (
+              <>
+                <span className="text-[10px] text-red-400/80">Remove?</span>
+                <button
+                  onClick={handleRemoveConfirm}
+                  disabled={removing}
+                  className="text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors"
+                  title="Confirm remove"
+                  data-testid={`button-remove-confirm-${skill.tokenId}`}
+                >
+                  {removing
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Check className="w-3 h-3" />}
+                </button>
+                <button
+                  onClick={() => setConfirmRemove(false)}
+                  disabled={removing}
+                  className="text-muted-foreground/50 hover:text-foreground transition-colors"
+                  title="Cancel"
+                  data-testid={`button-remove-cancel-${skill.tokenId}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setConfirmRemove(true)}
+                className="text-muted-foreground/25 hover:text-red-400 transition-colors"
+                title="Remove from bundle"
+                data-testid={`button-remove-${skill.tokenId}`}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -575,6 +641,31 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
   const openPicker  = (e: React.MouseEvent) => { e.stopPropagation(); setExpanded(true); setPickerOpen(true); };
   const closePicker = () => setPickerOpen(false);
 
+  /**
+   * Remove a skill from this bundle.
+   * Fetches the authoritative skill list from the API first to avoid accidentally
+   * dropping skills that aren't reflected in the in-memory authorizations list.
+   */
+  const handleRemoveSkill = async (skillId: string) => {
+    // Fetch authoritative list — same guard as AddSkillsPanel
+    const bundleData = await bundlesApi.get(bundle.bundleId);
+    const remaining = bundleData.skills
+      .map((s) => s.skillId)
+      .filter((id) => id !== skillId);
+
+    const sigHeader = await sign("update-bundle-skills");
+    await bundlesApi.updateSkills(bundle.bundleId, remaining, sigHeader);
+
+    toast({
+      title:       "Skill removed",
+      description: `Skill removed from bundle.`,
+    });
+
+    void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+    void queryClient.invalidateQueries({ queryKey: ["bundles-list"] });
+    void queryClient.invalidateQueries({ queryKey: ["bundle", bundle.bundleId] });
+  };
+
   const active      = skills.filter((s) => s.status === "active").length;
   const needsReauth = skills.filter((s) => s.status === "needs_reauth").length;
   const pending     = skills.filter((s) => s.status === "pending").length;
@@ -755,7 +846,11 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
           ) : (
             <div className="space-y-2">
               {sortedSkills.map((skill) => (
-                <SkillRow key={`${skill.skillId}-${skill.tokenId}`} skill={skill} />
+                <SkillRow
+                  key={`${skill.skillId}-${skill.tokenId}`}
+                  skill={skill}
+                  onRemove={isOwner ? handleRemoveSkill : undefined}
+                />
               ))}
             </div>
           )}
