@@ -158,7 +158,7 @@ export function buildTokenURI(params: {
     name:         `SkillFun: ${displayName}`,
     description,
     external_url: `https://github.com/${repoUrl}`,
-    image:        "https://skillfun.xyz/skill-nft-image.png",
+    image:        "https://skillfun.xyz/logo.png",
     attributes: [
       { trait_type: "Repository",      value: repoUrl },
       { trait_type: "Chain",           value: "0G Mainnet" },

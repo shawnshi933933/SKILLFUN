@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
-import { Zap, ChevronDown, Menu, X, Plus } from "lucide-react";
+import { ChevronDown, Menu, X, Plus } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -29,9 +29,11 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" data-testid="link-logo">
             <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-primary" />
-              </div>
+              <img
+                src={`${import.meta.env.BASE_URL}logo.png`}
+                alt="SkillFun"
+                className="w-8 h-8 rounded-lg object-contain"
+              />
               <span className="font-bold text-lg tracking-tight text-foreground">
                 Skill<span className="text-primary">Fun</span>
               </span>
