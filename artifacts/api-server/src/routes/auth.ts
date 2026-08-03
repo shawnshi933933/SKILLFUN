@@ -26,6 +26,9 @@ router.get("/auth/github", (req, res) => {
   const callbackUrl = `${process.env.API_BASE_URL ?? ""}/api/auth/github/callback`;
   const state = Math.random().toString(36).slice(2);
   req.session.oauthState = state;
+  // Store return path so callback can redirect back to the originating page
+  const returnTo = (req.query.return_to as string | undefined) ?? "/app/claim";
+  req.session.oauthReturnTo = returnTo.startsWith("/") ? returnTo : "/app/claim";
 
   const url = new URL("https://github.com/login/oauth/authorize");
   url.searchParams.set("client_id", clientId);
@@ -87,11 +90,13 @@ router.get("/auth/github/callback", async (req, res) => {
     });
 
     req.session.githubUsername = user.login;
-    req.session.oauthState = undefined;
+    const returnTo = req.session.oauthReturnTo ?? "/app/claim";
+    req.session.oauthState    = undefined;
+    req.session.oauthReturnTo = undefined;
     logger.info({ githubUsername: user.login }, "github oauth success");
 
-    const frontendUrl = process.env.FRONTEND_URL ?? "/";
-    res.redirect(`${frontendUrl}?github_auth=success`);
+    const frontendUrl = process.env.FRONTEND_URL ?? "";
+    res.redirect(`${frontendUrl}${returnTo}?github_auth=success`);
   } catch (err) {
     logger.error({ err }, "github oauth callback error");
     apiError(res, ErrorCode.INTERNAL, "OAuth callback failed");

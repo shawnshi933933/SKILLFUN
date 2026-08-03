@@ -209,11 +209,9 @@ export default function Claim() {
   // GitHub login redirect
   // --------------------------------------------------------------------------
   const handleGithubLogin = () => {
-    // Preserve current page so callback can redirect back here
     const callbackOrigin = window.location.origin;
-    // The API server redirects to FRONTEND_URL after OAuth; that's the root.
-    // After redirect, refreshSession picks up the new session.
-    window.location.href = `${callbackOrigin}/api/auth/github`;
+    // Pass return_to so the API server redirects back to this page after auth
+    window.location.href = `${callbackOrigin}/api/auth/github?return_to=/app/claim`;
   };
 
   // --------------------------------------------------------------------------

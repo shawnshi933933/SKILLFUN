@@ -5,6 +5,7 @@ declare module "express-session" {
     githubUsername?: string;
     walletAddress?: string;
     oauthState?: string;
+    oauthReturnTo?: string;
     /** Nonce issued to this session by GET /api/auth/challenge */
     challengeNonce?: string;
     challengeIssuedAt?: number;
