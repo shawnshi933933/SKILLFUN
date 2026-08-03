@@ -498,6 +498,36 @@ if (attempt.status === 402) {
                 </div>
               </div>
 
+              {/* Agent Guide — copy prompt */}
+              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium text-emerald-400 text-xs flex items-center gap-1">
+                    <Bot className="w-3 h-3" /> Agent Quick Start
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const guideUrl = `${mcpBaseUrl}/agent-guide.md`;
+                        const md = await fetch(guideUrl).then(r => r.text());
+                        await navigator.clipboard.writeText(md);
+                        toast({ title: "Agent guide copied!", description: "Paste it directly into your agent's context window." });
+                      } catch {
+                        toast({ title: "Copy failed", variant: "destructive" });
+                      }
+                    }}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 border border-emerald-500/30 rounded-md px-2 py-1 hover:bg-emerald-500/10 transition-colors"
+                  >
+                    <Copy className="w-3 h-3" /> Copy Guide
+                  </button>
+                </div>
+                <div className="text-xs text-muted-foreground/70 leading-relaxed">
+                  Give your agent the full step-by-step guide: payment flow, headers, TypeScript example, and troubleshooting — all pre-filled with this Bundle's exact URLs and prices.
+                </div>
+                <div className="font-mono text-xs text-muted-foreground/50 truncate">
+                  GET /mcp/{bundle.bundleId}/agent-guide.md
+                </div>
+              </div>
+
               {/* x402 payment info */}
               <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-xs text-muted-foreground leading-relaxed">
                 <div className="font-medium text-primary mb-1 flex items-center gap-1">
