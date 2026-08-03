@@ -89,6 +89,37 @@ export interface AuthorizeState {
 const IDLE_STATE: AuthorizeState = { phase: "idle", txHash: null, error: null };
 
 // ---------------------------------------------------------------------------
+// 0G-RPC-resilient receipt waiter
+// ---------------------------------------------------------------------------
+// 0G's RPC endpoint sometimes returns "no matching receipts found" for valid
+// submitted transactions, causing viem's waitForTransactionReceipt to throw
+// even though the tx will eventually be mined. We retry up to ~90 s total,
+// treating that specific error as a transient condition.
+async function waitForTx(hash: `0x${string}`): Promise<void> {
+  const MAX_ATTEMPTS   = 18;   // 18 × 5 s = 90 s
+  const POLL_MS        = 5_000;
+  const TRANSIENT_MSGS = ["no matching receipts", "missing or invalid", "could not be found"];
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await waitForTransactionReceipt(wagmiConfig as any, {
+        hash,
+        timeout:         30_000,
+        pollingInterval: POLL_MS,
+      });
+      return; // success
+    } catch (err) {
+      const msg = ((err as Error).message ?? "").toLowerCase();
+      const isTransient = TRANSIENT_MSGS.some((s) => msg.includes(s));
+      if (!isTransient || attempt === MAX_ATTEMPTS - 1) throw err;
+      // wait before retrying
+      await new Promise((r) => setTimeout(r, POLL_MS));
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Authorize hook
 // ---------------------------------------------------------------------------
 export function useAuthorizeSkill() {
@@ -115,8 +146,7 @@ export function useAuthorizeSkill() {
           args:         [SKILL_NFT_ADDRESS, basePriceBigInt],
         });
         setState((s) => ({ ...s, phase: "waiting_approve", txHash: approveTx }));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await waitForTransactionReceipt(wagmiConfig as any, { hash: approveTx, timeout: 120_000, pollingInterval: 3_000 });
+        await waitForTx(approveTx);
       }
 
       // Step 2: selfAuthorize (unclaimed) or purchaseAuthorization (claimed)
@@ -129,8 +159,7 @@ export function useAuthorizeSkill() {
         args:         [BigInt(skill.tokenId)],
       });
       setState((s) => ({ ...s, phase: "waiting_auth", txHash: authTx }));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await waitForTransactionReceipt(wagmiConfig as any, { hash: authTx, timeout: 120_000, pollingInterval: 3_000 });
+      await waitForTx(authTx);
 
       setState({ phase: "done", txHash: authTx, error: null });
 
