@@ -138,6 +138,21 @@ router.post("/claims", authMiddleware("submit-claim"), async (req, res) => {
   res.status(201).json({ claim });
 });
 
+// GET /api/claims/mine — list current user's own claims (GitHub session)
+router.get("/claims/mine", async (req, res) => {
+  const githubUsername = req.session.githubUsername;
+  if (!githubUsername) {
+    res.json({ claims: [] });
+    return;
+  }
+  const claims = await db
+    .select()
+    .from(pendingClaimsTable)
+    .where(eq(pendingClaimsTable.githubUsername, githubUsername))
+    .orderBy(desc(pendingClaimsTable.createdAt));
+  res.json({ claims });
+});
+
 // GET /api/claims/pending — list pending claims (platform owner only)
 router.get("/claims/pending", authMiddleware("admin:list-claims"), async (req, res) => {
   if (!PLATFORM_OWNER || req.walletAddress?.toLowerCase() !== PLATFORM_OWNER) {

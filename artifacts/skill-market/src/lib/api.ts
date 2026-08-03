@@ -337,6 +337,35 @@ export const authApi = {
   challenge: () => apiFetch<{ nonce: string }>("/auth/challenge"),
   me: () =>
     apiFetch<{ authenticated: boolean; githubUsername?: string; evmAddress?: string }>("/auth/me"),
+  linkWallet: (sigHeader: string) =>
+    apiFetch<{ success: boolean; evmAddress: string }>("/auth/link-wallet", {
+      method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify({}),
+    }),
+};
+
+// ---------------------------------------------------------------------------
+// Claims
+// ---------------------------------------------------------------------------
+export interface DbClaim {
+  id:             string;
+  tokenId:        number;
+  githubUsername: string;
+  walletAddress:  string;
+  status:         ClaimStatus;
+  createdAt:      string;
+  updatedAt:      string;
+}
+
+export const claimsApi = {
+  submit: (tokenId: number, sigHeader: string) =>
+    apiFetch<{ claim: DbClaim }>("/claims", {
+      method: "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body: JSON.stringify({ tokenId }),
+    }),
+  mine: () => apiFetch<{ claims: DbClaim[] }>("/claims/mine"),
 };
 
 // ---------------------------------------------------------------------------
