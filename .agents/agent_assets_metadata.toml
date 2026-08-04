@@ -143,3 +143,9 @@ id = "O_Ke6hsmiqDhkKcC92oE0"
 uri = "file://attached_assets/logos/skillfun-logo-3.png"
 type = "image"
 title = "方案 C — 六边形芯片 (Hex Chip)"
+
+[[outputs]]
+id = "j2lgHhthoXlGjy8H9n9Ot"
+uri = "file://.local/outputs/SKILLFUN-MARKET-DECK.pdf"
+type = "pdf"
+title = "SKILLFUN MARKET DECK.pdf"
