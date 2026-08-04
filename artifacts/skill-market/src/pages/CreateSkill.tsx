@@ -642,7 +642,7 @@ export default function CreateSkill() {
                 your Skill in a Bundle will pay this amount to <code className="text-primary/80">purchaseAuthorization</code>.
               </p>
 
-              <Field label="Base Price (W0G per invocation)" hint="Amount Curators pay to authorize, and agents pay per invoke via x402">
+              <Field label="Authorization Fee (W0G)" hint="Fee a Curator pays when authorizing this Skill into their Bundle. Leave 0 to make it free to curate.">
                 <div className="flex items-center gap-2">
                   <Input
                     type="number" min="0" step="0.001" placeholder="0.01"
@@ -653,21 +653,6 @@ export default function CreateSkill() {
                   <span className="text-sm text-muted-foreground">W0G</span>
                 </div>
               </Field>
-
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2 text-xs">
-                <div className="font-medium text-muted-foreground mb-2">Revenue Split (per invocation)</div>
-                {[
-                  { label: "Platform fee",    pct: "10%", color: "bg-white/20" },
-                  { label: "Creator royalty", pct: "80%", color: "bg-primary/50" },
-                  { label: "Owner income",    pct: "10%", color: "bg-accent/50" },
-                ].map((r) => (
-                  <div key={r.label} className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-sm ${r.color}`} />
-                    <span className="text-muted-foreground flex-1">{r.label}</span>
-                    <span className="font-mono">{r.pct}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
