@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useWriteContract, useAccount } from "wagmi";
 import { waitForTransactionReceipt } from "@wagmi/core";
+import { padHex } from "viem";
 import { wagmiConfig } from "@/lib/wagmi";
 import { curatorApi, type CuratorAuthorization } from "@/lib/api";
 import { getAddresses } from "@workspace/abi";
@@ -202,6 +203,8 @@ export function useAuthorizeSkill() {
 export type SyncPhase =
   | "idle"
   | "uploading"    // server fetches GitHub + uploads to 0G Storage
+  | "confirming"   // wallet signs authorizedUpdateDataHash tx
+  | "waiting_tx"   // waiting for on-chain confirmation
   | "done"
   | "error";
 
@@ -217,18 +220,17 @@ const IDLE_SYNC: SyncState = { phase: "idle", rootHash: null, noChange: false, e
 // ---------------------------------------------------------------------------
 // Hook: sync content of an unclaimed skill (curator-initiated)
 //
-// NOTE: The current SkillNFT contract (0x390e723b…) pre-dates the
-// `authorizedUpdateDataHash` function added to SkillNFT v2 (0x8d7473…).
-// On-chain hash updates for existing tokens require the Oracle owner to call
-// oracle.setSkillNFT(newAddress) and curators to re-selfAuthorize on the new
-// contract. Until that migration runs, this hook performs the off-chain steps
-// (GitHub fetch → 0G upload → DB update) which is sufficient for content
-// serving. The on-chain dataHash will sync when the creator claims.
+// Two-step flow:
+//   1. Server: fetch GitHub → upload to 0G Storage → update DB → return rootHash
+//   2. On-chain: curator wallet calls authorizedUpdateDataHash(tokenId, rootHash, 0)
+//      on SkillNFT V2 (0x8d7473…) — only works when _authorized[tokenId][caller]
+//      and ownerOf(tokenId) == address(this) (unclaimed).
 // ---------------------------------------------------------------------------
 export function useSyncUnclaimedSkill() {
-  const { address } = useAccount();
-  const sign        = useEip712Sign();
-  const queryClient = useQueryClient();
+  const { address }         = useAccount();
+  const sign                = useEip712Sign();
+  const queryClient         = useQueryClient();
+  const { writeContractAsync } = useWriteContract();
 
   const [state, setState] = useState<SyncState>(IDLE_SYNC);
 
@@ -237,15 +239,34 @@ export function useSyncUnclaimedSkill() {
     setState({ phase: "uploading", rootHash: null, noChange: false, error: null });
 
     try {
+      // Step 1: off-chain — GitHub fetch + 0G upload + DB update
       const sigHeader = await sign("user:prepare-sync");
       const result = await curatorApi.prepareSync(skill.skillId, sigHeader);
 
-      setState({
-        phase:    "done",
-        rootHash: result.rootHash ?? null,
-        noChange: result.noChange,
-        error:    null,
+      if (result.noChange) {
+        setState({ phase: "done", rootHash: result.rootHash ?? null, noChange: true, error: null });
+        void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+        return result;
+      }
+
+      // Step 2: on-chain — authorizedUpdateDataHash(tokenId, newHash, 0)
+      if (!result.rootHash) throw new Error("No rootHash returned from server");
+
+      // rootHash from 0G is a hex string; pad to 32 bytes for bytes32 param
+      const hashBytes32 = padHex(result.rootHash as `0x${string}`, { size: 32 });
+
+      setState((s) => ({ ...s, phase: "confirming" }));
+      const txHash = await writeContractAsync({
+        address:      SKILL_NFT_ADDRESS,
+        abi:          SKILL_NFT_ABI_FRAGMENT,
+        functionName: "authorizedUpdateDataHash",
+        args:         [BigInt(skill.tokenId), hashBytes32, 0n],
       });
+
+      setState((s) => ({ ...s, phase: "waiting_tx" }));
+      await waitForTx(txHash);
+
+      setState({ phase: "done", rootHash: result.rootHash, noChange: false, error: null });
 
       void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
 
@@ -255,7 +276,7 @@ export function useSyncUnclaimedSkill() {
       setState({ phase: "error", rootHash: null, noChange: false, error: msg });
       throw err;
     }
-  }, [address, sign, queryClient]);
+  }, [address, sign, queryClient, writeContractAsync]);
 
   const reset = useCallback(() => setState(IDLE_SYNC), []);
 

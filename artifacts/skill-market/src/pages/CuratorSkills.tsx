@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useAccount } from "wagmi";
+import { useAccount, useReadContracts } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useLocation } from "wouter";
 import {
@@ -26,6 +26,23 @@ import { useCuratorAuthorizations, useAuthorizeSkill, useSyncUnclaimedSkill, typ
 import { bundlesApi, skillsApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { formatUnits } from "viem";
+import { getAddresses } from "@workspace/abi";
+
+// SkillNFT V2 — authorizedUpdateDataHash lives here
+const SKILL_NFT_V2 = getAddresses(16661).SkillNFT as `0x${string}`;
+
+const IS_AUTHORIZED_ABI = [
+  {
+    name: "isAuthorized",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "user",    type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+] as const;
 
 // ---------------------------------------------------------------------------
 // Status helpers
@@ -91,10 +108,12 @@ const PHASE_LABEL: Record<AuthorizePhase, string> = {
 };
 
 const SYNC_PHASE_LABEL: Record<SyncPhase, string> = {
-  idle:      "",
-  uploading: "Syncing…",
-  done:      "Synced!",
-  error:     "Failed",
+  idle:       "",
+  uploading:  "Syncing…",
+  confirming: "Sign on-chain…",
+  waiting_tx: "Confirming TX…",
+  done:       "Synced!",
+  error:      "Failed",
 };
 
 // ---------------------------------------------------------------------------
@@ -1004,6 +1023,26 @@ export default function CuratorSkills() {
     staleTime: 30_000,
   });
 
+  // ── Re-authorize check: read isAuthorized on V2 for unclaimed skills ───────
+  // After the SkillNFT V2 migration, existing _authorized mappings live on the
+  // old contract. We batch-read V2 for any unclaimed skill with a non-pending DB
+  // status to detect curators who need to re-selfAuthorize on the new contract.
+  const unclaimedActive = (authData?.authorizations ?? []).filter(
+    (a) => !a.isClaimed && (a.status === "active" || a.status === "needs_reauth"),
+  );
+  const { data: v2AuthResults } = useReadContracts({
+    contracts: unclaimedActive.map((auth) => ({
+      address:      SKILL_NFT_V2,
+      abi:          IS_AUTHORIZED_ABI,
+      functionName: "isAuthorized" as const,
+      args:         [BigInt(auth.tokenId), (address ?? "0x0000000000000000000000000000000000000000") as `0x${string}`],
+    })),
+    query: { enabled: !!address && unclaimedActive.length > 0 },
+  });
+  const needsV2Reauth =
+    v2AuthResults !== undefined &&
+    v2AuthResults.some((r) => r.status === "success" && r.result === false);
+
   // ── Not connected ─────────────────────────────────────────────────────────
   if (!address) {
     return (
@@ -1108,6 +1147,26 @@ export default function CuratorSkills() {
             </Button>
           </div>
         </div>
+
+        {/* Re-authorize banner — shown when V2 contract reports no authorization
+            for unclaimed skills that the DB thinks are active/needs_reauth.
+            This happens after the SkillNFT → V2 migration; curators must
+            re-selfAuthorize on the new contract. */}
+        {needsV2Reauth && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 mb-6">
+            <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-400">Re-authorize unclaimed skills on the new contract</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                The SkillNFT contract was upgraded to V2. Your existing authorizations for unclaimed skills
+                were on the old contract and are no longer recognized. Click{" "}
+                <span className="text-foreground/70 font-medium">Authorize</span>{" "}
+                on each affected skill below to re-authorize on SkillNFT V2 — this is a free{" "}
+                <span className="font-mono">selfAuthorize(tokenId)</span> call.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Loading */}
         {isLoading ? (
