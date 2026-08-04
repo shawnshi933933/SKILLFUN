@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, X,
   Loader2, Package, Shield, AlertTriangle, Search,
-  SortAsc, Tag,
+  Tag, Star, PackageOpen,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSkills } from "@/hooks/use-skills";
@@ -48,18 +48,24 @@ function toSubdomain(name: string): string {
 }
 
 // ── Sort options ──────────────────────────────────────────────────────────────
-type SortKey = "newest" | "price_asc" | "price_desc" | "most_used";
+type SortKey = "newest" | "stars" | "bundles" | "price_asc" | "price_desc" | "most_used";
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "newest",     label: "Newest" },
-  { key: "price_asc",  label: "Price: Low → High" },
-  { key: "price_desc", label: "Price: High → Low" },
-  { key: "most_used",  label: "Most Used" },
+const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
+  { key: "newest",     label: "Newest",       icon: "🕐" },
+  { key: "stars",      label: "⭐ Stars",      icon: "⭐" },
+  { key: "bundles",    label: "📦 Bundles",    icon: "📦" },
+  { key: "price_asc",  label: "💰 Price ↑",   icon: "💰" },
+  { key: "price_desc", label: "💰 Price ↓",   icon: "💰" },
+  { key: "most_used",  label: "🔥 Most Used",  icon: "🔥" },
 ];
 
 function sortSkills(skills: DbSkill[], sort: SortKey): DbSkill[] {
   return [...skills].sort((a, b) => {
     switch (sort) {
+      case "stars":
+        return (b.githubStars ?? 0) - (a.githubStars ?? 0);
+      case "bundles":
+        return (b.bundleCount ?? 0) - (a.bundleCount ?? 0);
       case "price_asc":
         return getMeta<number>(a, "basePrice", 0) - getMeta<number>(b, "basePrice", 0);
       case "price_desc":
@@ -96,7 +102,6 @@ export default function CreateBundle() {
   const [search, setSearch]         = useState("");
   const [activeTag, setActiveTag]   = useState<string | null>(null);
   const [sortKey, setSortKey]       = useState<SortKey>("newest");
-  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const { data: skillsData, isLoading: skillsLoading } = useSkills({ status: "minted" });
   const availableSkills = skillsData?.skills ?? [];
@@ -303,72 +308,68 @@ export default function CreateBundle() {
                 </div>
               )}
 
-              {/* Search + Sort row */}
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name or repo…"
-                    className="bg-background border-white/10 pl-8 h-9 text-sm"
-                    data-testid="skill-search"
-                  />
-                </div>
-                {/* Sort dropdown */}
-                <div className="relative">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-white/10 gap-1.5 h-9 text-xs"
-                    onClick={() => setShowSortMenu((v) => !v)}
-                    data-testid="skill-sort-btn"
-                  >
-                    <SortAsc className="w-3.5 h-3.5" />
-                    {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
-                  </Button>
-                  {showSortMenu && (
-                    <div className="absolute right-0 top-10 z-20 bg-card border border-white/10 rounded-xl shadow-xl w-44 py-1 text-sm">
-                      {SORT_OPTIONS.map((o) => (
-                        <button
-                          key={o.key}
-                          onClick={() => { setSortKey(o.key); setShowSortMenu(false); }}
-                          className={`w-full text-left px-4 py-2 hover:bg-white/5 transition-colors ${sortKey === o.key ? "text-accent" : "text-foreground"}`}
-                        >
-                          {o.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name or repo…"
+                  className="bg-background border-white/10 pl-8 h-9 text-sm"
+                  data-testid="skill-search"
+                />
+              </div>
+
+              {/* Sort chips — always visible */}
+              <div>
+                <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wide">Sort by</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {SORT_OPTIONS.map((o) => (
+                    <button
+                      key={o.key}
+                      onClick={() => setSortKey(o.key)}
+                      data-testid={`sort-${o.key}`}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        sortKey === o.key
+                          ? "bg-accent/20 border-accent/40 text-accent font-medium"
+                          : "border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {/* Tag filter chips */}
               {allTags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setActiveTag(null)}
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs border transition-colors ${
-                      activeTag === null
-                        ? "bg-accent/20 border-accent/40 text-accent"
-                        : "border-white/10 text-muted-foreground hover:border-white/20"
-                    }`}
-                  >
-                    <Tag className="w-3 h-3" /> All
-                  </button>
-                  {allTags.map((tag) => (
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wide">Filter by tag</p>
+                  <div className="flex flex-wrap gap-1.5">
                     <button
-                      key={tag}
-                      onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                      className={`px-2.5 py-0.5 rounded-full text-xs border transition-colors ${
-                        activeTag === tag
+                      onClick={() => setActiveTag(null)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        activeTag === null
                           ? "bg-accent/20 border-accent/40 text-accent"
                           : "border-white/10 text-muted-foreground hover:border-white/20"
                       }`}
                     >
-                      {tag}
+                      <Tag className="w-3 h-3" /> All
                     </button>
-                  ))}
+                    {allTags.map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                        className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                          activeTag === tag
+                            ? "bg-accent/20 border-accent/40 text-accent"
+                            : "border-white/10 text-muted-foreground hover:border-white/20"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -394,6 +395,8 @@ export default function CreateBundle() {
                     const category    = getMeta<string>(skill, "category", "");
                     const basePrice   = getMeta<number>(skill, "basePrice", 0);
                     const invocations = getMeta<number>(skill, "invocations", 0);
+                    const stars       = skill.githubStars ?? 0;
+                    const bundles     = skill.bundleCount ?? 0;
                     const isSelected  = form.selectedSkillIds.includes(skill.skillId);
                     return (
                       <div
@@ -406,26 +409,38 @@ export default function CreateBundle() {
                             : "border-white/10 hover:border-white/20 hover:bg-white/5"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-white/20"}`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-white/20"}`}>
                             {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
                           </div>
-                          <div>
-                            <div className="font-medium text-sm">{name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm truncate">{name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
                               {category && (
                                 <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{category}</span>
                               )}
-                              {invocations > 0 && (
-                                <span>{invocations.toLocaleString()} uses</span>
+                              {stars > 0 && (
+                                <span className="flex items-center gap-0.5">
+                                  <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
+                                  {stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars}
+                                </span>
                               )}
-                              {!category && !invocations && (
-                                <span className="font-mono">{skill.repoUrl}</span>
+                              {bundles > 0 && (
+                                <span className="flex items-center gap-0.5">
+                                  <PackageOpen className="w-2.5 h-2.5 text-accent" />
+                                  {bundles} bundle{bundles !== 1 ? "s" : ""}
+                                </span>
+                              )}
+                              {invocations > 0 && (
+                                <span className="text-muted-foreground/70">{invocations.toLocaleString()} uses</span>
+                              )}
+                              {!category && !stars && !bundles && !invocations && (
+                                <span className="font-mono truncate">{skill.repoUrl}</span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
+                        <div className="text-right shrink-0 ml-3">
                           {basePrice > 0 ? (
                             <>
                               <div className="font-mono text-sm text-foreground">{basePrice} W0G</div>

@@ -44,6 +44,10 @@ export interface DbSkill {
   meta:          Record<string, unknown>;
   createdAt:     string;
   updatedAt:     string;
+  /** Number of bundles this skill is included in (server-computed) */
+  bundleCount?:  number;
+  /** GitHub repository star count (server-fetched, cached 1 h) */
+  githubStars?:  number;
 }
 
 export interface DbBundle {

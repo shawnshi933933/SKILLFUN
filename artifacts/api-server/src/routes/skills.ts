@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { skillsTable, paymentProofsTable, curatorAuthorizationsTable } from "@workspace/db";
-import { eq, desc, and, SQL, count, isNull } from "drizzle-orm";
+import { skillsTable, paymentProofsTable, curatorAuthorizationsTable, bundleSkillsTable } from "@workspace/db";
+import { eq, desc, and, SQL, count, isNull, getTableColumns } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
@@ -16,6 +16,29 @@ const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT.toLowerCase();
 
 const router = Router();
 
+// ── GitHub stars in-memory cache (1 hour TTL) ─────────────────────────────
+const githubStarsCache = new Map<string, { stars: number; fetchedAt: number }>();
+const GITHUB_CACHE_TTL = 60 * 60 * 1000;
+
+async function fetchGithubStars(repoUrl: string): Promise<number> {
+  const cached = githubStarsCache.get(repoUrl);
+  if (cached && Date.now() - cached.fetchedAt < GITHUB_CACHE_TTL) return cached.stars;
+  try {
+    // repoUrl is "owner/repo" format
+    const res = await fetch(`https://api.github.com/repos/${repoUrl}`, {
+      headers: { Accept: "application/vnd.github.v3+json" },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return cached?.stars ?? 0;
+    const data = await res.json() as { stargazers_count?: number };
+    const stars = data.stargazers_count ?? 0;
+    githubStarsCache.set(repoUrl, { stars, fetchedAt: Date.now() });
+    return stars;
+  } catch {
+    return cached?.stars ?? 0;
+  }
+}
+
 // GET /api/skills
 router.get("/skills", async (req, res) => {
   const { status, owner, repo } = req.query as Record<string, string | undefined>;
@@ -25,12 +48,26 @@ router.get("/skills", async (req, res) => {
   if (owner) conditions.push(eq(skillsTable.ownerAddress, owner.toLowerCase()));
   if (repo)  conditions.push(eq(skillsTable.repoUrl, repo));
 
-  const skills = await db
-    .select()
+  // Include bundle count via LEFT JOIN
+  const rows = await db
+    .select({
+      ...getTableColumns(skillsTable),
+      bundleCount: count(bundleSkillsTable.bundleId),
+    })
     .from(skillsTable)
+    .leftJoin(bundleSkillsTable, eq(bundleSkillsTable.skillId, skillsTable.skillId))
     .where(conditions.length ? and(...conditions) : undefined)
+    .groupBy(skillsTable.skillId)
     .orderBy(desc(skillsTable.createdAt))
     .limit(100);
+
+  // Fetch GitHub stars in parallel (best-effort)
+  const skills = await Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      githubStars: await fetchGithubStars(row.repoUrl),
+    })),
+  );
 
   res.json({ skills });
 });
