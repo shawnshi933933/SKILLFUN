@@ -736,7 +736,7 @@ router.post("/skills/:id/update-content", async (req, res) => {
       for (const filename of ["skill.md", "skillfun.json", "README.md"]) {
         try {
           const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filename}`;
-          const r = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+          const r = await fetch(url, { signal: AbortSignal.timeout(10_000), headers: { "Cache-Control": "no-cache" } });
           if (r.status === 200) { fetched = await r.text(); break outer; }
         } catch { /* try next */ }
       }
@@ -916,7 +916,7 @@ router.post("/skills/:id/prepare-sync", async (req, res) => {
     for (const filename of ["skill.md", "skillfun.json", "README.md"]) {
       try {
         const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filename}`;
-        const r = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+        const r = await fetch(url, { signal: AbortSignal.timeout(10_000), headers: { "Cache-Control": "no-cache" } });
         if (r.status === 200) { fetched = await r.text(); break outer; }
       } catch { /* try next */ }
     }

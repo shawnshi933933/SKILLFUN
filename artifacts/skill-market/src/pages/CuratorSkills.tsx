@@ -20,7 +20,7 @@ import { useLocation } from "wouter";
 import {
   Shield, AlertTriangle, CheckCircle2, Clock, RefreshCw,
   ExternalLink, Loader2, ChevronDown, ChevronRight, Layers, RotateCcw, Info,
-  Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins, Upload,
+  Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins, Upload, Trash2,
 } from "lucide-react";
 import { useCuratorAuthorizations, useAuthorizeSkill, useSyncUnclaimedSkill, type AuthorizePhase, type SyncPhase } from "@/hooks/use-curator";
 import { bundlesApi, skillsApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
@@ -121,20 +121,14 @@ const SYNC_PHASE_LABEL: Record<SyncPhase, string> = {
 // ---------------------------------------------------------------------------
 
 interface SkillRowProps {
-  skill:     CuratorAuthorization;
-  /** When provided, a remove button is shown on the row. */
-  onRemove?: (skillId: string) => Promise<void>;
+  skill: CuratorAuthorization;
 }
 
-function SkillRow({ skill, onRemove }: SkillRowProps) {
+function SkillRow({ skill }: SkillRowProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { state, authorize, reset }              = useAuthorizeSkill();
   const { state: syncState, sync, reset: syncReset } = useSyncUnclaimedSkill();
-
-  // Remove confirmation state
-  const [confirmRemove, setConfirmRemove] = useState(false);
-  const [removing,      setRemoving]      = useState(false);
 
   // Optimistic status: show "active" immediately after tx confirms, before server refetch
   const displayStatus: typeof skill.status = state.phase === "done" ? "active" : skill.status;
@@ -196,22 +190,6 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
         description: (err as Error).message,
         variant: "destructive",
       });
-    }
-  };
-
-  const handleRemoveConfirm = async () => {
-    if (!onRemove) return;
-    setRemoving(true);
-    try {
-      await onRemove(skill.skillId);
-    } catch (err) {
-      toast({
-        title: "Failed to remove skill",
-        description: (err as Error).message,
-        variant: "destructive",
-      });
-      setRemoving(false);
-      setConfirmRemove(false);
     }
   };
 
@@ -334,68 +312,31 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
           <ExternalLink className="w-2.5 h-2.5" /> 0G Scan
         </a>
 
-        {/* Remove from bundle */}
-        {onRemove && (
-          <div className="flex items-center gap-1 mt-0.5">
-            {confirmRemove ? (
-              <>
-                <span className="text-[10px] text-red-400/80">Remove?</span>
-                <button
-                  onClick={handleRemoveConfirm}
-                  disabled={removing}
-                  className="text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors"
-                  title="Confirm remove"
-                  data-testid={`button-remove-confirm-${skill.tokenId}`}
-                >
-                  {removing
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : <Check className="w-3 h-3" />}
-                </button>
-                <button
-                  onClick={() => setConfirmRemove(false)}
-                  disabled={removing}
-                  className="text-muted-foreground/50 hover:text-foreground transition-colors"
-                  title="Cancel"
-                  data-testid={`button-remove-cancel-${skill.tokenId}`}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setConfirmRemove(true)}
-                className="text-muted-foreground/25 hover:text-red-400 transition-colors"
-                title="Remove from bundle"
-                data-testid={`button-remove-${skill.tokenId}`}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Inline skill-picker panel — add skills to a bundle without leaving the page
+// Inline skill manager — add or remove skills from a bundle without leaving the page
 // ---------------------------------------------------------------------------
 
-interface AddSkillsPanelProps {
+interface ManageBundleSkillsPanelProps {
   bundleId: string;
   onClose:  () => void;
-  /** Called after a successful save so the parent can refresh */
+  /** Called after a successful add so the parent can refresh */
   onSaved:  () => void;
 }
 
-function AddSkillsPanel({ bundleId, onClose, onSaved }: AddSkillsPanelProps) {
+function ManageBundleSkillsPanel({ bundleId, onClose, onSaved }: ManageBundleSkillsPanelProps) {
   const { toast }       = useToast();
   const sign            = useEip712Sign();
   const queryClient     = useQueryClient();
-  const [search,   setSearch]   = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [saving,   setSaving]   = useState(false);
+  const [search,        setSearch]         = useState("");
+  const [selected,      setSelected]       = useState<Set<string>>(new Set());
+  const [saving,        setSaving]         = useState(false);
+  const [removing,      setRemoving]       = useState<string | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   // Fetch the bundle's current skills (authoritative list from DB).
   // Save is BLOCKED until this succeeds — updateSkills is a full-replace PUT,
@@ -461,6 +402,25 @@ function AddSkillsPanel({ bundleId, onClose, onSaved }: AddSkillsPanelProps) {
       return next;
     });
 
+  const handleRemove = async (skillId: string) => {
+    if (existingSkillIds === undefined) return;
+    setRemoving(skillId);
+    setConfirmRemoveId(null);
+    try {
+      const sigHeader = await sign("update-bundle-skills");
+      const remaining = existingSkillIds.filter(id => id !== skillId);
+      await bundlesApi.updateSkills(bundleId, remaining, sigHeader);
+      toast({ title: "Skill removed", description: "Skill removed from bundle." });
+      void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+      void queryClient.invalidateQueries({ queryKey: ["bundles-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["bundle", bundleId] });
+    } catch (err) {
+      toast({ title: "Failed to remove skill", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setRemoving(null);
+    }
+  };
+
   const handleSave = async () => {
     // Hard guard: never call updateSkills without the authoritative existing list.
     // existingSkillIds is undefined while loading or when the bundle fetch failed.
@@ -504,23 +464,83 @@ function AddSkillsPanel({ bundleId, onClose, onSaved }: AddSkillsPanelProps) {
       {/* Panel header */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-primary/90 flex items-center gap-1.5">
-          <Plus className="w-4 h-4" /> Add Skills to Bundle
+          <Package className="w-4 h-4" /> Manage Bundle Skills
         </span>
         <button
           onClick={onClose}
           className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-          aria-label="Close skill picker"
+          aria-label="Close skill manager"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Search */}
+      {/* ── In this bundle ─────────────────────────────────────────────── */}
+      {bundleData && bundleData.skills.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wide">In this bundle</p>
+          <div className="space-y-1 max-h-36 overflow-y-auto pr-0.5">
+            {bundleData.skills.map((s) => {
+              const meta = (s.meta as Record<string, unknown>) ?? {};
+              const name = (meta.name as string | undefined) ?? s.repoUrl.split("/").pop() ?? s.repoUrl;
+              const isConfirming   = confirmRemoveId === s.skillId;
+              const isRemovingThis = removing === s.skillId;
+              return (
+                <div key={s.skillId} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02]">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-medium truncate">{name}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground/50">#{s.tokenId}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isConfirming ? (
+                      <>
+                        <span className="text-[10px] text-red-400/80">Remove?</span>
+                        <button
+                          onClick={() => void handleRemove(s.skillId)}
+                          disabled={!!removing}
+                          className="text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors"
+                          title="Confirm remove"
+                        >
+                          {isRemovingThis
+                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                            : <Check className="w-3 h-3" />}
+                        </button>
+                        <button
+                          onClick={() => setConfirmRemoveId(null)}
+                          disabled={!!removing}
+                          className="text-muted-foreground/50 hover:text-foreground transition-colors"
+                          title="Cancel"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmRemoveId(s.skillId)}
+                        disabled={!!removing}
+                        className="text-muted-foreground/25 hover:text-red-400 disabled:opacity-30 transition-colors"
+                        title="Remove from bundle"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="border-t border-white/[0.06]" />
+        </div>
+      )}
+
+      {/* ── Search ─────────────────────────────────────────────────────── */}
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40 pointer-events-none" />
         <input
           type="text"
-          placeholder="Search skills…"
+          placeholder="Search skills to add…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-white/10 bg-white/5 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
@@ -729,26 +749,6 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
    * Fetches the authoritative skill list from the API first to avoid accidentally
    * dropping skills that aren't reflected in the in-memory authorizations list.
    */
-  const handleRemoveSkill = async (skillId: string) => {
-    // Fetch authoritative list — same guard as AddSkillsPanel
-    const bundleData = await bundlesApi.get(bundle.bundleId);
-    const remaining = bundleData.skills
-      .map((s) => s.skillId)
-      .filter((id) => id !== skillId);
-
-    const sigHeader = await sign("update-bundle-skills");
-    await bundlesApi.updateSkills(bundle.bundleId, remaining, sigHeader);
-
-    toast({
-      title:       "Skill removed",
-      description: `Skill removed from bundle.`,
-    });
-
-    void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
-    void queryClient.invalidateQueries({ queryKey: ["bundles-list"] });
-    void queryClient.invalidateQueries({ queryKey: ["bundle", bundle.bundleId] });
-  };
-
   const active      = skills.filter((s) => s.status === "active").length;
   const needsReauth = skills.filter((s) => s.status === "needs_reauth").length;
   const pending     = skills.filter((s) => s.status === "pending").length;
@@ -932,7 +932,6 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                 <SkillRow
                   key={`${skill.skillId}-${skill.tokenId}`}
                   skill={skill}
-                  onRemove={isOwner ? handleRemoveSkill : undefined}
                 />
               ))}
             </div>
@@ -940,7 +939,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
 
           {/* Inline skill picker */}
           {pickerOpen && (
-            <AddSkillsPanel
+            <ManageBundleSkillsPanel
               bundleId={bundle.bundleId}
               onClose={closePicker}
               onSaved={closePicker}
