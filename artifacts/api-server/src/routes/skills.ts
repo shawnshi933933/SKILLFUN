@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { skillsTable, paymentProofsTable, curatorAuthorizationsTable, bundleSkillsTable } from "@workspace/db";
-import { eq, desc, and, SQL, count, isNull, getTableColumns } from "drizzle-orm";
+import { eq, desc, and, SQL, count, isNull, getTableColumns, sql } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
@@ -968,7 +968,9 @@ router.post("/skills/:id/prepare-sync", async (req, res) => {
     .where(eq(skillsTable.skillId, skillId))
     .returning();
 
-  // Mark active curator authorizations as needs_reauth
+  // Mark active curator authorizations as needs_reauth — but NOT the caller who just
+  // synced the content. They are the one updating it; they don't need to re-review
+  // their own change. Only other curators (if any) need to re-authorize.
   const { rowCount } = await db
     .update(curatorAuthorizationsTable)
     .set({ authEpoch: -1 })
@@ -976,6 +978,7 @@ router.post("/skills/:id/prepare-sync", async (req, res) => {
       and(
         eq(curatorAuthorizationsTable.tokenId, skill.tokenId),
         isNull(curatorAuthorizationsTable.revokedAt),
+        sql`LOWER(${curatorAuthorizationsTable.curatorWallet}) != LOWER(${callerAddress})`,
       )
     );
 
