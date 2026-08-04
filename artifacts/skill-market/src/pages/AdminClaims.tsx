@@ -18,7 +18,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { SkillFunOracle_ABI } from "@workspace/abi";
 import {
   Shield, Loader2, CheckCircle2, XCircle, Clock, RefreshCw,
-  ChevronDown, ChevronUp, AlertTriangle, Zap, Terminal,
+  ChevronDown, ChevronUp, AlertTriangle, Zap, Terminal, ArrowRight,
 } from "lucide-react";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
@@ -26,6 +26,106 @@ import type { DbClaim } from "@/lib/api";
 
 // SkillFunOracle V3 (Ownable + operators, updatable skillNFT, deployed 2026-08-03)
 const ORACLE_ADDRESS = "0xD01885aE4E9d30B44C73E8f9B8ceA04869e70167" as const;
+const SKILL_NFT_V2 = "0x8d7473cE478FA46C16998d576879aD7c909344e0" as const;
+
+// ---------------------------------------------------------------------------
+// SetSkillNFT panel — lets the Oracle owner wire SkillNFT V2 in one click
+// ---------------------------------------------------------------------------
+
+function SetSkillNFTPanel({ isOwner }: { isOwner: boolean }) {
+  const { toast } = useToast();
+
+  // Read current skillNFT pointer from Oracle
+  const { data: currentSkillNFT, refetch } = useReadContract({
+    address: ORACLE_ADDRESS,
+    abi: SkillFunOracle_ABI as readonly object[],
+    functionName: "skillNFT",
+  });
+
+  const {
+    writeContract,
+    data: txHash,
+    isPending: isSigning,
+    error: writeError,
+    reset,
+  } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  useEffect(() => {
+    if (writeError) {
+      toast({ title: "setSkillNFT failed", description: (writeError as Error).message.slice(0, 160), variant: "destructive" });
+      reset();
+    }
+  }, [writeError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (isConfirmed) {
+      toast({ title: "Oracle updated", description: "skillNFT pointer now points to V2." });
+      refetch();
+    }
+  }, [isConfirmed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const alreadyWired =
+    typeof currentSkillNFT === "string" &&
+    currentSkillNFT.toLowerCase() === SKILL_NFT_V2.toLowerCase();
+
+  const busy = isSigning || isConfirming;
+
+  return (
+    <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-5 mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <Terminal className="w-4 h-4 text-indigo-400" />
+        <span className="text-sm font-semibold text-indigo-300">Contract Migration — wire SkillNFT V2</span>
+        {alreadyWired && (
+          <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10 text-xs ml-auto">
+            <CheckCircle2 className="w-3 h-3 mr-1" /> Already wired
+          </Badge>
+        )}
+      </div>
+
+      {/* Current → target */}
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 mb-4">
+        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+          <p className="text-xs text-muted-foreground mb-0.5">Current skillNFT</p>
+          <p className="text-xs font-mono text-foreground/70 truncate">
+            {currentSkillNFT ? String(currentSkillNFT) : "Loading…"}
+          </p>
+        </div>
+        <ArrowRight className="w-4 h-4 text-muted-foreground mx-auto hidden sm:block" />
+        <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 px-3 py-2">
+          <p className="text-xs text-muted-foreground mb-0.5">Target (V2)</p>
+          <p className="text-xs font-mono text-indigo-300 truncate">{SKILL_NFT_V2}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button
+          size="sm"
+          className="bg-indigo-600 hover:bg-indigo-500 text-white"
+          disabled={!isOwner || busy || alreadyWired}
+          title={!isOwner ? "Only the Oracle owner can call setSkillNFT" : undefined}
+          onClick={() =>
+            writeContract({
+              address: ORACLE_ADDRESS,
+              abi: SkillFunOracle_ABI as readonly object[],
+              functionName: "setSkillNFT",
+              args: [SKILL_NFT_V2],
+            })
+          }
+        >
+          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Zap className="w-3.5 h-3.5 mr-1.5" />}
+          {isSigning ? "Confirm in wallet…" : isConfirming ? "Confirming…" : alreadyWired ? "Done" : "Call setSkillNFT(V2)"}
+        </Button>
+        {!isOwner && (
+          <p className="text-xs text-amber-400">Connect the Oracle owner wallet to enable</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Write Oracle button — MetaMask signs setVerifiedClaims directly
@@ -436,6 +536,9 @@ export default function AdminClaims() {
             {claims === null ? "Load claims" : "Refresh"}
           </Button>
         </div>
+
+        {/* Contract migration panel — always shown when connected */}
+        <SetSkillNFTPanel isOwner={isOwner} />
 
         {/* Error */}
         {error && (
