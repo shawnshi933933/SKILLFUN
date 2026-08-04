@@ -131,8 +131,10 @@ export interface GitHubManifestResult {
     capabilities?: string[];
     tags?:         string[];
   };
-  githubUrl:   string;
-  warning?:    string;
+  githubUrl:        string;
+  warning?:         string;
+  /** True when the repo may be private and no repo-scope token is in the session */
+  possiblyPrivate?: boolean;
 }
 
 export interface PrepareMintResponse {

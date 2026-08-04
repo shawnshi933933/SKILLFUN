@@ -33,7 +33,10 @@ router.get("/auth/github", (req, res) => {
   const url = new URL("https://github.com/login/oauth/authorize");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", callbackUrl);
-  url.searchParams.set("scope", "read:user");
+  // Request 'repo' scope so we can fetch private repo files during skill registration.
+  // If the user previously authed with only 'read:user' they'll be prompted by GitHub to re-approve.
+  const wantsRepo = req.query.scope === "repo";
+  url.searchParams.set("scope", wantsRepo ? "read:user repo" : "read:user");
   url.searchParams.set("state", state);
   res.redirect(url.toString());
 });
@@ -90,10 +93,15 @@ router.get("/auth/github/callback", async (req, res) => {
     });
 
     req.session.githubUsername = user.login;
+    req.session.githubToken    = tokenData.access_token;
+    // Record whether this token has private-repo scope so the skill-manifest
+    // endpoint can use it and the frontend knows re-auth isn't needed.
+    const scopes: string = (tokenRes.headers.get("x-oauth-scopes") ?? "");
+    req.session.githubTokenHasRepoScope = scopes.split(",").map((s) => s.trim()).includes("repo");
     const returnTo = req.session.oauthReturnTo ?? "/app/claim";
     req.session.oauthState    = undefined;
     req.session.oauthReturnTo = undefined;
-    logger.info({ githubUsername: user.login }, "github oauth success");
+    logger.info({ githubUsername: user.login, hasRepoScope: req.session.githubTokenHasRepoScope }, "github oauth success");
 
     const frontendUrl = process.env.FRONTEND_URL ?? "";
     res.redirect(`${frontendUrl}${returnTo}?github_auth=success`);

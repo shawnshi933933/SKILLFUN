@@ -22,16 +22,41 @@ async function fetchRaw(
   owner: string,
   repo: string,
   branch: string,
-  filename: string
+  filename: string,
+  token?: string
 ): Promise<string | null> {
   const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filename}`;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(8_000),
+      headers: { "Cache-Control": "no-cache" },
+    });
     if (res.status === 200) return await res.text();
-    return null;
-  } catch {
-    return null;
+  } catch { /* try API fallback */ }
+
+  // Private-repo fallback: use GitHub Contents API with OAuth token
+  if (token) {
+    try {
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=${branch}`;
+      const apiRes = await fetch(apiUrl, {
+        signal: AbortSignal.timeout(8_000),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept:         "application/vnd.github.v3+json",
+          "User-Agent":   "SkillFun/1.0",
+          "Cache-Control": "no-cache",
+        },
+      });
+      if (apiRes.status === 200) {
+        const data = await apiRes.json() as { content?: string; encoding?: string };
+        if (data.encoding === "base64" && data.content) {
+          return Buffer.from(data.content.replace(/\n/g, ""), "base64").toString("utf8");
+        }
+      }
+    } catch { /* ignore */ }
   }
+
+  return null;
 }
 
 async function fetchFile(
@@ -163,11 +188,11 @@ function parseRepoInput(raw: string): ParsedRepo | null {
   return { owner, repo: repoName, branch: null, subpath: null };
 }
 
-// Fetch from a specific branch (no auto-fallback)
+// Fetch from a specific branch (no auto-fallback), with optional OAuth token for private repos
 async function fetchRawBranch(
-  owner: string, repo: string, branch: string, filepath: string
+  owner: string, repo: string, branch: string, filepath: string, token?: string
 ): Promise<string | null> {
-  return fetchRaw(owner, repo, branch, filepath);
+  return fetchRaw(owner, repo, branch, filepath, token);
 }
 
 // ---------------------------------------------------------------------------
@@ -190,7 +215,10 @@ router.get("/github/skill-manifest", async (req, res) => {
 
   const { owner, repo: repoName, branch: explicitBranch, subpath } = parsed;
 
-  logger.debug({ owner, repo: repoName, subpath }, "fetching skill manifest from GitHub");
+  // Optional GitHub OAuth token from session — enables private-repo access
+  const token: string | undefined = req.session?.githubToken;
+
+  logger.debug({ owner, repo: repoName, subpath, hasToken: !!token }, "fetching skill manifest from GitHub");
 
   // Branches to try (explicit branch takes priority)
   const branches = explicitBranch ? [explicitBranch] : ["main", "master"];
@@ -208,7 +236,7 @@ router.get("/github/skill-manifest", async (req, res) => {
     for (const branch of branches) {
       for (const dir of dirs) {
         const filepath = dir ? `${dir}/${filename}` : filename;
-        const content = await fetchRawBranch(owner, repoName, branch, filepath);
+        const content = await fetchRawBranch(owner, repoName, branch, filepath, token);
         if (content !== null) return { content, branch, dir };
       }
     }
@@ -266,14 +294,17 @@ router.get("/github/skill-manifest", async (req, res) => {
     return;
   }
 
-  // 4. Not found
+  // 4. Not found — detect whether repo might be private (no token, or token missing repo scope)
+  const hasRepoScope = req.session?.githubTokenHasRepoScope ?? false;
+  const possiblyPrivate = !token || !hasRepoScope;
   res.json({
-    found:      false,
-    fileType:   null,
-    rawContent: null,
-    parsed:     {},
-    githubUrl:  `https://github.com/${owner}/${repoName}`,
-    warning:    "No skill manifest found. Fill in the form manually and add a skillfun.json to your repo.",
+    found:           false,
+    fileType:        null,
+    rawContent:      null,
+    parsed:          {},
+    githubUrl:       `https://github.com/${owner}/${repoName}`,
+    warning:         "No skill manifest found. Fill in the form manually and add a skillfun.json to your repo.",
+    possiblyPrivate,
   });
 });
 

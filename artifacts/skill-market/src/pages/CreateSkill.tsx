@@ -55,15 +55,16 @@ const INITIAL_FORM: FormData = {
 // GitHub fetch state
 type FetchStatus = "idle" | "loading" | "found" | "not_found" | "error";
 interface GitHubState {
-  status:         FetchStatus;
-  fileType:       string | null;
-  rawContent:     string | null;
-  githubUrl:      string | null;
-  warning:        string | null;
-  fetchedForRepo: string | null;
+  status:          FetchStatus;
+  fileType:        string | null;
+  rawContent:      string | null;
+  githubUrl:       string | null;
+  warning:         string | null;
+  fetchedForRepo:  string | null;
+  possiblyPrivate: boolean;
 }
 const INITIAL_GH: GitHubState = {
-  status: "idle", fileType: null, rawContent: null, githubUrl: null, warning: null, fetchedForRepo: null,
+  status: "idle", fileType: null, rawContent: null, githubUrl: null, warning: null, fetchedForRepo: null, possiblyPrivate: false,
 };
 
 // ─── Phase labels ──────────────────────────────────────────────────────────────
@@ -151,12 +152,13 @@ export default function CreateSkill() {
       setDuplicate(existing);
 
       setGh({
-        status:         result.found ? "found" : "not_found",
-        fileType:       result.fileType,
-        rawContent:     result.rawContent,
-        githubUrl:      result.githubUrl,
-        warning:        result.warning ?? null,
-        fetchedForRepo: repo,
+        status:          result.found ? "found" : "not_found",
+        fileType:        result.fileType,
+        rawContent:      result.rawContent,
+        githubUrl:       result.githubUrl,
+        warning:         result.warning ?? null,
+        fetchedForRepo:  repo,
+        possiblyPrivate: result.possiblyPrivate ?? false,
       });
 
       // Auto-fill from parsed data — never overwrite manually-edited fields
@@ -820,6 +822,30 @@ function GitHubBadge({ gh }: { gh: GitHubState }) {
   }
 
   if (gh.status === "not_found") {
+    if (gh.possiblyPrivate) {
+      // Repo may be private — suggest re-auth with repo scope
+      const returnTo = encodeURIComponent(window.location.pathname);
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-xs text-amber-400/80">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            No <span className="font-mono mx-0.5">skillfun.json</span> or <span className="font-mono mx-0.5">skill.md</span> found — fill in the form manually.
+          </div>
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+            <Github className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="text-xs text-amber-400/90 flex-1">
+              Private repo? Grant repository access so we can auto-fill the form.
+            </span>
+            <a
+              href={`/api/auth/github?scope=repo&return_to=${returnTo}`}
+              className="text-xs font-medium text-amber-300 hover:text-amber-200 underline underline-offset-2 shrink-0"
+            >
+              Grant access →
+            </a>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center gap-1.5 text-xs text-amber-400/80">
         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
