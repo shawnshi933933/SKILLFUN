@@ -17,7 +17,6 @@ export default function Navbar() {
     { href: "/app/claim", label: "Claim", external: false },
     { href: "/app/stake", label: "Stake", external: false },
     { href: "/mcp/agent-guide.md", label: "Agent Guide", external: true },
-    { href: "/app/kol", label: "KOL", external: false },
   ];
 
   const isActive = (href: string) => location === href || location.startsWith(href.split("?")[0] + "/");

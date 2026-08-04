@@ -12,6 +12,7 @@ import mcpRouter          from "./mcp.js";
 import curatorRouter      from "./curator.js";
 import assetsRouter       from "./assets.js";
 import creatorRouter      from "./creator.js";
+import statsRouter        from "./stats.js";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(mcpRouter);
 router.use(curatorRouter);
 router.use(assetsRouter);
 router.use(creatorRouter);
+router.use(statsRouter);
 
 export default router;

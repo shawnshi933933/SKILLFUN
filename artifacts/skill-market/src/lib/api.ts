@@ -323,6 +323,20 @@ export const proofsApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Platform stats (landing page)
+// ---------------------------------------------------------------------------
+export interface PlatformStats {
+  totalSkills:      number;
+  totalBundles:     number;
+  totalInvocations: number;
+  cachedAt:         number;
+}
+
+export const statsApi = {
+  get: () => apiFetch<PlatformStats>("/stats"),
+};
+
+// ---------------------------------------------------------------------------
 // Chain reads (BFF — no direct RPC from frontend)
 // ---------------------------------------------------------------------------
 export const chainApi = {
