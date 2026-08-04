@@ -393,54 +393,61 @@ export default function CreateBundle() {
                   {filteredSkills.map((skill) => {
                     const name        = skillDisplayName(skill);
                     const category    = getMeta<string>(skill, "category", "");
+                    const description = getMeta<string>(skill, "description", "");
                     const basePrice   = getMeta<number>(skill, "basePrice", 0);
                     const invocations = getMeta<number>(skill, "invocations", 0);
                     const stars       = skill.githubStars ?? 0;
                     const bundles     = skill.bundleCount ?? 0;
                     const isSelected  = form.selectedSkillIds.includes(skill.skillId);
+                    const starsLabel  = stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : String(stars);
                     return (
                       <div
                         key={skill.skillId}
                         onClick={() => toggleSkill(skill.skillId)}
                         data-testid={`select-skill-${skill.skillId}`}
-                        className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${
+                        className={`flex items-start justify-between p-4 rounded-xl border cursor-pointer transition-all gap-3 ${
                           isSelected
                             ? "border-accent/40 bg-accent/10"
                             : "border-white/10 hover:border-white/20 hover:bg-white/5"
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-5 h-5 shrink-0 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-white/20"}`}>
+                        {/* Left: checkbox + info */}
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className={`w-5 h-5 mt-0.5 shrink-0 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-white/20"}`}>
                             {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
                           </div>
-                          <div className="min-w-0">
-                            <div className="font-medium text-sm truncate">{name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
+                          <div className="min-w-0 flex-1">
+                            {/* Name + repo */}
+                            <div className="font-medium text-sm">{name}</div>
+                            <div className="text-xs text-muted-foreground/60 font-mono truncate">{skill.repoUrl}</div>
+
+                            {/* Description */}
+                            {description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{description}</p>
+                            )}
+
+                            {/* Stats row — always shown */}
+                            <div className="flex items-center gap-3 mt-2 flex-wrap">
                               {category && (
-                                <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{category}</span>
+                                <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px]">{category}</span>
                               )}
-                              {stars > 0 && (
-                                <span className="flex items-center gap-0.5">
-                                  <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-                                  {stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars}
-                                </span>
-                              )}
-                              {bundles > 0 && (
-                                <span className="flex items-center gap-0.5">
-                                  <PackageOpen className="w-2.5 h-2.5 text-accent" />
-                                  {bundles} bundle{bundles !== 1 ? "s" : ""}
-                                </span>
-                              )}
+                              <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                                <Star className={`w-3 h-3 ${stars > 0 ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/40"}`} />
+                                {stars > 0 ? starsLabel : "—"}
+                              </span>
+                              <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                                <PackageOpen className={`w-3 h-3 ${bundles > 0 ? "text-accent" : "text-muted-foreground/40"}`} />
+                                {bundles > 0 ? `${bundles} bundle${bundles !== 1 ? "s" : ""}` : "—"}
+                              </span>
                               {invocations > 0 && (
-                                <span className="text-muted-foreground/70">{invocations.toLocaleString()} uses</span>
-                              )}
-                              {!category && !stars && !bundles && !invocations && (
-                                <span className="font-mono truncate">{skill.repoUrl}</span>
+                                <span className="text-[11px] text-muted-foreground/70">🔥 {invocations.toLocaleString()} uses</span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="text-right shrink-0 ml-3">
+
+                        {/* Right: price or status */}
+                        <div className="text-right shrink-0">
                           {basePrice > 0 ? (
                             <>
                               <div className="font-mono text-sm text-foreground">{basePrice} W0G</div>
