@@ -128,6 +128,7 @@ interface SkillRowProps {
 
 function SkillRow({ skill, onRemove }: SkillRowProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { state, authorize, reset }              = useAuthorizeSkill();
   const { state: syncState, sync, reset: syncReset } = useSyncUnclaimedSkill();
 
@@ -148,6 +149,10 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
       const result = await sync({ skillId: skill.skillId, tokenId: skill.tokenId });
       if (result.noChange) {
         toast({ title: "Already up to date", description: "Skill content has not changed since last sync." });
+        // Server cleared any stale authEpoch = -1 flags — refresh so the counter
+        // and other curator rows reflect the updated status immediately.
+        void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+        void queryClient.invalidateQueries({ queryKey: ["bundles-list"] });
       } else {
         toast({
           title: "Content synced",
@@ -248,7 +253,7 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
           )}
           {!skill.isClaimed && <span className="text-blue-400/70">Unclaimed — free to authorize</span>}
         </div>
-        {skill.status === "needs_reauth" && (
+        {displayStatus === "needs_reauth" && (
           <div className="text-xs text-amber-400/80 flex items-center gap-1 mt-1">
             <Info className="w-3 h-3" />
             {skill.storedEpoch === -1

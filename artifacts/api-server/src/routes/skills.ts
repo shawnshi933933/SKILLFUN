@@ -930,12 +930,26 @@ router.post("/skills/:id/prepare-sync", async (req, res) => {
   const newContentSha = crypto.createHash("sha256").update(fetched.trim(), "utf8").digest("hex");
   const meta = (skill.meta as Record<string, unknown>) ?? {};
   if (meta.contentSha256 === newContentSha) {
-    logger.info({ skillId, callerAddress }, "prepare-sync: content unchanged, skipping upload");
+    // Content hasn't changed — clear any stale authEpoch = -1 flags for ALL curators
+    // on this tokenId. The sentinel means "content changed, please re-review"; if the
+    // content is provably identical there is nothing to re-review for anyone.
+    const { rowCount: clearedReauth } = await db
+      .update(curatorAuthorizationsTable)
+      .set({ authEpoch: 0 })
+      .where(
+        and(
+          eq(curatorAuthorizationsTable.tokenId, skill.tokenId),
+          sql`${curatorAuthorizationsTable.authEpoch} = -1`,
+        )
+      );
+
+    logger.info({ skillId, callerAddress, clearedReauth }, "prepare-sync: content unchanged, cleared stale re-auth flags");
     res.json({
       skillId,
       rootHash:       skill.rootHash,
       contentVersion: skill.contentVersion ?? 1,
       noChange:       true,
+      clearedReauth:  clearedReauth ?? 0,
       message:        "Content is identical to the current version — no update needed.",
     });
     return;
