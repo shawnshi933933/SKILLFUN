@@ -532,14 +532,15 @@ export default function CreateBundle() {
               <h2 className="text-xl font-semibold mb-2">Pricing</h2>
               <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
                 <Coins className="w-3 h-3 inline mr-1 text-accent" />
-                Set the price agents pay per invocation of this Bundle. Agents see this before connecting.
+                Agents pay this fee once to obtain a proof for the current content version.
+                The proof stays valid until the content is updated — then agents pay again for the new version.
                 Leave blank (or set to 0) to make the Bundle free.
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm text-muted-foreground block">
-                  Price per call{" "}
-                  <span className="text-muted-foreground/50">(W0G, optional)</span>
+                  Access fee{" "}
+                  <span className="text-muted-foreground/50">(W0G per content version, optional)</span>
                 </label>
                 <div className="relative">
                   <Input
@@ -558,11 +559,11 @@ export default function CreateBundle() {
                 </div>
                 {form.servicePriceW0G && parseFloat(form.servicePriceW0G) > 0 ? (
                   <p className="text-xs text-emerald-400/80">
-                    Agents will pay <span className="font-mono font-semibold">{parseFloat(form.servicePriceW0G).toFixed(6)} W0G</span> per invocation.
+                    Agents pay <span className="font-mono font-semibold">{parseFloat(form.servicePriceW0G).toFixed(6)} W0G</span> to access each new content version.
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground/50">
-                    Free — agents can invoke this Bundle at no cost.
+                    Free — agents access this Bundle at no cost.
                   </p>
                 )}
               </div>
@@ -580,7 +581,7 @@ export default function CreateBundle() {
                       { label: "Bundle Name",          value: form.name || "—" },
                       { label: "Skills",               value: `${selectedSkills.length} selected` },
                       { label: "Workflow",             value: form.workflow ? `${form.workflow.slice(0, 60)}…` : "None" },
-                      { label: "Price per Call",       value: (form.servicePriceW0G && parseFloat(form.servicePriceW0G) > 0) ? `${parseFloat(form.servicePriceW0G).toFixed(6)} W0G` : "Free" },
+                      { label: "Access Fee",           value: (form.servicePriceW0G && parseFloat(form.servicePriceW0G) > 0) ? `${parseFloat(form.servicePriceW0G).toFixed(6)} W0G / version` : "Free" },
                       { label: "Total Base Price",     value: `${totalBasePrice.toFixed(4)} W0G/invoke` },
                       { label: "Curator Earning (est.)", value: curatorEarning > 0 ? `~${curatorEarning.toFixed(4)} W0G/invoke` : "—" },
                     ].map((r) => (
