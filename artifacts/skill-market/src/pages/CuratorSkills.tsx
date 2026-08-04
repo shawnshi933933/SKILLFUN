@@ -135,7 +135,10 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing,      setRemoving]      = useState(false);
 
-  const isActionable = skill.status === "needs_reauth" || skill.status === "pending" || skill.status === "revoked";
+  // Optimistic status: show "active" immediately after tx confirms, before server refetch
+  const displayStatus: typeof skill.status = state.phase === "done" ? "active" : skill.status;
+
+  const isActionable = displayStatus === "needs_reauth" || displayStatus === "pending" || displayStatus === "revoked";
   const isActive = state.phase !== "idle" && state.phase !== "done" && state.phase !== "error";
   const isSyncing = syncState.phase !== "idle" && syncState.phase !== "done" && syncState.phase !== "error";
 
@@ -213,11 +216,11 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
   return (
     <div
       className={`grid grid-cols-[1fr_auto] gap-4 items-center p-4 rounded-xl border transition-all ${
-        skill.status === "needs_reauth"
+        displayStatus === "needs_reauth"
           ? "border-amber-500/20 bg-amber-500/5"
-          : skill.status === "active"
+          : displayStatus === "active"
           ? "border-white/10 hover:border-white/20"
-          : skill.status === "pending"
+          : displayStatus === "pending"
           ? "border-dashed border-white/10"
           : "border-red-500/20 bg-red-500/5"
       }`}
@@ -228,7 +231,7 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm truncate">{skill.skillName}</span>
           <span className="text-xs font-mono text-muted-foreground/60">#{skill.tokenId}</span>
-          <StatusBadge status={skill.status} />
+          <StatusBadge status={displayStatus} />
           {!skill.isClaimed && (
             <Badge variant="outline" className="text-[10px] border-blue-500/30 text-blue-400 bg-blue-500/5">
               Unclaimed
@@ -270,13 +273,13 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
             onClick={handleAuthorize}
             data-testid={`button-authorize-${skill.tokenId}`}
             className={
-              skill.status === "active"
+              displayStatus === "active"
                 ? "border-white/20 text-sm"
                 : skill.isClaimed
                 ? "bg-amber-500 hover:bg-amber-600 text-black text-xs px-3"
                 : "bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3"
             }
-            variant={skill.status === "active" ? "outline" : "default"}
+            variant={displayStatus === "active" ? "outline" : "default"}
           >
             {isActive ? (
               <><Loader2 className="w-3 h-3 animate-spin mr-1" />{PHASE_LABEL[state.phase]}</>
