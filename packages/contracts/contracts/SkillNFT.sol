@@ -421,6 +421,36 @@ contract SkillNFT is ERC721, ERC721URIStorage, Ownable, IERC7857 {
         emit DataHashUpdated(tokenId, old, newHash);
     }
 
+    /// @notice An authorized curator may update the data hash of an *unclaimed*
+    ///         skill (one still held by this contract in platform custody).
+    ///         Once the creator claims the NFT this function reverts — from that
+    ///         point only the NFT owner can call updateDataHash().
+    ///
+    ///         Rationale: curators who have self-authorized for an unclaimed skill
+    ///         are the natural party to keep its 0G Storage pointer fresh.
+    ///         The price lock is intentional — basePrice is immutable until claimed.
+    ///
+    /// @param tokenId   Token to update (must be unclaimed).
+    /// @param newHash   New 0G Storage root hash.
+    /// @param index     Index in the IntelligentData array (0 for "skill-payload").
+    function authorizedUpdateDataHash(
+        uint256 tokenId,
+        bytes32 newHash,
+        uint256 index
+    ) external {
+        require(
+            ownerOf(tokenId) == address(this),
+            "SkillNFT: skill is claimed, use updateDataHash"
+        );
+        require(
+            _authorized[tokenId][msg.sender],
+            "SkillNFT: caller is not authorized for this skill"
+        );
+        bytes32 old = _intelligentData[tokenId][index].dataHash;
+        _intelligentData[tokenId][index].dataHash = newHash;
+        emit DataHashUpdated(tokenId, old, newHash);
+    }
+
     /// @notice Platform owner can update verifier address (e.g. upgrade to real TEE).
     function setVerifier(address _verifier) external onlyOwner {
         verifier = IERC7857DataVerifier(_verifier);

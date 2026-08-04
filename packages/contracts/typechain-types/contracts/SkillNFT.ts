@@ -101,6 +101,7 @@ export interface SkillNFTInterface extends Interface {
     nameOrSignature:
       | "approve"
       | "authorizeUsage"
+      | "authorizedUpdateDataHash"
       | "balanceOf"
       | "basePrice"
       | "claim"
@@ -163,6 +164,10 @@ export interface SkillNFTInterface extends Interface {
   encodeFunctionData(
     functionFragment: "authorizeUsage",
     values: [BigNumberish, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "authorizedUpdateDataHash",
+    values: [BigNumberish, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "balanceOf",
@@ -287,6 +292,10 @@ export interface SkillNFTInterface extends Interface {
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "authorizeUsage",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "authorizedUpdateDataHash",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
@@ -693,6 +702,12 @@ export interface SkillNFT extends BaseContract {
     "nonpayable"
   >;
 
+  authorizedUpdateDataHash: TypedContractMethod<
+    [tokenId: BigNumberish, newHash: BytesLike, index: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   balanceOf: TypedContractMethod<[owner: AddressLike], [bigint], "view">;
 
   basePrice: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
@@ -877,6 +892,13 @@ export interface SkillNFT extends BaseContract {
     nameOrSignature: "authorizeUsage"
   ): TypedContractMethod<
     [_tokenId: BigNumberish, _user: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "authorizedUpdateDataHash"
+  ): TypedContractMethod<
+    [tokenId: BigNumberish, newHash: BytesLike, index: BigNumberish],
     [void],
     "nonpayable"
   >;

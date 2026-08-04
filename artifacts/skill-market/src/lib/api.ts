@@ -408,6 +408,16 @@ export interface CuratorAuthorizationsResponse {
   curatorWallet:  string;
 }
 
+export interface PrepareSyncResponse {
+  skillId:        string;
+  rootHash:       string | null;
+  skillUri?:      string;
+  contentVersion: number;
+  curatorsMarked?: number;
+  noChange:       boolean;
+  message?:       string;
+}
+
 export const curatorApi = {
   listAuthorizations: (wallet: string) =>
     apiFetch<CuratorAuthorizationsResponse>(
@@ -418,6 +428,19 @@ export const curatorApi = {
     apiFetch<CuratorAuthorization & { status: AuthStatus }>(
       `/curator/authorizations/${tokenId}/status?wallet=${encodeURIComponent(wallet)}`
     ),
+
+  /**
+   * Curator-triggered content sync for an unclaimed skill.
+   * Fetches latest GitHub content, uploads to 0G Storage, updates DB.
+   * Returns the new rootHash — the curator's wallet must then call
+   * authorizedUpdateDataHash(tokenId, rootHash, 0) on-chain.
+   */
+  prepareSync: (skillId: string, sigHeader: string) =>
+    apiFetch<PrepareSyncResponse>(`/skills/${skillId}/prepare-sync`, {
+      method:  "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body:    JSON.stringify({}),
+    }),
 };
 
 // ---------------------------------------------------------------------------

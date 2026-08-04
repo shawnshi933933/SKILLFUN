@@ -8,6 +8,7 @@ import { waitForTransactionReceipt } from "@wagmi/core";
 import { wagmiConfig } from "@/lib/wagmi";
 import { curatorApi, type CuratorAuthorization } from "@/lib/api";
 import { getAddresses } from "@workspace/abi";
+import { useEip712Sign } from "@/hooks/use-eip712";
 
 // ---------------------------------------------------------------------------
 // Query hook — list all authorizations for the connected wallet
@@ -41,6 +42,17 @@ const SKILL_NFT_ABI_FRAGMENT = [
     type: "function",
     stateMutability: "nonpayable",
     inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [],
+  },
+  {
+    name: "authorizedUpdateDataHash",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "newHash", type: "bytes32" },
+      { name: "index",   type: "uint256" },
+    ],
     outputs: [],
   },
 ] as const;
@@ -182,4 +194,70 @@ export function useAuthorizeSkill() {
   const reset = useCallback(() => setState(IDLE_STATE), []);
 
   return { state, authorize, reset };
+}
+
+// ---------------------------------------------------------------------------
+// Sync-unclaimed-skill phase type
+// ---------------------------------------------------------------------------
+export type SyncPhase =
+  | "idle"
+  | "uploading"    // server fetches GitHub + uploads to 0G Storage
+  | "done"
+  | "error";
+
+export interface SyncState {
+  phase:       SyncPhase;
+  rootHash:    string | null;
+  noChange:    boolean;
+  error:       string | null;
+}
+
+const IDLE_SYNC: SyncState = { phase: "idle", rootHash: null, noChange: false, error: null };
+
+// ---------------------------------------------------------------------------
+// Hook: sync content of an unclaimed skill (curator-initiated)
+//
+// NOTE: The current SkillNFT contract (0x390e723b…) pre-dates the
+// `authorizedUpdateDataHash` function added to SkillNFT v2 (0x8d7473…).
+// On-chain hash updates for existing tokens require the Oracle owner to call
+// oracle.setSkillNFT(newAddress) and curators to re-selfAuthorize on the new
+// contract. Until that migration runs, this hook performs the off-chain steps
+// (GitHub fetch → 0G upload → DB update) which is sufficient for content
+// serving. The on-chain dataHash will sync when the creator claims.
+// ---------------------------------------------------------------------------
+export function useSyncUnclaimedSkill() {
+  const { address } = useAccount();
+  const sign        = useEip712Sign();
+  const queryClient = useQueryClient();
+
+  const [state, setState] = useState<SyncState>(IDLE_SYNC);
+
+  const sync = useCallback(async (skill: Pick<CuratorAuthorization, "skillId" | "tokenId">) => {
+    if (!address) throw new Error("Wallet not connected");
+    setState({ phase: "uploading", rootHash: null, noChange: false, error: null });
+
+    try {
+      const sigHeader = await sign("user:prepare-sync");
+      const result = await curatorApi.prepareSync(skill.skillId, sigHeader);
+
+      setState({
+        phase:    "done",
+        rootHash: result.rootHash ?? null,
+        noChange: result.noChange,
+        error:    null,
+      });
+
+      void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+
+      return result;
+    } catch (err) {
+      const msg = (err as Error).message ?? "Unknown error";
+      setState({ phase: "error", rootHash: null, noChange: false, error: msg });
+      throw err;
+    }
+  }, [address, sign, queryClient]);
+
+  const reset = useCallback(() => setState(IDLE_SYNC), []);
+
+  return { state, sync, reset };
 }

@@ -219,6 +219,22 @@ export async function writeOracleVerification(
   });
 }
 
+/**
+ * Check whether `userAddress` has on-chain authorization for `tokenId`.
+ * Reads SkillNFT.isAuthorized(tokenId, user).
+ */
+export async function isAuthorizedOnChain(tokenId: number, userAddress: string): Promise<boolean> {
+  return rpcCall("isAuthorizedOnChain", async () => {
+    const result = await client.readContract({
+      address: addresses.SkillNFT as `0x${string}`,
+      abi: SkillNFT_ABI,
+      functionName: "isAuthorized",
+      args: [BigInt(tokenId), userAddress as `0x${string}`],
+    });
+    return result as boolean;
+  });
+}
+
 export async function getOracleVerifiedOwner(tokenId: number) {
   const key = cacheKey(CHAIN_ID, "getOracleVerifiedOwner", tokenId);
   return cached(key, TTL.ORACLE, () =>

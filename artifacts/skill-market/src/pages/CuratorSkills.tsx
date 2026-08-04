@@ -20,9 +20,9 @@ import { useLocation } from "wouter";
 import {
   Shield, AlertTriangle, CheckCircle2, Clock, RefreshCw,
   ExternalLink, Loader2, ChevronDown, ChevronRight, Layers, RotateCcw, Info,
-  Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins,
+  Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins, Upload,
 } from "lucide-react";
-import { useCuratorAuthorizations, useAuthorizeSkill, type AuthorizePhase } from "@/hooks/use-curator";
+import { useCuratorAuthorizations, useAuthorizeSkill, useSyncUnclaimedSkill, type AuthorizePhase, type SyncPhase } from "@/hooks/use-curator";
 import { bundlesApi, skillsApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { formatUnits } from "viem";
@@ -90,6 +90,13 @@ const PHASE_LABEL: Record<AuthorizePhase, string> = {
   error:           "Failed",
 };
 
+const SYNC_PHASE_LABEL: Record<SyncPhase, string> = {
+  idle:      "",
+  uploading: "Syncing…",
+  done:      "Synced!",
+  error:     "Failed",
+};
+
 // ---------------------------------------------------------------------------
 // Single skill row component
 // ---------------------------------------------------------------------------
@@ -102,7 +109,8 @@ interface SkillRowProps {
 
 function SkillRow({ skill, onRemove }: SkillRowProps) {
   const { toast } = useToast();
-  const { state, authorize, reset } = useAuthorizeSkill();
+  const { state, authorize, reset }              = useAuthorizeSkill();
+  const { state: syncState, sync, reset: syncReset } = useSyncUnclaimedSkill();
 
   // Remove confirmation state
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -110,6 +118,28 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
 
   const isActionable = skill.status === "needs_reauth" || skill.status === "pending" || skill.status === "revoked";
   const isActive = state.phase !== "idle" && state.phase !== "done" && state.phase !== "error";
+  const isSyncing = syncState.phase !== "idle" && syncState.phase !== "done" && syncState.phase !== "error";
+
+  const handleSync = async () => {
+    syncReset();
+    try {
+      const result = await sync({ skillId: skill.skillId, tokenId: skill.tokenId });
+      if (result.noChange) {
+        toast({ title: "Already up to date", description: "Skill content has not changed since last sync." });
+      } else {
+        toast({
+          title: "Content synced",
+          description: "0G Storage and DB updated with latest GitHub content.",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Sync failed",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const basePriceW0G = (() => {
     try {
@@ -240,6 +270,32 @@ function SkillRow({ skill, onRemove }: SkillRowProps) {
         )}
         {state.phase === "error" && (
           <span className="text-[10px] text-red-400 max-w-[160px] text-right">{state.error?.slice(0, 80)}</span>
+        )}
+
+        {/* Sync Content — only for unclaimed skills (claimed skills use Creator Dashboard) */}
+        {!skill.isClaimed && (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isSyncing}
+              onClick={handleSync}
+              data-testid={`button-sync-${skill.tokenId}`}
+              className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 text-xs px-3 gap-1"
+              title="Sync latest GitHub content to 0G Storage and update on-chain data hash"
+            >
+              {isSyncing ? (
+                <><Loader2 className="w-3 h-3 animate-spin" />{SYNC_PHASE_LABEL[syncState.phase]}</>
+              ) : syncState.phase === "done" ? (
+                <><CheckCircle2 className="w-3 h-3" />Synced</>
+              ) : (
+                <><Upload className="w-3 h-3" />Sync Content</>
+              )}
+            </Button>
+            {syncState.phase === "error" && (
+              <span className="text-[10px] text-red-400 max-w-[160px] text-right">{syncState.error?.slice(0, 80)}</span>
+            )}
+          </>
         )}
         <a
           href={`https://chainscan.0g.ai/token/${skill.tokenId}`}

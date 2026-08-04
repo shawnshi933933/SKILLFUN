@@ -792,4 +792,169 @@ router.post("/skills/:id/update-content", async (req, res) => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/skills/:id/prepare-sync
+//
+// Curator-triggered content sync for *unclaimed* skills.
+// Flow:
+//   1. Verify skill is unclaimed (mintStatus === 'minted', NFT held by contract)
+//   2. Verify caller has on-chain authorization via _authorized mapping
+//      (i.e. they previously called selfAuthorize for this tokenId)
+//   3. Fetch latest content from GitHub + upload to 0G Storage
+//   4. Update DB rootHash, contentVersion, mark curator authorizations needs_reauth
+//   5. Return { rootHash, noChange } — the curator's wallet calls
+//      authorizedUpdateDataHash(tokenId, rootHash, 0) on-chain separately
+//
+// Crucially: this endpoint does NOT call updateDataHash on-chain.
+// The curator's wallet submits that transaction in the browser.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/skills/:id/prepare-sync", async (req, res) => {
+  const skillId   = req.params.id as string;
+  const sigHeader = req.headers["x-wallet-signature"] as string | undefined;
+
+  if (!sigHeader) {
+    apiError(res, ErrorCode.UNAUTHORIZED, "X-Wallet-Signature header required");
+    return;
+  }
+
+  let callerAddress: string;
+  try {
+    callerAddress = await verifyWalletSignature(sigHeader, "user:prepare-sync");
+  } catch {
+    apiError(res, ErrorCode.UNAUTHORIZED, "Invalid wallet signature");
+    return;
+  }
+
+  // Fetch skill
+  const [skill] = await db
+    .select()
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!skill) {
+    apiError(res, ErrorCode.NOT_FOUND, "Skill not found");
+    return;
+  }
+
+  // Only unclaimed skills — claimed skills use the creator's update-content flow
+  if (skill.mintStatus !== "minted") {
+    apiError(
+      res,
+      ErrorCode.INVALID_INPUT,
+      skill.mintStatus === "claimed"
+        ? "This skill has been claimed — only the NFT owner can update its content"
+        : "Skill must be minted before content can be synced"
+    );
+    return;
+  }
+  if (skill.tokenId == null) {
+    apiError(res, ErrorCode.INVALID_INPUT, "Skill has no tokenId");
+    return;
+  }
+
+  // Verify caller has on-chain authorization for this tokenId
+  // We read the _authorized mapping via isAuthorized(tokenId, caller)
+  const { isAuthorizedOnChain } = await import("../services/chain.js");
+  const authorized = await isAuthorizedOnChain(skill.tokenId, callerAddress).catch(() => false);
+  if (!authorized) {
+    apiError(
+      res,
+      ErrorCode.FORBIDDEN,
+      "You have not authorized this skill. Call selfAuthorize() first."
+    );
+    return;
+  }
+
+  // Fetch latest content from GitHub
+  const parts = skill.repoUrl.replace(/^https?:\/\/github\.com\//, "").split("/");
+  const [owner, repo] = parts;
+  if (!owner || !repo) {
+    apiError(res, ErrorCode.INVALID_INPUT, `Cannot parse repoUrl as owner/repo: ${skill.repoUrl}`);
+    return;
+  }
+
+  let fetched: string | null = null;
+  outer: for (const branch of ["main", "master"]) {
+    for (const filename of ["skill.md", "skillfun.json", "README.md"]) {
+      try {
+        const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filename}`;
+        const r = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+        if (r.status === 200) { fetched = await r.text(); break outer; }
+      } catch { /* try next */ }
+    }
+  }
+  if (!fetched) {
+    apiError(res, ErrorCode.NOT_FOUND, `Could not fetch skill file from GitHub repo: ${skill.repoUrl}`);
+    return;
+  }
+
+  // SHA-256 dedup check — same as update-content
+  const newContentSha = crypto.createHash("sha256").update(fetched.trim(), "utf8").digest("hex");
+  const meta = (skill.meta as Record<string, unknown>) ?? {};
+  if (meta.contentSha256 === newContentSha) {
+    logger.info({ skillId, callerAddress }, "prepare-sync: content unchanged, skipping upload");
+    res.json({
+      skillId,
+      rootHash:       skill.rootHash,
+      contentVersion: skill.contentVersion ?? 1,
+      noChange:       true,
+      message:        "Content is identical to the current version — no update needed.",
+    });
+    return;
+  }
+
+  // Upload to 0G Storage
+  const manifest: Record<string, unknown> = {
+    skillId:   skill.skillId,
+    repoUrl:   skill.repoUrl,
+    name:      meta.name ?? skill.repoUrl.split("/").pop(),
+    ...meta,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const { rootHash: newRootHash, skillUri: newSkillUri, aesKey: newAesKey } =
+    await uploadSkillManifest(skill.skillId, skill.repoUrl, manifest, fetched.trim());
+
+  const newContentVersion = (skill.contentVersion ?? 1) + 1;
+
+  const [updatedSkill] = await db
+    .update(skillsTable)
+    .set({
+      rootHash:       newRootHash,
+      skillUri:       newSkillUri,
+      aesKey:         newAesKey ?? skill.aesKey,
+      contentVersion: newContentVersion,
+      updatedAt:      new Date(),
+      meta:           { ...meta, contentSha256: newContentSha },
+    })
+    .where(eq(skillsTable.skillId, skillId))
+    .returning();
+
+  // Mark active curator authorizations as needs_reauth
+  const { rowCount } = await db
+    .update(curatorAuthorizationsTable)
+    .set({ authEpoch: -1 })
+    .where(
+      and(
+        eq(curatorAuthorizationsTable.tokenId, skill.tokenId),
+        isNull(curatorAuthorizationsTable.revokedAt),
+      )
+    );
+
+  logger.info(
+    { skillId, tokenId: skill.tokenId, newRootHash, newContentVersion, callerAddress, curatorsMarked: rowCount ?? 0 },
+    "prepare-sync: content updated by curator, awaiting on-chain authorizedUpdateDataHash"
+  );
+
+  res.json({
+    skillId,
+    rootHash:           newRootHash,
+    skillUri:           newSkillUri,
+    contentVersion:     newContentVersion,
+    curatorsMarked:     rowCount ?? 0,
+    noChange:           false,
+  });
+});
+
 export default router;
