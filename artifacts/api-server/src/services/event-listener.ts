@@ -113,36 +113,55 @@ async function processRange(fromBlock: bigint, toBlock: bigint): Promise<void> {
       await db.delete(skillContentCacheTable)
         .where(eq(skillContentCacheTable.tokenId, tokenId));
 
-      // Update rootHash + bump contentVersion
+      // Update rootHash + bump contentVersion; also read mintStatus so we know
+      // whether to flag curators for re-auth (see below).
+      let mintStatus: string | null = null;
       if (newHash) {
         const [existing] = await db
-          .select({ contentVersion: skillsTable.contentVersion })
+          .select({ contentVersion: skillsTable.contentVersion, mintStatus: skillsTable.mintStatus })
           .from(skillsTable)
           .where(eq(skillsTable.tokenId, tokenId))
           .limit(1);
 
         if (existing) {
+          mintStatus = existing.mintStatus;
           await db.update(skillsTable)
             .set({ rootHash: newHash, contentVersion: existing.contentVersion + 1, updatedAt: new Date() })
             .where(eq(skillsTable.tokenId, tokenId));
         }
       }
 
-      // Mark all active (non-revoked) curator authorizations as needs_reauth.
-      // authEpoch = -1 is the sentinel checked by computeStatus in curator.ts.
-      // This fires regardless of whether the creator used the API endpoint — it
-      // catches direct on-chain updateDataHash calls too.
-      const { rowCount } = await db
-        .update(curatorAuthorizationsTable)
-        .set({ authEpoch: -1 })
-        .where(
-          eq(curatorAuthorizationsTable.tokenId, tokenId)
-          // isNull check omitted intentionally: we want to re-flag even curators
-          // whose revokedAt was set by a prior AuthorizationsPurged — they should
-          // still see the new content when they choose to re-authorize.
-        );
+      // ── curator re-auth flagging ────────────────────────────────────────────
+      // DataHashUpdated fires for two different callers:
+      //   • authorizedUpdateDataHash  (curator-initiated, only valid for unclaimed skills)
+      //   • updateDataHash            (creator/owner-initiated, only valid for claimed skills)
+      //
+      // For UNCLAIMED skills: the update always goes through prepare-sync, which
+      // already marks OTHER curators with authEpoch = -1 while excluding the
+      // syncing curator. Repeating it here would wrongly re-flag the syncing
+      // curator, so we skip the update entirely for unclaimed skills.
+      //
+      // For CLAIMED skills: the creator pushed new content — all curators must
+      // re-review, so we apply the authEpoch = -1 update as before.
+      let curatorsMarked = 0;
+      if (mintStatus !== "minted") {
+        // claimed (or unknown) — flag all curators for re-auth
+        const { rowCount } = await db
+          .update(curatorAuthorizationsTable)
+          .set({ authEpoch: -1 })
+          .where(
+            eq(curatorAuthorizationsTable.tokenId, tokenId)
+            // isNull check omitted intentionally: re-flag even curators whose
+            // revokedAt was set by a prior AuthorizationsPurged so they see new content.
+          );
+        curatorsMarked = rowCount ?? 0;
+      }
 
-      logger.info({ tokenId, newHash, curatorsMarked: rowCount ?? 0 }, "event-listener: DataHashUpdated — cache cleared, curator auths flagged for re-review");
+      logger.info(
+        { tokenId, newHash, mintStatus, curatorsMarked,
+          skippedReason: mintStatus === "minted" ? "unclaimed — prepare-sync handles re-auth" : undefined },
+        "event-listener: DataHashUpdated — cache cleared",
+      );
     }
 
     const total = authLogs.length + purgedLogs.length + dataLogs.length;
