@@ -3,9 +3,13 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import pinoHttp from "pino-http";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import router from "./routes/index.js";
 import mcpHandlerRouter from "./routes/mcp-handler.js";
 import { logger } from "./lib/logger.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app: Express = express();
 
@@ -46,6 +50,9 @@ app.use(session({
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   },
 }));
+
+// Serve static public assets (e.g. NFT logo image)
+app.use("/api/static", express.static(join(__dirname, "../public")));
 
 app.use("/api", router);
 
