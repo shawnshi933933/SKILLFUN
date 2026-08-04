@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -6,14 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, X, Loader2, Package, Shield, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, X,
+  Loader2, Package, Shield, AlertTriangle, Search,
+  SortAsc, Tag,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSkills } from "@/hooks/use-skills";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { bundlesApi } from "@/lib/api";
 import type { DbSkill } from "@/lib/api";
 
-const STEPS = ["Bundle Info", "Workflow", "Select Skills", "Review & Deploy"];
+// ── Step order ────────────────────────────────────────────────────────────────
+const STEPS = ["Bundle Info", "Select Skills", "Workflow", "Review & Deploy"];
 
 interface FormData {
   name: string;
@@ -32,18 +37,43 @@ function skillDisplayName(skill: DbSkill): string {
   return getMeta<string>(skill, "name", skill.repoUrl.split("/").pop() ?? skill.skillId);
 }
 
-/** Convert a bundle name into a URL-safe subdomain slug. */
 function toSubdomain(name: string): string {
   const base = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40) || "bundle";
-  // Append a short random suffix to reduce collision risk.
   const suffix = Math.random().toString(36).slice(2, 6);
   return `${base}-${suffix}`;
 }
 
+// ── Sort options ──────────────────────────────────────────────────────────────
+type SortKey = "newest" | "price_asc" | "price_desc" | "most_used";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "newest",     label: "Newest" },
+  { key: "price_asc",  label: "Price: Low → High" },
+  { key: "price_desc", label: "Price: High → Low" },
+  { key: "most_used",  label: "Most Used" },
+];
+
+function sortSkills(skills: DbSkill[], sort: SortKey): DbSkill[] {
+  return [...skills].sort((a, b) => {
+    switch (sort) {
+      case "price_asc":
+        return getMeta<number>(a, "basePrice", 0) - getMeta<number>(b, "basePrice", 0);
+      case "price_desc":
+        return getMeta<number>(b, "basePrice", 0) - getMeta<number>(a, "basePrice", 0);
+      case "most_used":
+        return getMeta<number>(b, "invocations", 0) - getMeta<number>(a, "invocations", 0);
+      case "newest":
+      default:
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function CreateBundle() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -62,10 +92,48 @@ export default function CreateBundle() {
     selectedSkillIds: [],
   });
 
-  // Load real minted skills from the API
+  // Skill-picker filter / sort state
+  const [search, setSearch]         = useState("");
+  const [activeTag, setActiveTag]   = useState<string | null>(null);
+  const [sortKey, setSortKey]       = useState<SortKey>("newest");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
   const { data: skillsData, isLoading: skillsLoading } = useSkills({ status: "minted" });
   const availableSkills = skillsData?.skills ?? [];
 
+  // ── Derived filter state ───────────────────────────────────────────────────
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    availableSkills.forEach((s) => {
+      const cat = getMeta<string>(s, "category", "");
+      if (cat) tags.add(cat);
+      const skillTags = getMeta<string[]>(s, "tags", []);
+      skillTags.forEach((t) => tags.add(t));
+    });
+    return Array.from(tags).sort();
+  }, [availableSkills]);
+
+  const filteredSkills = useMemo(() => {
+    let list = availableSkills;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(
+        (s) =>
+          skillDisplayName(s).toLowerCase().includes(q) ||
+          s.repoUrl.toLowerCase().includes(q),
+      );
+    }
+    if (activeTag) {
+      list = list.filter((s) => {
+        const cat  = getMeta<string>(s, "category", "");
+        const tags = getMeta<string[]>(s, "tags", []);
+        return cat === activeTag || tags.includes(activeTag);
+      });
+    }
+    return sortSkills(list, sortKey);
+  }, [availableSkills, search, activeTag, sortKey]);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
   const update = (key: keyof FormData, value: string | number | string[]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
@@ -78,15 +146,15 @@ export default function CreateBundle() {
     }));
   };
 
-  const selectedSkills = availableSkills.filter((s) => form.selectedSkillIds.includes(s.skillId));
-  const totalBasePrice = selectedSkills.reduce((sum, s) => sum + getMeta<number>(s, "basePrice", 0), 0);
-  const markupAmount = totalBasePrice * form.markup / 100;
-  const curatorEarning = markupAmount * 0.5 * 0.9;
+  const selectedSkills   = availableSkills.filter((s) => form.selectedSkillIds.includes(s.skillId));
+  const totalBasePrice   = selectedSkills.reduce((sum, s) => sum + getMeta<number>(s, "basePrice", 0), 0);
+  const markupAmount     = totalBasePrice * form.markup / 100;
+  const curatorEarning   = markupAmount * 0.5 * 0.9;
 
+  // ── Deploy ─────────────────────────────────────────────────────────────────
   const handleDeploy = async () => {
     setDeployError(null);
     try {
-      // ── Step 1: Create the bundle ──────────────────────────────────────────
       setDeployState("creating");
       const createSig = await sign("create-bundle");
       const subdomain = toSubdomain(form.name);
@@ -106,14 +174,12 @@ export default function CreateBundle() {
         createSig,
       );
 
-      // ── Step 2: Link the selected skills ──────────────────────────────────
       setDeployState("linking");
       if (form.selectedSkillIds.length > 0) {
         const skillsSig = await sign("update-bundle-skills");
         await bundlesApi.updateSkills(bundle.bundleId, form.selectedSkillIds, skillsSig);
       }
 
-      // ── Done ──────────────────────────────────────────────────────────────
       setCreatedBundleId(bundle.bundleId);
       setDeployState("done");
       toast({
@@ -129,12 +195,13 @@ export default function CreateBundle() {
   };
 
   const deploySteps = [
-    { key: "creating",  label: "Creating Bundle" },
-    { key: "linking",   label: "Linking Skills to MCP endpoint" },
+    { key: "creating", label: "Creating Bundle" },
+    { key: "linking",  label: "Linking Skills to MCP endpoint" },
   ];
   const deployOrder = ["creating", "linking", "done"];
-  const deployIdx = deployOrder.indexOf(deployState);
+  const deployIdx   = deployOrder.indexOf(deployState);
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
@@ -145,15 +212,22 @@ export default function CreateBundle() {
           </div>
           <h1 className="text-3xl font-bold">Create a Bundle</h1>
         </div>
-        <p className="text-muted-foreground mb-8 mt-1">Curate Skills into a themed product with a single MCP endpoint. Add a workflow playbook so agents know how to use your Bundle.</p>
+        <p className="text-muted-foreground mb-8 mt-1">
+          Curate Skills into a themed product with a single MCP endpoint. Add a workflow playbook so agents know how to use your Bundle.
+        </p>
 
         {/* Progress */}
         <div className="mb-8">
           <Progress value={((step + 1) / STEPS.length) * 100} className="h-1.5 mb-4" />
           <div className="grid grid-cols-4 gap-2">
             {STEPS.map((s, i) => (
-              <div key={s} className={`text-xs text-center ${i === step ? "text-accent font-semibold" : i < step ? "text-emerald-400" : "text-muted-foreground"}`}>
-                {i < step ? <CheckCircle className="w-4 h-4 mx-auto mb-1" /> : <div className="w-4 h-4 rounded-full border mx-auto mb-1 flex items-center justify-center text-[10px]">{i + 1}</div>}
+              <div
+                key={s}
+                className={`text-xs text-center ${i === step ? "text-accent font-semibold" : i < step ? "text-emerald-400" : "text-muted-foreground"}`}
+              >
+                {i < step
+                  ? <CheckCircle className="w-4 h-4 mx-auto mb-1" />
+                  : <div className="w-4 h-4 rounded-full border mx-auto mb-1 flex items-center justify-center text-[10px]">{i + 1}</div>}
                 {s}
               </div>
             ))}
@@ -162,72 +236,143 @@ export default function CreateBundle() {
 
         <div className="bg-card border border-white/10 rounded-2xl p-8">
 
-          {/* Step 0: Basic Info */}
+          {/* ── Step 0: Bundle Info ───────────────────────────────────────── */}
           {step === 0 && (
             <div className="space-y-5">
               <h2 className="text-xl font-semibold mb-5">Bundle Information</h2>
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Bundle Name</label>
-                <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="e.g. DeFi Alpha Suite" className="bg-background border-white/10" data-testid="input-bundle-name" />
+                <Input
+                  value={form.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  placeholder="e.g. DeFi Alpha Suite"
+                  className="bg-background border-white/10"
+                  data-testid="input-bundle-name"
+                />
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Description</label>
-                <Textarea value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="What does this Bundle do? What type of agents will use it?" className="bg-background border-white/10 min-h-[80px]" data-testid="input-bundle-description" />
+                <Textarea
+                  value={form.description}
+                  onChange={(e) => update("description", e.target.value)}
+                  placeholder="What does this Bundle do? What type of agents will use it?"
+                  className="bg-background border-white/10 min-h-[80px]"
+                  data-testid="input-bundle-description"
+                />
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Tags (comma-separated)</label>
-                <Input value={form.tags} onChange={(e) => update("tags", e.target.value)} placeholder="DeFi, Trading, Alpha" className="bg-background border-white/10" data-testid="input-bundle-tags" />
-              </div>
-            </div>
-          )}
-
-          {/* Step 1: Workflow */}
-          {step === 1 && (
-            <div className="space-y-5">
-              <h2 className="text-xl font-semibold mb-2">Agent Workflow Playbook</h2>
-              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
-                <Bot className="w-3 h-3 inline mr-1 text-accent" />
-                This workflow is shown to AI agents when they call <span className="font-mono">initialize</span> on your MCP endpoint. Describe how to sequence your Skills to accomplish the Bundle's goal.
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-1.5 block">Workflow Description <span className="text-muted-foreground/50">(optional)</span></label>
-                <Textarea
-                  value={form.workflow}
-                  onChange={(e) => update("workflow", e.target.value)}
-                  placeholder={`Example:
-1. Call market-scanner:5 with { query: "ETH whale movements" } → get whale wallet list
-2. Call risk-analyzer:7 with { wallets: <result from step 1> } → get risk scores
-3. Call portfolio-optimizer:12 with { risk_scores: <result from step 2> } → get recommendations
-
-Each skill returns decrypted content you execute locally. Proof tokens are long-lived — no repeat payment needed until creator updates the skill.`}
-                  className="bg-background border-white/10 min-h-[200px] font-mono text-sm"
-                  data-testid="input-bundle-workflow"
+                <Input
+                  value={form.tags}
+                  onChange={(e) => update("tags", e.target.value)}
+                  placeholder="DeFi, Trading, Alpha"
+                  className="bg-background border-white/10"
+                  data-testid="input-bundle-tags"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Leave blank to skip. You can always add or update the workflow later from the bundle settings.
-              </p>
             </div>
           )}
 
-          {/* Step 2: Select Skills */}
-          {step === 2 && (
-            <div className="space-y-5">
-              <h2 className="text-xl font-semibold mb-2">Select Skills</h2>
-              <p className="text-sm text-muted-foreground mb-5">Choose 2 or more Skills to include. Agents will pay W0G per Skill via invokeSkill + x402.</p>
+          {/* ── Step 1: Select Skills ─────────────────────────────────────── */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold mb-1">Select Skills</h2>
+                <p className="text-sm text-muted-foreground">
+                  Choose 2 or more Skills to include. Agents will pay W0G per Skill via invokeSkill + x402.
+                </p>
+              </div>
 
+              {/* Selected chips */}
               {form.selectedSkillIds.length > 0 && (
-                <div className="bg-accent/5 border border-accent/20 rounded-xl p-3 mb-4 flex flex-wrap gap-2">
+                <div className="bg-accent/5 border border-accent/20 rounded-xl p-3 flex flex-wrap gap-2">
                   {selectedSkills.map((s) => (
-                    <div key={s.skillId} className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2 py-1 text-xs text-accent">
+                    <div
+                      key={s.skillId}
+                      className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2 py-1 text-xs text-accent"
+                    >
                       {skillDisplayName(s)}
-                      <button onClick={() => toggleSkill(s.skillId)} className="hover:text-white"><X className="w-3 h-3" /></button>
+                      <button onClick={() => toggleSkill(s.skillId)} className="hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
-                  <div className="text-xs text-muted-foreground self-center ml-auto">{form.selectedSkillIds.length} selected</div>
+                  <div className="text-xs text-muted-foreground self-center ml-auto">
+                    {form.selectedSkillIds.length} selected
+                  </div>
                 </div>
               )}
 
+              {/* Search + Sort row */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by name or repo…"
+                    className="bg-background border-white/10 pl-8 h-9 text-sm"
+                    data-testid="skill-search"
+                  />
+                </div>
+                {/* Sort dropdown */}
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-white/10 gap-1.5 h-9 text-xs"
+                    onClick={() => setShowSortMenu((v) => !v)}
+                    data-testid="skill-sort-btn"
+                  >
+                    <SortAsc className="w-3.5 h-3.5" />
+                    {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
+                  </Button>
+                  {showSortMenu && (
+                    <div className="absolute right-0 top-10 z-20 bg-card border border-white/10 rounded-xl shadow-xl w-44 py-1 text-sm">
+                      {SORT_OPTIONS.map((o) => (
+                        <button
+                          key={o.key}
+                          onClick={() => { setSortKey(o.key); setShowSortMenu(false); }}
+                          className={`w-full text-left px-4 py-2 hover:bg-white/5 transition-colors ${sortKey === o.key ? "text-accent" : "text-foreground"}`}
+                        >
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Tag filter chips */}
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setActiveTag(null)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs border transition-colors ${
+                      activeTag === null
+                        ? "bg-accent/20 border-accent/40 text-accent"
+                        : "border-white/10 text-muted-foreground hover:border-white/20"
+                    }`}
+                  >
+                    <Tag className="w-3 h-3" /> All
+                  </button>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs border transition-colors ${
+                        activeTag === tag
+                          ? "bg-accent/20 border-accent/40 text-accent"
+                          : "border-white/10 text-muted-foreground hover:border-white/20"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Skill list */}
               {skillsLoading ? (
                 <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-sm">
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading skills…
@@ -237,19 +382,29 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                   <Package className="w-8 h-8" />
                   <span className="text-sm">No minted Skills found. Mint a Skill first before creating a Bundle.</span>
                 </div>
+              ) : filteredSkills.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+                  <Search className="w-6 h-6" />
+                  <span className="text-sm">No skills match your search.</span>
+                </div>
               ) : (
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                  {availableSkills.map((skill) => {
-                    const name      = skillDisplayName(skill);
-                    const category  = getMeta<string>(skill, "category", "");
-                    const basePrice = getMeta<number>(skill, "basePrice", 0);
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {filteredSkills.map((skill) => {
+                    const name        = skillDisplayName(skill);
+                    const category    = getMeta<string>(skill, "category", "");
+                    const basePrice   = getMeta<number>(skill, "basePrice", 0);
                     const invocations = getMeta<number>(skill, "invocations", 0);
-                    const isSelected = form.selectedSkillIds.includes(skill.skillId);
+                    const isSelected  = form.selectedSkillIds.includes(skill.skillId);
                     return (
-                      <div key={skill.skillId}
+                      <div
+                        key={skill.skillId}
                         onClick={() => toggleSkill(skill.skillId)}
                         data-testid={`select-skill-${skill.skillId}`}
-                        className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${isSelected ? "border-accent/40 bg-accent/10" : "border-white/10 hover:border-white/20 hover:bg-white/5"}`}
+                        className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-accent/40 bg-accent/10"
+                            : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-white/20"}`}>
@@ -257,9 +412,16 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                           </div>
                           <div>
                             <div className="font-medium text-sm">{name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {category}{category && " · "}{invocations > 0 && `${invocations.toLocaleString()} invocations`}
-                              {!category && !invocations && <span className="font-mono">{skill.repoUrl}</span>}
+                            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                              {category && (
+                                <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{category}</span>
+                              )}
+                              {invocations > 0 && (
+                                <span>{invocations.toLocaleString()} uses</span>
+                              )}
+                              {!category && !invocations && (
+                                <span className="font-mono">{skill.repoUrl}</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -283,7 +445,52 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
             </div>
           )}
 
-          {/* Step 3: Review & Deploy */}
+          {/* ── Step 2: Workflow ──────────────────────────────────────────── */}
+          {step === 2 && (
+            <div className="space-y-5">
+              <h2 className="text-xl font-semibold mb-2">Agent Workflow Playbook</h2>
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
+                <Bot className="w-3 h-3 inline mr-1 text-accent" />
+                This workflow is shown to AI agents when they call{" "}
+                <span className="font-mono">initialize</span> on your MCP endpoint. Describe how to
+                sequence your Skills to accomplish the Bundle's goal.
+              </div>
+              {/* Show selected skills as reference */}
+              {selectedSkills.length > 0 && (
+                <div className="bg-background border border-white/10 rounded-xl p-3">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium">
+                    Skills in this Bundle ({selectedSkills.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedSkills.map((s, i) => (
+                      <span key={s.skillId} className="text-xs bg-white/5 border border-white/10 rounded px-2 py-0.5">
+                        <span className="text-muted-foreground mr-1">{i + 1}.</span>
+                        {skillDisplayName(s)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">
+                  Workflow Description{" "}
+                  <span className="text-muted-foreground/50">(optional)</span>
+                </label>
+                <Textarea
+                  value={form.workflow}
+                  onChange={(e) => update("workflow", e.target.value)}
+                  placeholder={`Example:\n1. Call market-scanner with { query: "ETH whale movements" } → get whale wallet list\n2. Call risk-analyzer with { wallets: <result from step 1> } → get risk scores\n3. Call portfolio-optimizer with { risk_scores: <result from step 2> } → get recommendations\n\nEach skill returns decrypted content you execute locally.`}
+                  className="bg-background border-white/10 min-h-[200px] font-mono text-sm"
+                  data-testid="input-bundle-workflow"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Leave blank to skip. You can always add or update the workflow later from bundle settings.
+              </p>
+            </div>
+          )}
+
+          {/* ── Step 3: Review & Deploy ───────────────────────────────────── */}
           {step === 3 && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-5">Review & Deploy</h2>
@@ -291,10 +498,10 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                 <>
                   <div className="bg-background border border-white/10 rounded-xl p-5 space-y-3">
                     {[
-                      { label: "Bundle Name", value: form.name || "—" },
-                      { label: "Skills", value: `${selectedSkills.length} selected` },
-                      { label: "Workflow", value: form.workflow ? `${form.workflow.slice(0, 60)}…` : "None" },
-                      { label: "Total Base Price", value: `${totalBasePrice.toFixed(4)} W0G/invoke` },
+                      { label: "Bundle Name",          value: form.name || "—" },
+                      { label: "Skills",               value: `${selectedSkills.length} selected` },
+                      { label: "Workflow",             value: form.workflow ? `${form.workflow.slice(0, 60)}…` : "None" },
+                      { label: "Total Base Price",     value: `${totalBasePrice.toFixed(4)} W0G/invoke` },
                       { label: "Curator Earning (est.)", value: curatorEarning > 0 ? `~${curatorEarning.toFixed(4)} W0G/invoke` : "—" },
                     ].map((r) => (
                       <div key={r.label} className="flex justify-between text-sm">
@@ -305,7 +512,10 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                   </div>
                   <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
                     <Bot className="w-3 h-3 inline mr-1 text-accent" />
-                    Deploying creates a Bundle with a single MCP endpoint. Agents discover Skills via <span className="font-mono">tools/list</span>, pay W0G via <span className="font-mono">invokeSkill</span>, and receive decrypted Skill content to run locally. Proof tokens are valid until you update the Skill content.
+                    Deploying creates a Bundle with a single MCP endpoint. Agents discover Skills via{" "}
+                    <span className="font-mono">tools/list</span>, pay W0G via{" "}
+                    <span className="font-mono">invokeSkill</span>, and receive decrypted Skill content
+                    to run locally.
                   </div>
                   {deployError && (
                     <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
@@ -325,22 +535,35 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
               {deployState !== "idle" && (
                 <div className="space-y-4">
                   {deploySteps.map((ds) => {
-                    const idx = deployOrder.indexOf(ds.key);
-                    const isDone = deployIdx > idx;
+                    const idx      = deployOrder.indexOf(ds.key);
+                    const isDone   = deployIdx > idx;
                     const isActive = deployIdx === idx;
                     return (
-                      <div key={ds.key} className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${isDone ? "border-emerald-500/30 bg-emerald-500/5" : isActive ? "border-accent/40 bg-accent/5" : "border-white/10"}`} data-testid={`deploy-step-${ds.key}`}>
-                        {isDone ? <CheckCircle className="w-5 h-5 text-emerald-400" /> : isActive ? <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" /> : <div className="w-5 h-5 rounded-full border border-white/20" />}
-                        <span className={`text-sm ${isDone ? "text-emerald-400" : isActive ? "text-accent" : "text-muted-foreground"}`}>{ds.label}</span>
+                      <div
+                        key={ds.key}
+                        className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                          isDone ? "border-emerald-500/30 bg-emerald-500/5" :
+                          isActive ? "border-accent/40 bg-accent/5" : "border-white/10"
+                        }`}
+                        data-testid={`deploy-step-${ds.key}`}
+                      >
+                        {isDone
+                          ? <CheckCircle className="w-5 h-5 text-emerald-400" />
+                          : isActive
+                            ? <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                            : <div className="w-5 h-5 rounded-full border border-white/20" />}
+                        <span className={`text-sm ${isDone ? "text-emerald-400" : isActive ? "text-accent" : "text-muted-foreground"}`}>
+                          {ds.label}
+                        </span>
                       </div>
                     );
                   })}
                   {deployState === "done" && (
                     <div className="text-center pt-4 space-y-4">
                       <div className="text-2xl font-bold text-emerald-400">Bundle Deployed!</div>
-                      <p className="text-muted-foreground text-sm">Your Bundle is live. Agents can now discover and invoke Skills via x402 W0G payment.</p>
-
-                      {/* Authorization reminder */}
+                      <p className="text-muted-foreground text-sm">
+                        Your Bundle is live. Agents can now discover and invoke Skills via x402 W0G payment.
+                      </p>
                       {selectedSkills.length > 0 && (
                         <div className="text-left bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
                           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -349,7 +572,6 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                             <p className="text-xs text-muted-foreground mb-2">
                               You have {selectedSkills.length} Skill{selectedSkills.length > 1 ? "s" : ""} in this Bundle.
                               Agents can't access them until you authorize each one on-chain.
-                              Unclaimed Skills are free; claimed Skills require a W0G payment equal to their base price.
                             </p>
                             <Button
                               size="sm"
@@ -363,7 +585,6 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
                           </div>
                         </div>
                       )}
-
                       <div className="flex gap-3 justify-center">
                         {createdBundleId && (
                           <Button
@@ -396,13 +617,25 @@ Each skill returns decrypted content you execute locally. Proof tokens are long-
             </div>
           )}
 
+          {/* Navigation */}
           {deployState === "idle" && (
             <div className="flex justify-between mt-8">
-              <Button variant="outline" className="border-white/20 gap-2" onClick={() => setStep((s) => Math.max(s - 1, 0))} disabled={step === 0} data-testid="button-prev-step">
+              <Button
+                variant="outline"
+                className="border-white/20 gap-2"
+                onClick={() => setStep((s) => Math.max(s - 1, 0))}
+                disabled={step === 0}
+                data-testid="button-prev-step"
+              >
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
               {step < 3 && (
-                <Button className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2" onClick={() => setStep((s) => Math.min(s + 1, 3))} data-testid="button-next-step">
+                <Button
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+                  onClick={() => setStep((s) => Math.min(s + 1, 3))}
+                  disabled={step === 0 && !form.name.trim()}
+                  data-testid="button-next-step"
+                >
                   Next <ArrowRight className="w-4 h-4" />
                 </Button>
               )}
