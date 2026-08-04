@@ -18,7 +18,7 @@ import { bundlesApi } from "@/lib/api";
 import type { DbSkill } from "@/lib/api";
 
 // ── Step order ────────────────────────────────────────────────────────────────
-const STEPS = ["Bundle Info", "Select Skills", "Workflow", "Review & Deploy"];
+const STEPS = ["Bundle Info", "Select Skills", "Workflow", "Pricing", "Review & Deploy"];
 
 interface FormData {
   name: string;
@@ -27,6 +27,8 @@ interface FormData {
   tags: string;
   markup: number;
   selectedSkillIds: string[];
+  /** Per-call price in W0G (decimal, e.g. "0.01"). Empty string = free. */
+  servicePriceW0G: string;
 }
 
 function getMeta<T>(skill: DbSkill, key: string, fallback: T): T {
@@ -96,6 +98,7 @@ export default function CreateBundle() {
     tags: "",
     markup: 15,
     selectedSkillIds: [],
+    servicePriceW0G: "",
   });
 
   // Skill-picker filter / sort state
@@ -157,6 +160,16 @@ export default function CreateBundle() {
   const curatorEarning   = markupAmount * 0.5 * 0.9;
 
   // ── Deploy ─────────────────────────────────────────────────────────────────
+  // Convert W0G decimal → wei string for the API (e.g. "0.01" → "10000000000000000")
+  const servicePriceWei: string | null = (() => {
+    const v = form.servicePriceW0G.trim();
+    if (!v || v === "0") return null;
+    try {
+      const wei = BigInt(Math.round(parseFloat(v) * 1e18));
+      return wei > 0n ? wei.toString() : null;
+    } catch { return null; }
+  })();
+
   const handleDeploy = async () => {
     setDeployError(null);
     try {
@@ -168,6 +181,7 @@ export default function CreateBundle() {
           subdomain,
           name: form.name,
           description: form.description || undefined,
+          servicePrice: servicePriceWei,
           meta: {
             workflow: form.workflow || undefined,
             tags: form.tags
@@ -512,8 +526,51 @@ export default function CreateBundle() {
             </div>
           )}
 
-          {/* ── Step 3: Review & Deploy ───────────────────────────────────── */}
-          {step === 3 && (
+          {/* ── Step 3: Pricing ──────────────────────────────────────────── */}
+          {step === 3 && deployState === "idle" && (
+            <div className="space-y-5">
+              <h2 className="text-xl font-semibold mb-2">Pricing</h2>
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
+                <Coins className="w-3 h-3 inline mr-1 text-accent" />
+                Set the price agents pay per invocation of this Bundle. Agents see this before connecting.
+                Leave blank (or set to 0) to make the Bundle free.
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground block">
+                  Price per call{" "}
+                  <span className="text-muted-foreground/50">(W0G, optional)</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    placeholder="0.00 — free"
+                    value={form.servicePriceW0G}
+                    onChange={(e) => update("servicePriceW0G", e.target.value)}
+                    className="bg-background border-white/10 pr-14"
+                    data-testid="input-service-price"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60 pointer-events-none">
+                    W0G
+                  </span>
+                </div>
+                {form.servicePriceW0G && parseFloat(form.servicePriceW0G) > 0 ? (
+                  <p className="text-xs text-emerald-400/80">
+                    Agents will pay <span className="font-mono font-semibold">{parseFloat(form.servicePriceW0G).toFixed(6)} W0G</span> per invocation.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground/50">
+                    Free — agents can invoke this Bundle at no cost.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 4: Review & Deploy ───────────────────────────────────── */}
+          {step === 4 && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-5">Review & Deploy</h2>
               {deployState === "idle" && (
@@ -523,6 +580,7 @@ export default function CreateBundle() {
                       { label: "Bundle Name",          value: form.name || "—" },
                       { label: "Skills",               value: `${selectedSkills.length} selected` },
                       { label: "Workflow",             value: form.workflow ? `${form.workflow.slice(0, 60)}…` : "None" },
+                      { label: "Price per Call",       value: (form.servicePriceW0G && parseFloat(form.servicePriceW0G) > 0) ? `${parseFloat(form.servicePriceW0G).toFixed(6)} W0G` : "Free" },
                       { label: "Total Base Price",     value: `${totalBasePrice.toFixed(4)} W0G/invoke` },
                       { label: "Curator Earning (est.)", value: curatorEarning > 0 ? `~${curatorEarning.toFixed(4)} W0G/invoke` : "—" },
                     ].map((r) => (
@@ -625,7 +683,7 @@ export default function CreateBundle() {
                             setDeployState("idle");
                             setDeployError(null);
                             setCreatedBundleId(null);
-                            setForm({ name: "", description: "", workflow: "", tags: "", markup: 15, selectedSkillIds: [] });
+                            setForm({ name: "", description: "", workflow: "", tags: "", markup: 15, selectedSkillIds: [], servicePriceW0G: "" });
                           }}
                           data-testid="button-create-another"
                         >
@@ -651,10 +709,10 @@ export default function CreateBundle() {
               >
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
-              {step < 3 && (
+              {step < 4 && (
                 <Button
                   className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
-                  onClick={() => setStep((s) => Math.min(s + 1, 3))}
+                  onClick={() => setStep((s) => Math.min(s + 1, 4))}
                   disabled={step === 0 && !form.name.trim()}
                   data-testid="button-next-step"
                 >
