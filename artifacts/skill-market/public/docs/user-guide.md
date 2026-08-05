@@ -279,8 +279,6 @@ X-Payment: <base64-encoded signed payment proof>
 |---|---|
 | Chain ID | `16661` |
 | Currency | W0G (18 decimals) |
-| RPC | `https://evmrpc-testnet.0g.ai` |
-| Explorer | `https://chainscan.0g.ai` |
 | SkillNFT Contract | `0x8d7473cE478FA46C16998d576879aD7c909344e0` |
 
 ---
