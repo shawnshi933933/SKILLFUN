@@ -46,7 +46,7 @@ router.get("/skills", async (req, res) => {
   const conditions: SQL[] = [];
   if (status) conditions.push(eq(skillsTable.mintStatus, status as "pending" | "minting" | "minted" | "claimed"));
   if (owner) conditions.push(eq(skillsTable.ownerAddress, owner.toLowerCase()));
-  if (repo)  conditions.push(eq(skillsTable.repoUrl, repo));
+  if (repo)  conditions.push(sql`lower(rtrim(${skillsTable.repoUrl}, '/')) = lower(${repo.replace(/\/+$/, "")})`);
 
   // Include bundle count via LEFT JOIN
   const rows = await db
@@ -207,15 +207,21 @@ router.post("/skills/prepare-mint", async (req, res) => {
     return;
   }
 
+  // Normalize repoUrl: strip trailing slashes and whitespace so "owner/repo/"
+  // and "owner/repo" are treated as the same repo everywhere in the system.
+  const normalizedRepoUrl = repoUrl.trim().replace(/\/+$/, "");
+
   // ── Repo uniqueness guard ────────────────────────────────────────────────
   // Block minting if this repo already has a minted or claimed Skill NFT.
   // Pending records (not yet on-chain) are ignored — they may be stale drafts.
+  // Use sql`lower()` to tolerate case differences, and strip trailing slash
+  // from stored values so old records with a trailing slash are also caught.
   const [existing] = await db
-    .select({ skillId: skillsTable.skillId, tokenId: skillsTable.tokenId })
+    .select({ skillId: skillsTable.skillId, tokenId: skillsTable.tokenId, repoUrl: skillsTable.repoUrl })
     .from(skillsTable)
     .where(
       and(
-        eq(skillsTable.repoUrl, repoUrl.trim()),
+        sql`lower(rtrim(${skillsTable.repoUrl}, '/')) = lower(${normalizedRepoUrl})`,
         inArray(skillsTable.mintStatus, ["minted", "claimed"]),
       )
     )
@@ -233,7 +239,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
   const skillId          = generateId("sk");
   const resolvedMeta     = meta ?? {};
   const resolvedOwner    = ownerMode === "mine" ? callerAddress : callerAddress; // always record submitter
-  const manifestOwnerVal = (repoUrl as string).trim();
+  const manifestOwnerVal = normalizedRepoUrl;
 
   // Build manifest envelope for 0G Storage
   const manifest: Record<string, unknown> = {
