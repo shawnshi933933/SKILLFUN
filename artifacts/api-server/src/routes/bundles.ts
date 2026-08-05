@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { bundlesTable, bundleSkillsTable, skillsTable, paymentProofsTable } from "@workspace/db";
-import { eq, desc, asc, inArray, count, and, sql } from "drizzle-orm";
+import { eq, desc, asc, inArray, count, sum, and, sql } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -126,13 +126,13 @@ router.get("/bundles/:id/analytics", async (req, res) => {
       .where(inArray(paymentProofsTable.skillId, skillIds))
       .orderBy(desc(paymentProofsTable.issuedAt))
       .limit(50),
-    // All proofs → Invocations counter
+    // SUM(call_count) per skill → true Invocations (each tools/call increments by 1)
     db
-      .select({ skillId: paymentProofsTable.skillId, total: count() })
+      .select({ skillId: paymentProofsTable.skillId, total: sum(paymentProofsTable.callCount) })
       .from(paymentProofsTable)
       .where(inArray(paymentProofsTable.skillId, skillIds))
       .groupBy(paymentProofsTable.skillId),
-    // Only paid proofs (tx_hash starts with 0x) → W0G Earned
+    // COUNT of paid proofs (tx_hash starts with 0x) → W0G Earned
     // Free proofs use a synthetic key like "free:wallet:bundleId:tokenId"
     db
       .select({ skillId: paymentProofsTable.skillId, total: count() })
@@ -177,13 +177,15 @@ router.get("/bundles/:id/analytics", async (req, res) => {
     const meta      = (skill?.meta as Record<string, unknown>) ?? {};
     const skillName = (meta.name as string | undefined) ?? row.skillId;
     const paidCount = paidCountMap[row.skillId] ?? 0;
+    // sum() returns string | null in Drizzle — coerce to number
+    const invocations = Number(row.total ?? 0);
     // Revenue only from real on-chain payments; 0 if bundle is free
     const priceW0G  = servicePriceW0G ?? 0;
     return {
       skillId:     row.skillId,
       skillName,
-      invocations: row.total,      // all proofs (free + paid)
-      paidProofs:  paidCount,      // on-chain paid proofs only
+      invocations,           // actual tools/call count (SUM of call_count)
+      paidProofs:  paidCount,// on-chain paid proofs only
       revenueW0G:  paidCount * priceW0G,
     };
   });

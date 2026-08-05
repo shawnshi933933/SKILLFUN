@@ -187,6 +187,9 @@ export const paymentProofsTable = pgTable(
     bundleId:       text("bundle_id"),
     issuedAt:       timestamp("issued_at").notNull().defaultNow(),
     expiresAt:      timestamp("expires_at"),                     // null = version-gated only
+    /** Incremented on every successful tools/call that uses this proof.
+     *  0 at issuance; first actual call bumps it to 1. Use SUM(callCount) for true invocation counts. */
+    callCount:      integer("call_count").notNull().default(0),
   },
   (t) => [
     index("payment_proofs_skill_idx").on(t.skillId),

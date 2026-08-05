@@ -29,7 +29,7 @@ import {
   paymentProofsTable,
   skillContentCacheTable,
 } from "@workspace/db";
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, sql } from "drizzle-orm";
 import { downloadSkillContent } from "../services/storage.js"; // used in getSkillContent helper
 import { getAddresses, ZEROG_MAINNET, SkillNFT_ABI } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
@@ -1251,6 +1251,13 @@ router.post("/:bundleId/mcp", async (req, res) => {
         // ── fetch + decrypt content (cache-first) ─────────────────────────
         try {
           const content = await getSkillContent(skill);
+          // Increment call_count on the proof used — fire-and-forget so it never blocks the response
+          if (proofToken) {
+            db.update(paymentProofsTable)
+              .set({ callCount: sql`${paymentProofsTable.callCount} + 1` })
+              .where(eq(paymentProofsTable.token, proofToken))
+              .catch((err) => logger.warn({ err, proofToken }, "mcp: failed to increment call_count"));
+          }
           logger.info({ bundleId, toolName, skillId: skill.skillId }, "mcp tools/call success");
           res.json(jsonRpcOk(id, {
             content: [{ type: "text", text: content }],
