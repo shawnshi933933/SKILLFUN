@@ -47,10 +47,10 @@ function bundleToCard(b: DbBundle): BundleCardData {
     name:           b.name,
     description:    b.description ?? "",
     curatorAddress: b.ownerAddress,
-    skillCount:     (meta.skillCount as number) ?? 0,
+    skillCount:     b.skillCount  ?? 0,
     apy:            0,
     stakerPool:     0,
-    invocations:    0,
+    invocations:    b.invocations ?? 0,
     curatorMarkup:  0,
     tags:           (meta.tags as string[])  ?? [],
     isLive:         true,
@@ -156,7 +156,7 @@ export default function Landing() {
 
   const { data: skillsData } = useQuery({
     queryKey: ["landing-skills"],
-    queryFn: () => skillsApi.list({ status: "minted" }),
+    queryFn: () => skillsApi.list(),
     staleTime: 60_000,
   });
 
@@ -167,6 +167,7 @@ export default function Landing() {
   });
 
   const featuredSkills: SkillCardData[] = (skillsData?.skills ?? [])
+    .filter(s => s.mintStatus === "minted" || s.mintStatus === "claimed")
     .slice(0, 4)
     .map(skillToCard);
 

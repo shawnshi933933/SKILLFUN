@@ -66,6 +66,10 @@ export interface DbBundle {
   meta:         Record<string, unknown>;
   createdAt:    string;
   updatedAt:    string;
+  /** Joined from DB — real skill count (not from meta) */
+  skillCount?:  number;
+  /** Joined from DB — total invocations */
+  invocations?: number;
 }
 
 export interface OnChainSkillData {
