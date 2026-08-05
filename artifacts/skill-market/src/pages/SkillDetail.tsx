@@ -173,7 +173,7 @@ export default function SkillDetail() {
             {/* Header */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <Badge variant="outline" className="border-white/20 text-muted-foreground">v{version}</Badge>
+                <Badge variant="outline" className="border-border text-muted-foreground">v{version}</Badge>
                 {isMinted && (
                   <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -188,12 +188,12 @@ export default function SkillDetail() {
               </div>
               <h1 className="text-4xl font-bold mb-2">{name}</h1>
               <p className="text-muted-foreground mb-3">{description}</p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Hash className="w-3.5 h-3.5" />
                 <span>{skill.skillId}</span>
                 {skill.tokenId != null && (
                   <>
-                    <span className="text-white/20">·</span>
+                    <span className="text-muted-foreground/30">·</span>
                     <span>Token #{skill.tokenId}</span>
                     <a
                       href={`${EXPLORER}/nft/${SKILL_NFT_ADDR}/${skill.tokenId}`}
@@ -232,9 +232,9 @@ export default function SkillDetail() {
                   { label: "Invocations",  value: invocations.toLocaleString() },
                   { label: "W0G Earned",   value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—" },
                 ].map((stat) => (
-                  <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
+                  <div key={stat.label} className="bg-card border border-border rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
-                    <div className="font-mono font-semibold text-sm">{stat.value}</div>
+                    <div className="font-semibold tabular-nums text-sm">{stat.value}</div>
                   </div>
                 ))}
               </div>
@@ -242,7 +242,7 @@ export default function SkillDetail() {
 
             {/* Tabs */}
             <Tabs defaultValue="activity">
-              <TabsList className="bg-card border border-white/10">
+              <TabsList className="bg-card border border-border">
                 <TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="chain">On-Chain</TabsTrigger>
                 <TabsTrigger value="meta">Metadata</TabsTrigger>
@@ -252,13 +252,13 @@ export default function SkillDetail() {
                 <div className="space-y-3">
                   {/* Live aggregate stats */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-card border border-white/10 rounded-xl p-3">
+                    <div className="bg-card border border-border rounded-xl p-3">
                       <div className="text-xs text-muted-foreground mb-0.5">Total Invocations</div>
-                      <div className="font-mono font-semibold text-lg">{invocations.toLocaleString()}</div>
+                      <div className="font-semibold tabular-nums text-lg">{invocations.toLocaleString()}</div>
                     </div>
-                    <div className="bg-card border border-white/10 rounded-xl p-3">
+                    <div className="bg-card border border-border rounded-xl p-3">
                       <div className="text-xs text-muted-foreground mb-0.5">W0G Earned</div>
-                      <div className="font-mono font-semibold text-lg text-emerald-400">
+                      <div className="font-semibold tabular-nums text-lg text-emerald-600">
                         {revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—"}
                       </div>
                     </div>
@@ -281,7 +281,7 @@ export default function SkillDetail() {
               </TabsContent>
 
               <TabsContent value="chain" className="mt-4">
-                <div className="space-y-3 font-mono text-xs">
+                <div className="space-y-3 text-xs">
                   {onChain ? (
                     <>
                       <Row label="Token ID" value={String(onChain.tokenId)} />
@@ -310,7 +310,7 @@ export default function SkillDetail() {
 
               <TabsContent value="meta" className="mt-4 space-y-3 text-xs">
                 {/* GitHub */}
-                <div className="bg-card border border-white/10 rounded-xl px-4 py-3 space-y-2">
+                <div className="bg-card border border-border rounded-xl px-4 py-3 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1">
                     <Github className="w-3.5 h-3.5" /> GitHub
                   </div>
@@ -319,7 +319,7 @@ export default function SkillDetail() {
                 </div>
 
                 {/* 0G Storage */}
-                <div className="bg-card border border-white/10 rounded-xl px-4 py-3 space-y-2">
+                <div className="bg-card border border-border rounded-xl px-4 py-3 space-y-2">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 text-muted-foreground font-medium">
                       <Database className="w-3.5 h-3.5" /> 0G Storage
@@ -336,7 +336,7 @@ export default function SkillDetail() {
                       {/* Storage pointer — what the NFT actually stores */}
                       <div className="flex items-start justify-between gap-4">
                         <span className="text-muted-foreground shrink-0">Storage Pointer</span>
-                        <span className="font-mono text-primary text-right break-all">
+                        <span className="text-primary text-right break-all text-xs">
                           0g://{skill.rootHash.slice(0, 18)}…
                         </span>
                       </div>
@@ -354,14 +354,14 @@ export default function SkillDetail() {
                       })()}
 
                       {/* Verify on node button — authoritative check (not StorageScan) */}
-                      <div className="pt-2 border-t border-white/10">
+                      <div className="pt-2 border-t border-border">
                         <p className="text-[10px] text-muted-foreground mb-2">
                           StorageScan cannot index direct-node uploads. Use node RPC to verify.
                         </p>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full gap-2 border-white/20 text-xs h-8 mb-2"
+                          className="w-full gap-2 border-border text-xs h-8 mb-2"
                           onClick={handleVerify}
                           disabled={verifying}
                         >
@@ -395,11 +395,11 @@ export default function SkillDetail() {
                       </div>
 
                       {/* Fetch + decrypt button */}
-                      <div className="pt-2 border-t border-white/10">
+                      <div className="pt-2 border-t border-border">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full gap-2 border-white/20 text-xs h-8"
+                          className="w-full gap-2 border-border text-xs h-8"
                           onClick={handleFetchContent}
                           disabled={fetchingContent}
                         >
@@ -422,7 +422,7 @@ export default function SkillDetail() {
                                 Copy ↗
                               </button>
                             </div>
-                            <pre className="p-3 rounded-lg bg-black/40 text-xs font-mono overflow-auto max-h-96 text-muted-foreground whitespace-pre-wrap break-words border border-white/10">
+                            <pre className="p-3 rounded-lg bg-muted text-xs font-mono overflow-auto max-h-96 text-foreground/80 whitespace-pre-wrap break-words border border-border">
                               {skillContent}
                             </pre>
                           </div>
@@ -436,7 +436,7 @@ export default function SkillDetail() {
 
                 {/* Capabilities & Tags */}
                 {(meta.capabilities || meta.tags) && (
-                  <div className="bg-card border border-white/10 rounded-xl px-4 py-3 space-y-2">
+                  <div className="bg-card border border-border rounded-xl px-4 py-3 space-y-2">
                     <div className="flex items-center gap-2 text-muted-foreground font-medium mb-1">
                       <FileCode2 className="w-3.5 h-3.5" /> Skill Details
                     </div>
@@ -450,12 +450,12 @@ export default function SkillDetail() {
                     {meta.tags && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {(meta.tags as string[]).map((t) => (
-                          <span key={t} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-muted-foreground">{t}</span>
+                          <span key={t} className="px-2 py-0.5 rounded-md bg-muted border border-border text-muted-foreground">{t}</span>
                         ))}
                       </div>
                     )}
                     {meta.instructions && (
-                      <p className="text-muted-foreground pt-2 border-t border-white/10 leading-relaxed">{meta.instructions as string}</p>
+                      <p className="text-muted-foreground pt-2 border-t border-border leading-relaxed">{meta.instructions as string}</p>
                     )}
                   </div>
                 )}
@@ -466,18 +466,18 @@ export default function SkillDetail() {
           {/* Right — Action panel */}
           <div className="space-y-4">
             {/* Access card */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div className="flex items-baseline justify-between">
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Base Price</div>
-                  <div className="text-2xl font-bold font-mono">
+                  <div className="text-2xl font-bold tabular-nums">
                     {basePrice > 0 ? `${basePrice} W0G` : <span className="text-emerald-400">Free</span>}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {basePrice > 0 ? "per Curator authorization" : "Curators authorize for free"}
                   </div>
                 </div>
-                <Badge className={`${isMinted ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-white/5 text-muted-foreground border-white/10"} border`}>
+                <Badge className={`${isMinted ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30" : "bg-muted text-muted-foreground border-border"} border`}>
                   {skill.mintStatus}
                 </Badge>
               </div>
@@ -498,29 +498,29 @@ export default function SkillDetail() {
             </div>
 
             {/* Revenue model */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <div className="text-xs text-muted-foreground">Revenue Model</div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-sm bg-accent/60" />
                   <span className="text-muted-foreground">Authorization fee</span>
                 </div>
-                <span className="font-mono font-medium text-accent">100% → Owner</span>
+                <span className="font-medium text-accent">100% → Owner</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-sm bg-primary/60" />
                   <span className="text-muted-foreground">Per-invocation (x402)</span>
                 </div>
-                <span className="font-mono font-medium text-primary">100% → Curator</span>
+                <span className="font-medium text-primary">100% → Curator</span>
               </div>
-              <p className="text-xs text-muted-foreground/60 pt-1 border-t border-white/10 leading-relaxed">
-                Curators pay <span className="text-foreground font-mono">{basePrice > 0 ? `${basePrice} W0G` : "0 W0G"}</span> to authorize, then keep all agent invocation fees.
+              <p className="text-xs text-muted-foreground/60 pt-1 border-t border-border leading-relaxed">
+                Curators pay <span className="text-foreground font-semibold">{basePrice > 0 ? `${basePrice} W0G` : "0 W0G"}</span> to authorize, then keep all agent invocation fees.
               </p>
             </div>
 
             {/* Security */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <div className="text-xs text-muted-foreground">Security Status</div>
               <SecurityRow icon={<Lock className="w-4 h-4 text-primary" />} label="ERC-7857 iNFT Standard" />
               <SecurityRow icon={<Shield className="w-4 h-4 text-emerald-400" />} label="0G Chain Mainnet" />
@@ -531,7 +531,7 @@ export default function SkillDetail() {
                 <SecurityRow icon={<Clock className="w-4 h-4 text-orange-400" />} label="Awaiting Mint" orange />
               )}
               {skill.rootHash && (
-                <div className="text-xs font-mono text-muted-foreground pt-1 border-t border-white/10 break-all">
+                <div className="text-xs text-muted-foreground pt-1 border-t border-border break-all">
                   {skill.rootHash.slice(0, 24)}…
                 </div>
               )}
@@ -548,7 +548,7 @@ function LinkRow({ label, href, text }: { label: string; href: string; text: str
     <div className="flex items-start justify-between gap-4">
       <span className="text-muted-foreground shrink-0">{label}</span>
       <a href={href} target="_blank" rel="noreferrer"
-         className="text-primary hover:underline font-mono break-all flex items-center gap-1 text-right">
+         className="text-primary hover:underline break-all flex items-center gap-1 text-right text-sm">
         {text}<ExternalLink className="w-3 h-3 shrink-0" />
       </a>
     </div>
@@ -571,7 +571,7 @@ function CopyRow({ label, value, mono }: { label: string; value: string; mono?: 
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 bg-card border border-white/10 rounded-xl px-4 py-2.5">
+    <div className="flex items-start justify-between gap-4 bg-card border border-border rounded-xl px-4 py-2.5">
       <span className="text-muted-foreground shrink-0">{label}</span>
       <span className={`text-right break-all ${mono ? "font-mono text-xs" : ""}`}>{value}</span>
     </div>

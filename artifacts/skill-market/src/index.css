@@ -67,52 +67,53 @@
 }
 
 :root {
-  --background: 222 47% 6%;
-  --foreground: 210 40% 96%;
-  --card: 222 47% 10%;
-  --card-foreground: 210 40% 96%;
-  --popover: 222 47% 10%;
-  --popover-foreground: 210 40% 96%;
-  --primary: 265 85% 65%;
-  --primary-foreground: 222 47% 6%;
-  --secondary: 217 32% 17%;
-  --secondary-foreground: 210 40% 96%;
-  --muted: 217 32% 17%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 185 85% 55%;
-  --accent-foreground: 222 47% 6%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 96%;
-  --border: 217 32% 17%;
-  --input: 217 32% 17%;
-  --ring: 265 85% 65%;
-  
-  --chart-1: 265 85% 65%;
-  --chart-2: 185 85% 55%;
-  --chart-3: 217 32% 17%;
-  --chart-4: 215 20.2% 65.1%;
-  --chart-5: 222 47% 10%;
+  /* ── 0G-style light theme ── */
+  --background: 60 8% 96%;           /* warm off-white, like 0g.ai */
+  --foreground: 240 5% 10%;          /* near-black text */
+  --card: 0 0% 100%;                 /* pure white cards */
+  --card-foreground: 240 5% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 5% 10%;
+  --primary: 258 80% 55%;            /* 0G purple */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 95%;
+  --secondary-foreground: 240 5% 25%;
+  --muted: 240 5% 92%;
+  --muted-foreground: 240 5% 45%;
+  --accent: 235 85% 60%;            /* indigo-blue accent */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5% 88%;
+  --input: 0 0% 100%;
+  --ring: 258 80% 55%;
 
-  --sidebar: 222 47% 10%;
-  --sidebar-foreground: 210 40% 96%;
-  --sidebar-border: 217 32% 17%;
-  --sidebar-primary: 265 85% 65%;
-  --sidebar-primary-foreground: 222 47% 6%;
-  --sidebar-accent: 217 32% 17%;
-  --sidebar-accent-foreground: 210 40% 96%;
-  --sidebar-ring: 265 85% 65%;
+  --chart-1: 258 80% 55%;
+  --chart-2: 235 85% 60%;
+  --chart-3: 240 5% 88%;
+  --chart-4: 240 5% 45%;
+  --chart-5: 0 0% 100%;
 
-  --app-font-sans: 'Inter', sans-serif;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 240 5% 10%;
+  --sidebar-border: 240 5% 88%;
+  --sidebar-primary: 258 80% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 5% 92%;
+  --sidebar-accent-foreground: 240 5% 25%;
+  --sidebar-ring: 258 80% 55%;
+
+  --app-font-sans: 'Space Grotesk', sans-serif;
   --app-font-serif: Georgia, serif;
-  --app-font-mono: Menlo, monospace;
+  --app-font-mono: 'JetBrains Mono', monospace;
   --radius: .5rem; /* 8px */
-  
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+
+  --button-outline: rgba(0,0,0, .08);
+  --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: 9;
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
-  
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .06);
+
   /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-accent-border: hsl(var(--sidebar-accent));
@@ -124,7 +125,7 @@
 }
 
 .dark {
-  /* Defaulting to dark as requested */
+  /* Reserved — not used */
 }
 
 @layer base {

@@ -482,7 +482,7 @@ export default function SkillTryPanel({ skillId, skillName, category }: Props) {
     <div className="bg-card border border-primary/20 rounded-2xl overflow-hidden" data-testid="skill-try-panel">
       {/* Header — always visible */}
       <button
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-black/5 transition-colors"
         onClick={() => setOpen((v) => !v)}
         data-testid="button-toggle-try-panel"
       >
@@ -524,18 +524,18 @@ export default function SkillTryPanel({ skillId, skillName, category }: Props) {
 
       {/* Expanded panel */}
       {open && (
-        <div className="px-5 pb-5 border-t border-white/10">
+        <div className="px-5 pb-5 border-t border-border">
           {remaining <= 0 ? (
             /* No trials left */
             <div className="pt-5 text-center">
-              <div className="w-12 h-12 rounded-xl bg-muted/20 border border-white/10 flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 rounded-xl bg-muted/20 border border-border flex items-center justify-center mx-auto mb-4">
                 <Lock className="w-6 h-6 text-muted-foreground" />
               </div>
               <div className="font-semibold mb-2">Trial limit reached</div>
               <p className="text-sm text-muted-foreground mb-4">
                 You've used all 3 free trials for this Skill. Purchase access to run unlimited queries.
               </p>
-              <div className="text-xs text-muted-foreground bg-white/5 rounded-lg px-4 py-3">
+              <div className="text-xs text-muted-foreground bg-muted rounded-lg px-4 py-3">
                 Full access includes live data, real execution, API integration, and priority inference.
               </div>
             </div>
@@ -549,7 +549,7 @@ export default function SkillTryPanel({ skillId, skillName, category }: Props) {
                     {examples.map((ex) => (
                       <button
                         key={ex}
-                        className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground text-left"
+                        className="text-xs px-3 py-1.5 rounded-full bg-muted border border-border hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground text-left"
                         onClick={() => setInput(ex)}
                         data-testid="button-example-prompt"
                       >
@@ -567,7 +567,7 @@ export default function SkillTryPanel({ skillId, skillName, category }: Props) {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={`Ask ${skillName} anything...`}
-                    className="bg-background border-white/10 min-h-[80px] resize-none text-sm"
+                    className="bg-background border-border min-h-[80px] resize-none text-sm"
                     data-testid="input-try-skill"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleTry();
@@ -591,7 +591,7 @@ export default function SkillTryPanel({ skillId, skillName, category }: Props) {
 
               {/* Thinking state */}
               {phase === "thinking" && (
-                <div className="bg-background rounded-xl border border-white/10 p-4">
+                <div className="bg-background rounded-xl border border-border p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex gap-1">
                       {[0, 1, 2].map((i) => (
@@ -652,7 +652,7 @@ export default function SkillTryPanel({ skillId, skillName, category }: Props) {
 
                   <div
                     ref={outputRef}
-                    className="bg-background rounded-xl border border-white/10 p-4 text-sm font-mono leading-relaxed max-h-[420px] overflow-y-auto whitespace-pre-wrap text-foreground/90"
+                    className="bg-background rounded-xl border border-border p-4 text-sm font-mono leading-relaxed max-h-[420px] overflow-y-auto whitespace-pre-wrap text-foreground/90"
                     data-testid="output-trial-result"
                   >
                     {output}

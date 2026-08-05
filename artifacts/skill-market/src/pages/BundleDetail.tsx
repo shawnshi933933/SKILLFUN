@@ -213,7 +213,7 @@ if (attempt.status === 402) {
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="border-white/10 text-muted-foreground text-xs">
+                    <Badge key={tag} variant="outline" className="border-border text-muted-foreground text-xs">
                       {tag}
                     </Badge>
                   ))}
@@ -230,7 +230,7 @@ if (attempt.status === 402) {
               <div className="space-y-2">
                 {/* Primary: POST MCP endpoint (JSON-RPC 2.0) */}
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 font-mono text-xs bg-background border border-white/10 rounded-lg px-3 py-2 text-muted-foreground truncate">
+                  <div className="flex-1 text-xs bg-background border border-border rounded-lg px-3 py-2 text-muted-foreground truncate">
                     {mcpUrl}
                   </div>
                   <CopyButton text={mcpUrl} />
@@ -264,7 +264,7 @@ if (attempt.status === 402) {
               </button>
               {snippetOpen && (
                 <div className="relative">
-                  <pre className="bg-background border border-white/10 rounded-xl p-4 text-[11px] text-muted-foreground overflow-x-auto font-mono leading-relaxed max-h-80">
+                  <pre className="bg-background border border-border rounded-xl p-4 text-[11px] text-muted-foreground overflow-x-auto font-mono leading-relaxed max-h-80">
                     {snippet}
                   </pre>
                   <CopyButton text={snippet} />
@@ -297,9 +297,9 @@ if (attempt.status === 402) {
                   { label: "W0G Earned", value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)} W0G` : "—" },
                   { label: "Service Price", value: servicePriceW0G ? `${servicePriceW0G} W0G` : "Free" },
                 ].map((stat) => (
-                  <div key={stat.label} className="bg-card border border-white/10 rounded-xl p-3">
+                  <div key={stat.label} className="bg-card border border-border rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
-                    <div className="font-mono font-semibold text-sm">{stat.value}</div>
+                    <div className="font-semibold tabular-nums text-sm">{stat.value}</div>
                   </div>
                 ))}
               </div>
@@ -307,7 +307,7 @@ if (attempt.status === 402) {
 
             {/* Tabs */}
             <Tabs defaultValue="skills">
-              <TabsList className="bg-card border border-white/10">
+              <TabsList className="bg-card border border-border">
                 <TabsTrigger value="skills">Skills ({skills.length})</TabsTrigger>
                 {(bundle as any).workflow && <TabsTrigger value="workflow">Workflow</TabsTrigger>}
                 <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -326,7 +326,7 @@ if (attempt.status === 402) {
                       const basePrice = getMeta<number>(skill, "basePrice", 0);
                       return (
                         <Link key={skill.skillId} href={`/app/skill/${skill.skillId}`}>
-                          <div className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
+                          <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 hover:bg-muted/60 transition-colors cursor-pointer">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                               <Zap className="w-4 h-4 text-primary" />
                             </div>
@@ -353,7 +353,7 @@ if (attempt.status === 402) {
 
               {(bundle as any).workflow && (
                 <TabsContent value="workflow" className="mt-4">
-                  <div className="bg-card border border-white/10 rounded-xl p-5">
+                  <div className="bg-card border border-border rounded-xl p-5">
                     <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
                       <Bot className="w-3.5 h-3.5" />
                       Orchestration playbook — shown to agents on MCP initialize
@@ -380,7 +380,7 @@ if (attempt.status === 402) {
                           ? `${Math.floor(secondsAgo / 3600)}h ago`
                           : issuedAt.toLocaleDateString();
                         return (
-                          <div key={`${event.skillId}-${event.issuedAt}-${idx}`} className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 text-sm">
+                          <div key={`${event.skillId}-${event.issuedAt}-${idx}`} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 text-sm">
                             <Bot className="w-4 h-4 text-primary shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -419,7 +419,7 @@ if (attempt.status === 402) {
             </Tabs>
 
             {/* Security */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <div className="text-xs text-muted-foreground">Bundle Security</div>
               <div className="flex items-center gap-2 text-sm"><Lock className="w-4 h-4 text-primary" /> Skill content hashes locked on-chain (ERC-7857)</div>
               <div className="flex items-center gap-2 text-sm"><Shield className="w-4 h-4 text-emerald-400" /> Content version-gated proofs — creator update invalidates agent cache</div>
@@ -430,7 +430,7 @@ if (attempt.status === 402) {
           {/* Right — Access panel */}
           <div className="space-y-4">
             {/* Price card */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-4">
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <div className="text-xs text-muted-foreground">Service Price (x402)</div>
@@ -455,7 +455,7 @@ if (attempt.status === 402) {
                         placeholder="0 = Free"
                         value={priceInput}
                         onChange={(e) => setPriceInput(e.target.value)}
-                        className="h-8 font-mono text-sm bg-background border-white/20 w-32"
+                        className="h-8 font-mono text-sm bg-background border-border w-32"
                         disabled={savingPrice}
                         autoFocus
                       />
@@ -481,7 +481,7 @@ if (attempt.status === 402) {
                   </div>
                 ) : (
                   <>
-                    <div className="text-2xl font-bold font-mono">
+                    <div className="text-2xl font-bold tabular-nums">
                       {servicePriceW0G
                         ? `${servicePriceW0G} W0G`
                         : <span className="text-emerald-400">Free</span>
@@ -497,7 +497,7 @@ if (attempt.status === 402) {
               {/* MCP endpoint */}
               <div className="space-y-2">
                 <div className="text-xs text-muted-foreground">MCP Endpoint</div>
-                <div className="bg-background border border-white/10 rounded-lg px-3 py-2 font-mono text-xs text-primary/80 break-all">
+                <div className="bg-background border border-border rounded-lg px-3 py-2 text-xs text-primary/80 break-all">
                   POST /mcp/{bundle.bundleId}/mcp
                 </div>
                 <div className="text-xs text-muted-foreground/60">
@@ -545,7 +545,7 @@ if (attempt.status === 402) {
             </div>
 
             {/* Curator auth reminder */}
-            <div className="bg-card border border-white/10 rounded-2xl p-5 space-y-3">
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <div className="text-xs text-muted-foreground">Curator Authorization</div>
               <p className="text-xs text-muted-foreground/70 leading-relaxed">
                 Each Skill in this Bundle must be authorized on-chain before agents can access it.

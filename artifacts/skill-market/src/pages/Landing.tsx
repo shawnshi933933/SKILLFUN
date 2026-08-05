@@ -62,9 +62,9 @@ function bundleToCard(b: DbBundle): BundleCardData {
 
 function StatSkeleton() {
   return (
-    <div className="bg-card/60 border border-white/10 rounded-xl p-4 backdrop-blur-sm animate-pulse">
-      <div className="h-8 w-16 bg-white/10 rounded mb-2" />
-      <div className="h-3 w-24 bg-white/5 rounded" />
+    <div className="bg-card border border-border rounded-xl p-4 animate-pulse">
+      <div className="h-8 w-16 bg-muted rounded mb-2" />
+      <div className="h-3 w-24 bg-muted/60 rounded" />
     </div>
   );
 }
@@ -91,39 +91,39 @@ GET /mcp/{bundle-subdomain}
   };
 
   return (
-    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl overflow-hidden">
+    <div className="bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
       <button
         className="w-full flex items-center justify-between px-6 py-4 text-left"
         onClick={() => setOpen((v) => !v)}
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
-            <Bot className="w-4 h-4 text-amber-400" />
+          <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
+            <Bot className="w-4 h-4 text-amber-700" />
           </div>
           <div>
-            <div className="font-semibold text-amber-300 text-sm">Connect as Agent</div>
-            <div className="text-xs text-amber-400/70">x402 autonomous payments · ERC-8183 MCP endpoint</div>
+            <div className="font-semibold text-amber-800 text-sm">Connect as Agent</div>
+            <div className="text-xs text-amber-600/80">x402 autonomous payments · MCP endpoint</div>
           </div>
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-amber-400/60" /> : <ChevronDown className="w-4 h-4 text-amber-400/60" />}
+        {open ? <ChevronUp className="w-4 h-4 text-amber-500" /> : <ChevronDown className="w-4 h-4 text-amber-500" />}
       </button>
 
       {open && (
         <div className="px-6 pb-5 space-y-3">
-          <div className="relative bg-black/40 border border-white/10 rounded-xl p-4">
-            <pre className="text-xs text-white/70 font-mono whitespace-pre leading-relaxed overflow-x-auto">{snippet}</pre>
+          <div className="relative bg-muted border border-border rounded-xl p-4">
+            <pre className="text-xs text-foreground/80 font-mono whitespace-pre leading-relaxed overflow-x-auto">{snippet}</pre>
             <button
               onClick={handleCopy}
-              className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors"
+              className="absolute top-3 right-3 p-1.5 rounded-lg bg-background border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
           <div className="flex gap-2">
             <Button
               size="sm"
               variant="outline"
-              className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10 gap-1.5 text-xs"
+              className="border-amber-300 text-amber-700 hover:bg-amber-50 gap-1.5 text-xs"
               onClick={() => window.open("/mcp/agent-guide.md", "_blank")}
             >
               Full Agent Guide <ArrowRight className="w-3 h-3" />
@@ -131,7 +131,7 @@ GET /mcp/{bundle-subdomain}
             <Button
               size="sm"
               variant="outline"
-              className="border-white/20 hover:bg-white/5 text-xs"
+              className="border-border hover:bg-muted text-xs"
               onClick={() => { window.location.href = "/app/market?tab=bundles"; }}
             >
               Browse Bundles
@@ -186,24 +186,24 @@ export default function Landing() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,92,246,0.15),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(124,58,237,0.08),transparent)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
         <div className="relative max-w-5xl mx-auto text-center">
-          <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/10 px-4 py-1.5 text-sm">
-            ERC-7857 iNFT · ERC-8183 MCP · x402 A2A Payments · 0G Chain
+          <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/8 px-4 py-1.5 text-sm">
+            ERC-7857 iNFT · MCP · x402 A2A Payments · 0G Chain
           </Badge>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
             A Skill is a
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-400 to-accent">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-violet-500 to-accent">
               Programmable Asset
             </span>
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Mint AI Agent Skills as sovereign NFTs. Bundle them into products. Let agents pay autonomously via x402. Every invocation earns — forever.
+            Mint AI Agent Skills as sovereign NFTs on 0G Chain. Bundle them into MCP products. Let agents pay autonomously via x402.
           </p>
 
           {/* Live stats */}
@@ -213,9 +213,9 @@ export default function Landing() {
               : liveStats.map((stat) => (
                   <div
                     key={stat.label}
-                    className="bg-card/60 border border-white/10 rounded-xl p-4 backdrop-blur-sm"
+                    className="bg-card border border-border rounded-xl p-4 shadow-sm"
                   >
-                    <div className="text-2xl font-bold text-foreground">{stat.value ?? "—"}</div>
+                    <div className="text-2xl font-bold text-foreground tabular-nums">{stat.value ?? "—"}</div>
                     <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
                   </div>
                 ))}
@@ -226,14 +226,14 @@ export default function Landing() {
             {/* Creator */}
             <button
               onClick={() => setLocation("/app/create")}
-              className="group bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 rounded-2xl p-5 text-left transition-all"
+              className="group bg-primary/8 hover:bg-primary/15 border border-primary/25 hover:border-primary/45 rounded-2xl p-5 text-left transition-all"
               data-testid="cta-mint-skill"
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center mb-4 group-hover:bg-primary/30 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center mb-4 group-hover:bg-primary/25 transition-colors">
                 <Code2 className="w-5 h-5 text-primary" />
               </div>
               <div className="font-semibold text-sm mb-1">Mint Skill NFT</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Register your AI skill on-chain. Earn 10% royalty on every invocation, forever.</div>
+              <div className="text-xs text-muted-foreground leading-relaxed">Mint your GitHub repo as an ERC-7857 iNFT. Content is encrypted and stored on 0G Storage.</div>
               <div className="mt-3 flex items-center gap-1 text-xs text-primary font-medium">
                 Start creating <ArrowRight className="w-3 h-3" />
               </div>
@@ -242,14 +242,14 @@ export default function Landing() {
             {/* Curator */}
             <button
               onClick={() => setLocation("/app/curator/skills")}
-              className="group bg-accent/10 hover:bg-accent/20 border border-accent/30 hover:border-accent/50 rounded-2xl p-5 text-left transition-all"
+              className="group bg-accent/8 hover:bg-accent/15 border border-accent/25 hover:border-accent/45 rounded-2xl p-5 text-left transition-all"
               data-testid="cta-curate-bundle"
             >
-              <div className="w-10 h-10 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center mb-4 group-hover:bg-accent/30 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/25 flex items-center justify-center mb-4 group-hover:bg-accent/25 transition-colors">
                 <Layers className="w-5 h-5 text-accent" />
               </div>
               <div className="font-semibold text-sm mb-1">Curate a Bundle</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Assemble Skills into a themed product with one MCP URL. Earn 50% of markup fees.</div>
+              <div className="text-xs text-muted-foreground leading-relaxed">Bundle Skills into a product with one MCP endpoint. Set your service price and accept x402 payments from agents.</div>
               <div className="mt-3 flex items-center gap-1 text-xs text-accent font-medium">
                 Open curator panel <ArrowRight className="w-3 h-3" />
               </div>
@@ -258,15 +258,15 @@ export default function Landing() {
             {/* Agent */}
             <button
               onClick={() => setLocation("/app/market?tab=bundles")}
-              className="group bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 rounded-2xl p-5 text-left transition-all"
+              className="group bg-amber-50 hover:bg-amber-100/70 border border-amber-200 hover:border-amber-300 rounded-2xl p-5 text-left transition-all"
               data-testid="cta-connect-agent"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center mb-4 group-hover:bg-amber-500/30 transition-colors">
-                <Bot className="w-5 h-5 text-amber-400" />
+              <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center mb-4 group-hover:bg-amber-200/70 transition-colors">
+                <Bot className="w-5 h-5 text-amber-700" />
               </div>
               <div className="font-semibold text-sm mb-1">Connect as Agent</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Discover Bundles, call via MCP, pay autonomously with x402. No human approval.</div>
-              <div className="mt-3 flex items-center gap-1 text-xs text-amber-400 font-medium">
+              <div className="text-xs text-muted-foreground leading-relaxed">Discover Bundles, call via MCP, pay autonomously with x402. No human approval needed.</div>
+              <div className="mt-3 flex items-center gap-1 text-xs text-amber-700 font-medium">
                 Browse bundles <ArrowRight className="w-3 h-3" />
               </div>
             </button>
@@ -275,7 +275,7 @@ export default function Landing() {
       </section>
 
       {/* ── Featured Skills ───────────────────────────────────────────────── */}
-      <section className="py-24 px-4 bg-card/30">
+      <section className="py-24 px-4 bg-muted/40">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -285,7 +285,7 @@ export default function Landing() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/20 hover:bg-white/5"
+              className="border-border hover:bg-muted"
               onClick={() => setLocation("/app/market")}
               data-testid="button-view-all-skills"
             >
@@ -300,7 +300,7 @@ export default function Landing() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-card border border-white/10 rounded-2xl p-5 animate-pulse h-48" />
+                <div key={i} className="bg-card border border-border rounded-2xl p-5 animate-pulse h-48" />
               ))}
             </div>
           )}
@@ -333,7 +333,7 @@ export default function Landing() {
           ) : (
             <div className="grid md:grid-cols-3 gap-5">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-card border border-white/10 rounded-2xl p-5 animate-pulse h-48" />
+                <div key={i} className="bg-card border border-border rounded-2xl p-5 animate-pulse h-48" />
               ))}
             </div>
           )}
@@ -341,7 +341,7 @@ export default function Landing() {
       </section>
 
       {/* ── How It Works ─────────────────────────────────────────────────── */}
-      <section className="py-24 px-4 bg-card/30">
+      <section className="py-24 px-4 bg-muted/40">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl font-semibold mb-3">How It Works</h2>
           <p className="text-muted-foreground mb-14">Three steps from expertise to autonomous on-chain income.</p>
@@ -351,23 +351,23 @@ export default function Landing() {
               {
                 step: "01",
                 title: "Register",
-                desc: "Creator mints their AI skill as an ERC-7857 iNFT. Content is encrypted and stored on 0G Storage. Earns 10% royalty perpetually.",
+                desc: "Creator mints a GitHub repo as an ERC-7857 iNFT on 0G Chain. Content is AES-256 encrypted and stored on 0G Storage.",
                 color: "text-primary border-primary/40 bg-primary/10",
               },
               {
                 step: "02",
                 title: "Curate",
-                desc: "Curator bundles skills into a themed product published on a single ERC-8183 MCP endpoint. Sets markup and earns 50% of fees.",
+                desc: "Curator bundles Skills into a product with a single MCP endpoint. Set your service price and start accepting x402 payments from agents.",
                 color: "text-accent border-accent/40 bg-accent/10",
               },
               {
                 step: "03",
-                title: "Earn",
-                desc: "AI agents discover the bundle, pay via x402, and invoke the skill. Fees split on-chain instantly — creator, owner, curator, staker all earn.",
-                color: "text-emerald-400 border-emerald-500/40 bg-emerald-500/10",
+                title: "Invoke",
+                desc: "AI agents discover bundles, call via MCP, and pay autonomously via x402. NFT owners earn W0G per authorization — on-chain, instantly.",
+                color: "text-emerald-700 border-emerald-500/40 bg-emerald-500/10",
               },
             ].map((s) => (
-              <div key={s.step} className="bg-card border border-white/10 rounded-2xl p-6">
+              <div key={s.step} className="bg-card border border-border rounded-2xl p-6 shadow-sm">
                 <div className={`inline-flex w-10 h-10 rounded-xl border items-center justify-center mb-4 ${s.color}`}>
                   <span className="text-xs font-mono font-bold">{s.step}</span>
                 </div>
@@ -391,10 +391,10 @@ export default function Landing() {
       </section>
 
       {/* ── Footer CTA ───────────────────────────────────────────────────── */}
-      <section className="py-24 px-4 bg-card/30">
+      <section className="py-24 px-4 bg-muted/40">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="bg-card border border-primary/20 rounded-2xl p-12 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(139,92,246,0.08),transparent)]" />
+          <div className="bg-card border border-primary/15 rounded-2xl p-12 relative overflow-hidden shadow-sm">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(124,58,237,0.05),transparent)]" />
             <div className="relative">
               <h2 className="text-3xl font-bold mb-4">Treat your Skill as an Asset</h2>
               <p className="text-muted-foreground mb-8 text-sm">
@@ -405,7 +405,7 @@ export default function Landing() {
               <div className="flex flex-wrap justify-center gap-3">
                 <Button
                   size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 px-8 rounded-full"
                   onClick={() => setLocation("/app/create")}
                   data-testid="button-cta-mint"
                 >
@@ -414,7 +414,7 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-accent/30 text-accent hover:bg-accent/10 gap-2"
+                  className="border-accent/30 text-accent hover:bg-accent/10 gap-2 rounded-full"
                   onClick={() => setLocation("/app/curator/skills")}
                   data-testid="button-cta-curate"
                 >
@@ -427,17 +427,17 @@ export default function Landing() {
       </section>
 
       {/* ── 0G Strip ─────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-[#0a0a0f] via-[#0d1a2e] to-[#0a0a0f] border-t border-cyan-500/20 py-4 px-4">
+      <div className="bg-primary/5 border-t border-primary/15 py-4 px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-xs font-bold tracking-[0.2em] text-cyan-400 uppercase">Powered by 0G</span>
-          <span className="text-white/20">·</span>
-          <span className="text-xs text-white/40">0G Chain (16661) · 0G Storage · 0G DA</span>
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-xs font-bold tracking-[0.2em] text-primary uppercase">Powered by 0G</span>
+          <span className="text-muted-foreground/40">·</span>
+          <span className="text-xs text-muted-foreground">0G Chain (16661) · 0G Storage · 0G DA</span>
         </div>
       </div>
 
-      <footer className="border-t border-white/10 py-8 px-4 text-center text-sm text-muted-foreground">
-        SkillFun — ERC-7857 iNFT Registry · ERC-8183 MCP · x402 A2A Payments · Built on 0G Chain
+      <footer className="border-t border-border py-8 px-4 text-center text-sm text-muted-foreground">
+        SkillFun — ERC-7857 iNFT Registry · MCP · x402 A2A Payments · Built on 0G Chain
       </footer>
     </div>
   );

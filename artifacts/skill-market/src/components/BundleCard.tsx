@@ -46,7 +46,7 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
 
   return (
     <Link href={`/app/bundle/${bundle.id}`} data-testid={`card-bundle-${bundle.id}`}>
-      <div className="group relative bg-card border border-white/10 rounded-xl p-5 hover:border-accent/30 hover:bg-white/5 transition-all duration-200 cursor-pointer h-full flex flex-col">
+      <div className="group relative bg-card border border-border rounded-xl p-5 hover:border-accent/40 hover:shadow-md transition-all duration-200 cursor-pointer h-full flex flex-col">
 
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-1.5">
@@ -79,34 +79,34 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
               <button
                 key={tag}
                 onClick={(e) => handleTagClick(e, tag)}
-                className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10 hover:border-accent/40 hover:text-accent hover:bg-accent/10 transition-colors"
+                className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border hover:border-accent/40 hover:text-accent hover:bg-accent/10 transition-colors"
               >
                 {tag}
               </button>
             ))}
             {tags.length > 3 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground/50 border border-white/10">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground/60 border border-border">
                 +{tags.length - 3} more
               </span>
             )}
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-3 mt-auto space-y-2">
+        <div className="border-t border-border pt-3 mt-auto space-y-2">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Service Price</div>
-              <div className="flex items-center gap-1 font-mono font-semibold text-sm">
-                <Coins className="w-3 h-3 text-yellow-400/80" />
+              <div className="flex items-center gap-1 font-semibold tabular-nums text-sm">
+                <Coins className="w-3 h-3 text-amber-600" />
                 {formatServicePrice(bundle.servicePrice) === "Free"
-                  ? <span className="text-emerald-400">Free</span>
-                  : <span className="text-yellow-300/90">{formatServicePrice(bundle.servicePrice)}</span>
+                  ? <span className="text-emerald-600">Free</span>
+                  : <span className="text-amber-700">{formatServicePrice(bundle.servicePrice)}</span>
                 }
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs text-muted-foreground mb-0.5">Invocations</div>
-              <div className="flex items-center gap-1 text-accent font-mono text-sm">
+              <div className="flex items-center gap-1 text-accent tabular-nums text-sm">
                 <Bot className="w-3 h-3" />
                 {bundle.invocations.toLocaleString()}
               </div>
@@ -117,15 +117,15 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
               <Layers className="w-3 h-3" />
               {skillCount} Skill{skillCount !== 1 ? "s" : ""}
             </span>
-            <span className="flex items-center gap-1 text-emerald-400/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="flex items-center gap-1 text-emerald-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               MCP endpoint
             </span>
           </div>
           {bundle.skillNames && bundle.skillNames.length > 0 && (
             <div className="flex items-center gap-1 overflow-hidden">
               {bundle.skillNames.slice(0, 3).map((name) => (
-                <span key={name} className="text-xs px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-muted-foreground/70 truncate max-w-[80px]">
+                <span key={name} className="text-xs px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground/70 truncate max-w-[80px]">
                   {name}
                 </span>
               ))}

@@ -40,11 +40,11 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
 
   return (
     <Link href={`/app/skill/${skill.id}`} data-testid={`card-skill-${skill.id}`}>
-      <div className="group relative bg-card border border-white/10 rounded-xl p-5 hover:border-primary/30 hover:bg-white/5 transition-all duration-200 cursor-pointer h-full flex flex-col">
+      <div className="group relative bg-card border border-border rounded-xl p-5 hover:border-primary/40 hover:shadow-md transition-all duration-200 cursor-pointer h-full flex flex-col">
 
         {skill.isTimelockPending && (
           <div className="absolute top-3 right-3">
-            <Badge variant="outline" className="text-xs border-orange-500/40 text-orange-400 bg-orange-500/10 gap-1">
+            <Badge variant="outline" className="text-xs border-orange-500/40 text-orange-600 bg-orange-500/10 gap-1">
               <Lock className="w-3 h-3" /> Timelock
             </Badge>
           </div>
@@ -53,13 +53,13 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
         {/* Encryption + live badges */}
         <div className="flex items-start gap-1.5 mb-3">
           {skill.encryptionEnabled && (
-            <Badge variant="outline" className="text-xs border-cyan-500/40 text-cyan-400 bg-cyan-500/10 gap-1">
+            <Badge variant="outline" className="text-xs border-cyan-500/40 text-cyan-700 bg-cyan-500/10 gap-1">
               <Lock className="w-3 h-3" /> Encrypted
             </Badge>
           )}
           {skill.isLive && (
-            <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-400 gap-1 ml-auto">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+            <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-600 gap-1 ml-auto">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
             </Badge>
           )}
         </div>
@@ -78,30 +78,30 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
               <button
                 key={tag}
                 onClick={(e) => handleTagClick(e, tag)}
-                className="text-xs px-2 py-0.5 rounded-full bg-card border border-white/10 text-muted-foreground hover:text-foreground hover:border-white/30 transition-colors"
+                className="text-xs px-2 py-0.5 rounded-full bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
               >
                 {tag}
               </button>
             ))}
             {extraTagCount > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-muted-foreground/60">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-muted border border-border text-muted-foreground/60">
                 +{extraTagCount} more
               </span>
             )}
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-3 mt-auto">
+        <div className="border-t border-border pt-3 mt-auto">
           <div className="flex items-center justify-between mb-2">
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Base Price</div>
-              <div className="font-mono font-semibold text-foreground text-sm">
-                {skill.basePrice > 0 ? `${skill.basePrice} W0G` : <span className="text-emerald-400 text-xs">Free</span>}
+              <div className="font-semibold tabular-nums text-foreground text-sm">
+                {skill.basePrice > 0 ? `${skill.basePrice} W0G` : <span className="text-emerald-600 text-xs">Free</span>}
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs text-muted-foreground mb-0.5">Invocations</div>
-              <div className="flex items-center gap-1 text-accent font-mono text-sm">
+              <div className="flex items-center gap-1 text-accent tabular-nums text-sm">
                 <Bot className="w-3 h-3" />
                 {skill.invocations.toLocaleString()}
               </div>
