@@ -3,7 +3,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { skillsTable, paymentProofsTable, curatorAuthorizationsTable, bundleSkillsTable, skillContentCacheTable } from "@workspace/db";
 import { analyzeSkillContent } from "../services/ai.js";
-import { eq, desc, and, SQL, count, isNull, getTableColumns, sql } from "drizzle-orm";
+import { eq, desc, and, SQL, count, isNull, getTableColumns, sql, inArray } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware, verifyWalletSignature } from "../middleware/auth.js";
@@ -220,16 +220,23 @@ router.post("/skills/prepare-mint", async (req, res) => {
   // Pending records (not yet on-chain) are ignored — they may be stale drafts.
   // Use sql`lower()` to tolerate case differences, and strip trailing slash
   // from stored values so old records with a trailing slash are also caught.
-  const [existing] = await db
-    .select({ skillId: skillsTable.skillId, tokenId: skillsTable.tokenId, repoUrl: skillsTable.repoUrl })
-    .from(skillsTable)
-    .where(
-      and(
-        sql`lower(rtrim(${skillsTable.repoUrl}, '/')) = lower(${normalizedRepoUrl})`,
-        inArray(skillsTable.mintStatus, ["minted", "claimed"]),
+  let existing: { skillId: string; tokenId: number | null; repoUrl: string } | undefined;
+  try {
+    [existing] = await db
+      .select({ skillId: skillsTable.skillId, tokenId: skillsTable.tokenId, repoUrl: skillsTable.repoUrl })
+      .from(skillsTable)
+      .where(
+        and(
+          sql`lower(rtrim(${skillsTable.repoUrl}, '/')) = lower(${normalizedRepoUrl})`,
+          inArray(skillsTable.mintStatus, ["minted", "claimed"]),
+        )
       )
-    )
-    .limit(1);
+      .limit(1);
+  } catch (err) {
+    logger.error({ err, normalizedRepoUrl }, "prepare-mint: uniqueness check failed");
+    apiError(res, ErrorCode.INTERNAL, "Database error during uniqueness check");
+    return;
+  }
 
   if (existing) {
     apiError(res, ErrorCode.CONFLICT,
@@ -283,25 +290,32 @@ router.post("/skills/prepare-mint", async (req, res) => {
 
   // Create DB record (pending — confirmed after user's tx lands)
   // aesKey is stored in DB only — never sent to client or on-chain
-  const [skill] = await db
-    .insert(skillsTable)
-    .values({
-      skillId,
-      repoUrl:       manifestOwnerVal,
-      skillUri:      uploadResult.skillUri,
-      rootHash:      uploadResult.rootHash,
-      aesKey:        uploadResult.aesKey,
-      manifestOwner: manifestOwnerVal,
-      ownerAddress:  resolvedOwner,
-      meta: {
-        ...resolvedMeta,
-        ownerMode,
-        ...(uploadResult.txSeq != null ? { storeTxSeq: uploadResult.txSeq } : {}),
-        storageUploaded: uploadResult.uploaded,
-        ...(contentSha256 ? { contentSha256 } : {}),
-      } as Record<string, unknown>,
-    })
-    .returning();
+  let skill: typeof skillsTable.$inferSelect;
+  try {
+    [skill] = await db
+      .insert(skillsTable)
+      .values({
+        skillId,
+        repoUrl:       manifestOwnerVal,
+        skillUri:      uploadResult.skillUri,
+        rootHash:      uploadResult.rootHash,
+        aesKey:        uploadResult.aesKey,
+        manifestOwner: manifestOwnerVal,
+        ownerAddress:  resolvedOwner,
+        meta: {
+          ...resolvedMeta,
+          ownerMode,
+          ...(uploadResult.txSeq != null ? { storeTxSeq: uploadResult.txSeq } : {}),
+          storageUploaded: uploadResult.uploaded,
+          ...(contentSha256 ? { contentSha256 } : {}),
+        } as Record<string, unknown>,
+      })
+      .returning();
+  } catch (err) {
+    logger.error({ err, skillId }, "prepare-mint: DB insert failed");
+    apiError(res, ErrorCode.INTERNAL, "Failed to create skill record");
+    return;
+  }
 
   logger.info({ skillId, repoUrl, ownerMode, caller: callerAddress }, "prepare-mint: manifest ready");
 
