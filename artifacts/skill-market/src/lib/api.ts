@@ -18,8 +18,11 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    const msg = (body as { error?: { message?: string } })?.error?.message ?? res.statusText;
-    throw new Error(msg);
+    const errBody = body as { error?: { message?: string; possiblyPrivate?: boolean } };
+    const msg = errBody?.error?.message ?? res.statusText;
+    const err = new Error(msg) as Error & { possiblyPrivate?: boolean };
+    if (errBody?.error?.possiblyPrivate) err.possiblyPrivate = true;
+    throw err;
   }
   return res.json();
 }

@@ -28,8 +28,9 @@ export function apiError(
   res: Response,
   code: ErrorCode,
   message: string,
-  statusOverride?: number
+  statusOverride?: number,
+  extra?: Record<string, unknown>
 ): void {
   const status = statusOverride ?? STATUS_MAP[code];
-  res.status(status).json({ error: { code, message } });
+  res.status(status).json({ error: { code, message, ...extra } });
 }

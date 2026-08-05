@@ -726,23 +726,58 @@ router.post("/skills/:id/update-content", async (req, res) => {
   if (fromGithub) {
     // Fetch latest skill file directly from the GitHub repo
     const parts = skill.repoUrl.replace(/^https?:\/\/github\.com\//, "").split("/");
-    const [owner, repo] = parts;
-    if (!owner || !repo) {
+    const [ghOwner, ghRepo] = parts;
+    if (!ghOwner || !ghRepo) {
       apiError(res, ErrorCode.INVALID_INPUT, `Cannot parse repoUrl as owner/repo: ${skill.repoUrl}`);
       return;
     }
+    // Use session token for private-repo fallback (requires repo OAuth scope)
+    const ghToken: string | undefined = req.session?.githubToken;
     let fetched: string | null = null;
+
+    // Try raw.githubusercontent.com first; fall back to Contents API for private repos
     outer: for (const branch of ["main", "master"]) {
       for (const filename of ["skill.md", "skillfun.json", "README.md"]) {
+        // 1. Public raw fetch
         try {
-          const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filename}`;
-          const r = await fetch(url, { signal: AbortSignal.timeout(10_000), headers: { "Cache-Control": "no-cache" } });
+          const rawUrl = `https://raw.githubusercontent.com/${ghOwner}/${ghRepo}/${branch}/${filename}`;
+          const r = await fetch(rawUrl, { signal: AbortSignal.timeout(10_000), headers: { "Cache-Control": "no-cache" } });
           if (r.status === 200) { fetched = await r.text(); break outer; }
-        } catch { /* try next */ }
+        } catch { /* try Contents API */ }
+
+        // 2. Private-repo fallback via GitHub Contents API (needs repo-scope token)
+        if (ghToken) {
+          try {
+            const apiUrl = `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${filename}?ref=${branch}`;
+            const apiRes = await fetch(apiUrl, {
+              signal: AbortSignal.timeout(10_000),
+              headers: {
+                Authorization:   `Bearer ${ghToken}`,
+                Accept:          "application/vnd.github.v3+json",
+                "User-Agent":    "SkillFun/1.0",
+                "Cache-Control": "no-cache",
+              },
+            });
+            if (apiRes.status === 200) {
+              const data = await apiRes.json() as { content?: string; encoding?: string };
+              if (data.encoding === "base64" && data.content) {
+                fetched = Buffer.from(data.content.replace(/\n/g, ""), "base64").toString("utf8");
+                break outer;
+              }
+            }
+          } catch { /* try next file/branch */ }
+        }
       }
     }
+
     if (!fetched) {
-      apiError(res, ErrorCode.NOT_FOUND, `Could not fetch skill file from GitHub repo: ${skill.repoUrl}`);
+      const hasRepoScope = req.session?.githubTokenHasRepoScope ?? false;
+      const possiblyPrivate = !ghToken || !hasRepoScope;
+      apiError(res, ErrorCode.NOT_FOUND,
+        `Could not fetch skill file from GitHub repo: ${skill.repoUrl}`,
+        undefined,
+        { possiblyPrivate },
+      );
       return;
     }
     resolvedContent = fetched;

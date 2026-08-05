@@ -136,9 +136,10 @@ const PHASE_DETAIL: Partial<Record<UpdatePhase, string>> = {
 function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: () => void }) {
   const { toast } = useToast();
   const sign = useEip712Sign();
-  const [phase, setPhase]       = useState<UpdatePhase>("idle");
-  const [errMsg, setErrMsg]     = useState("");
+  const [phase, setPhase]         = useState<UpdatePhase>("idle");
+  const [errMsg, setErrMsg]       = useState("");
   const [newRootHash, setNewRootHash] = useState<string | null>(null);
+  const [privateRepo, setPrivateRepo] = useState(false);
 
   const { writeContractAsync } = useWriteContract();
 
@@ -148,6 +149,7 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
     setPhase("fetching");
     setErrMsg("");
     setNewRootHash(null);
+    setPrivateRepo(false);
 
     try {
       // Step 1: Backend fetches from GitHub + uploads to 0G
@@ -199,9 +201,13 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
       onSuccess();
     } catch (err) {
       const msg = (err as Error).message ?? "Sync failed";
+      const isPrivate = (err as Error & { possiblyPrivate?: boolean }).possiblyPrivate === true;
       setErrMsg(msg.slice(0, 160));
       setPhase("error");
-      toast({ title: "Sync failed", description: msg.slice(0, 120), variant: "destructive" });
+      setPrivateRepo(isPrivate);
+      if (!isPrivate) {
+        toast({ title: "Sync failed", description: msg.slice(0, 120), variant: "destructive" });
+      }
     }
   };
 
@@ -228,7 +234,7 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
       </div>
 
       {/* Phase progress (while active or done) */}
-      {phase !== "idle" && (
+      {phase !== "idle" && !privateRepo && (
         <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
           phase === "done"
             ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
@@ -249,6 +255,23 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
               {newRootHash.slice(0, 18)}…
             </span>
           )}
+        </div>
+      )}
+
+      {/* Private-repo banner */}
+      {privateRepo && (
+        <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-xs bg-amber-500/10 border border-amber-500/30 text-amber-300">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+          <div className="flex-1">
+            <span className="font-medium">This repo appears to be private.</span>
+            <span className="text-amber-400/70 ml-1">Grant GitHub access so SkillFun can read it.</span>
+          </div>
+          <a
+            href={`/api/auth/github?scope=repo&return_to=${encodeURIComponent(window.location.pathname)}`}
+            className="shrink-0 font-semibold text-amber-300 hover:text-amber-200 underline underline-offset-2 whitespace-nowrap"
+          >
+            Grant access →
+          </a>
         </div>
       )}
 
