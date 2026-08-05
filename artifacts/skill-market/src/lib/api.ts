@@ -494,6 +494,22 @@ export const creatorApi = {
     ),
 
   /**
+   * Update user-editable metadata fields (name, description, category, etc.)
+   * without touching 0G Storage or on-chain data.
+   * Requires an EIP-712 wallet signature with action "update-skill".
+   */
+  updateMeta: (
+    skillId:   string,
+    meta:      Record<string, unknown>,
+    sigHeader: string,
+  ) =>
+    apiFetch<{ skill: Record<string, unknown> }>(`/skills/${skillId}`, {
+      method:  "PATCH",
+      headers: { "X-Wallet-Signature": sigHeader },
+      body:    JSON.stringify({ meta }),
+    }),
+
+  /**
    * Sync skill content from GitHub (fromGithub: true) or upload provided content.
    * Uploads to 0G Storage, increments contentVersion in DB,
    * and marks curator_authorizations for this tokenId as needs_reauth.

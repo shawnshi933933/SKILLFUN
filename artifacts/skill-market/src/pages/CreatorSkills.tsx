@@ -21,10 +21,11 @@ import { SkillNFT_ABI, getAddresses } from "@workspace/abi";
 import { creatorApi, type CreatorSkill } from "@/lib/api";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { formatUnits, parseUnits } from "viem";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Wand2, DollarSign, RefreshCw, ExternalLink, Loader2,
   ChevronDown, ChevronUp, FileText, CheckCircle2, AlertTriangle,
-  Zap, Github, RotateCcw,
+  Zap, Github, RotateCcw, Pencil,
 } from "lucide-react";
 
 const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT as `0x${string}`;
@@ -312,11 +313,167 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
 }
 
 // ---------------------------------------------------------------------------
+// EditMetaPanel — edit name/description/category/version/capabilities/tags
+// ---------------------------------------------------------------------------
+
+function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: () => void }) {
+  const { toast } = useToast();
+  const sign = useEip712Sign();
+
+  const m = skill.meta as Record<string, unknown>;
+  const [fields, setFields] = useState({
+    name:         (m.name         as string) ?? skill.skillName ?? "",
+    description:  (m.description  as string) ?? "",
+    category:     (m.category     as string) ?? "",
+    version:      (m.version      as string) ?? "1.0.0",
+    capabilities: Array.isArray(m.capabilities)
+                    ? (m.capabilities as string[]).join(", ")
+                    : (m.capabilities as string) ?? "",
+    tags:         Array.isArray(m.tags)
+                    ? (m.tags as string[]).join(", ")
+                    : (m.tags as string) ?? "",
+    instructions: (m.instructions as string) ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k: keyof typeof fields, v: string) =>
+    setFields(s => ({ ...s, [k]: v }));
+
+  const handleSave = async () => {
+    if (!fields.name.trim()) {
+      toast({ title: "Name is required", variant: "destructive" }); return;
+    }
+    setSaving(true);
+    try {
+      const sigHeader = await sign("update-skill");
+      const newMeta: Record<string, unknown> = {
+        ...m,
+        name:         fields.name.trim(),
+        description:  fields.description.trim(),
+        category:     fields.category.trim(),
+        version:      fields.version.trim(),
+        capabilities: fields.capabilities.split(",").map(s => s.trim()).filter(Boolean),
+        tags:         fields.tags.split(",").map(s => s.trim()).filter(Boolean),
+        instructions: fields.instructions.trim(),
+      };
+      await creatorApi.updateMeta(skill.skillId, newMeta, sigHeader);
+      toast({ title: "Info updated", description: "Skill metadata saved." });
+      onSuccess();
+    } catch (err) {
+      toast({
+        title: "Save failed",
+        description: (err as Error).message?.slice(0, 140) ?? "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Name + Version row */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-2 space-y-1">
+          <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Name</label>
+          <Input
+            value={fields.name}
+            onChange={e => set("name", e.target.value)}
+            placeholder="Skill name"
+            className="h-8 text-xs bg-white/5 border-white/10"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Version</label>
+          <Input
+            value={fields.version}
+            onChange={e => set("version", e.target.value)}
+            placeholder="1.0.0"
+            className="h-8 text-xs bg-white/5 border-white/10"
+          />
+        </div>
+      </div>
+
+      {/* Category */}
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Category</label>
+        <Input
+          value={fields.category}
+          onChange={e => set("category", e.target.value)}
+          placeholder="e.g. Code, Finance, Data…"
+          className="h-8 text-xs bg-white/5 border-white/10"
+        />
+      </div>
+
+      {/* Description */}
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Description</label>
+        <Textarea
+          value={fields.description}
+          onChange={e => set("description", e.target.value)}
+          placeholder="What this skill does"
+          rows={3}
+          className="text-xs bg-white/5 border-white/10 resize-none"
+        />
+      </div>
+
+      {/* Instructions for Agents */}
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Instructions for Agents</label>
+        <Textarea
+          value={fields.instructions}
+          onChange={e => set("instructions", e.target.value)}
+          placeholder="How an agent should invoke this skill"
+          rows={2}
+          className="text-xs bg-white/5 border-white/10 resize-none"
+        />
+      </div>
+
+      {/* Capabilities */}
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Capabilities</label>
+        <Input
+          value={fields.capabilities}
+          onChange={e => set("capabilities", e.target.value)}
+          placeholder="e.g. price-checking, trading, analysis (comma-separated)"
+          className="h-8 text-xs bg-white/5 border-white/10"
+        />
+      </div>
+
+      {/* Tags */}
+      <div className="space-y-1">
+        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Tags</label>
+        <Input
+          value={fields.tags}
+          onChange={e => set("tags", e.target.value)}
+          placeholder="e.g. defi, blockchain, web3 (comma-separated)"
+          className="h-8 text-xs bg-white/5 border-white/10"
+        />
+      </div>
+
+      <Button
+        size="sm"
+        onClick={handleSave}
+        disabled={saving}
+        className="h-8 px-4 text-xs"
+      >
+        {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+        {saving ? "Saving…" : "Save Changes"}
+      </Button>
+
+      <p className="text-[10px] text-muted-foreground/40 leading-relaxed">
+        Updates the off-chain record only — no gas required. Curators and agents will see the new info immediately.
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // SkillCard
 // ---------------------------------------------------------------------------
 
 function SkillCard({ skill, onRefresh }: { skill: CreatorSkill; onRefresh: () => void }) {
-  const [expanded, setExpanded] = useState<null | "price" | "content">(null);
+  const [expanded, setExpanded] = useState<null | "price" | "content" | "edit">(null);
 
   const basePriceDisplay = (() => {
     try {
@@ -384,6 +541,21 @@ function SkillCard({ skill, onRefresh }: { skill: CreatorSkill; onRefresh: () =>
             Content
             {expanded === "content" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className={`h-7 px-2 text-xs gap-1 border transition-colors ${
+              expanded === "edit"
+                ? "border-violet-500/40 text-violet-300 bg-violet-500/10"
+                : "border-white/10 text-muted-foreground hover:text-violet-300"
+            }`}
+            onClick={() => setExpanded(expanded === "edit" ? null : "edit")}
+            data-testid={`button-expand-edit-${skill.tokenId}`}
+          >
+            <Pencil className="w-3 h-3" />
+            Edit
+            {expanded === "edit" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
           <a
             href={`${ZEROG_SCAN}/nft/${SKILL_NFT_ADDRESS}/${skill.tokenId}`}
             target="_blank"
@@ -413,6 +585,16 @@ function SkillCard({ skill, onRefresh }: { skill: CreatorSkill; onRefresh: () =>
             <FileText className="w-3 h-3 text-primary" /> Update Skill Content (skill.md)
           </p>
           <UpdateContentPanel skill={skill} onSuccess={() => { setExpanded(null); onRefresh(); }} />
+        </div>
+      )}
+
+      {/* Expanded: Edit Info */}
+      {expanded === "edit" && (
+        <div className="px-4 pb-4 border-t border-white/5 pt-3">
+          <p className="text-xs text-muted-foreground mb-3 font-medium flex items-center gap-1">
+            <Pencil className="w-3 h-3 text-violet-400" /> Edit Skill Info
+          </p>
+          <EditMetaPanel skill={skill} onSuccess={() => { setExpanded(null); onRefresh(); }} />
         </div>
       )}
     </div>
