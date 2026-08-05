@@ -250,7 +250,7 @@ export default function CreateBundle() {
           </div>
         </div>
 
-        <div className="bg-card border border-white/10 rounded-2xl p-8">
+        <div className="bg-card border border-border rounded-2xl p-8">
 
           {/* ── Step 0: Bundle Info ───────────────────────────────────────── */}
           {step === 0 && (
@@ -262,7 +262,7 @@ export default function CreateBundle() {
                   value={form.name}
                   onChange={(e) => update("name", e.target.value)}
                   placeholder="e.g. DeFi Alpha Suite"
-                  className="bg-background border-white/10"
+                  className="bg-background border-border"
                   data-testid="input-bundle-name"
                 />
               </div>
@@ -272,7 +272,7 @@ export default function CreateBundle() {
                   value={form.description}
                   onChange={(e) => update("description", e.target.value)}
                   placeholder="What does this Bundle do? What type of agents will use it?"
-                  className="bg-background border-white/10 min-h-[80px]"
+                  className="bg-background border-border min-h-[80px]"
                   data-testid="input-bundle-description"
                 />
               </div>
@@ -282,7 +282,7 @@ export default function CreateBundle() {
                   value={form.tags}
                   onChange={(e) => update("tags", e.target.value)}
                   placeholder="DeFi, Trading, Alpha"
-                  className="bg-background border-white/10"
+                  className="bg-background border-border"
                   data-testid="input-bundle-tags"
                 />
               </div>
@@ -326,7 +326,7 @@ export default function CreateBundle() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name or repo…"
-                  className="bg-background border-white/10 pl-8 h-9 text-sm"
+                  className="bg-background border-border pl-8 h-9 text-sm"
                   data-testid="skill-search"
                 />
               </div>
@@ -343,7 +343,7 @@ export default function CreateBundle() {
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                         sortKey === o.key
                           ? "bg-accent/20 border-accent/40 text-accent font-medium"
-                          : "border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
+                          : "border-border text-muted-foreground hover:border-border hover:text-foreground"
                       }`}
                     >
                       {o.label}
@@ -362,7 +362,7 @@ export default function CreateBundle() {
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-colors ${
                         activeTag === null
                           ? "bg-accent/20 border-accent/40 text-accent"
-                          : "border-white/10 text-muted-foreground hover:border-white/20"
+                          : "border-border text-muted-foreground hover:border-border"
                       }`}
                     >
                       <Tag className="w-3 h-3" /> All
@@ -374,7 +374,7 @@ export default function CreateBundle() {
                         className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                           activeTag === tag
                             ? "bg-accent/20 border-accent/40 text-accent"
-                            : "border-white/10 text-muted-foreground hover:border-white/20"
+                            : "border-border text-muted-foreground hover:border-border"
                         }`}
                       >
                         {tag}
@@ -418,12 +418,12 @@ export default function CreateBundle() {
                         className={`flex items-start justify-between p-4 rounded-xl border cursor-pointer transition-all gap-3 ${
                           isSelected
                             ? "border-accent/40 bg-accent/10"
-                            : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                            : "border-border hover:border-border hover:bg-muted"
                         }`}
                       >
                         {/* Left: checkbox + info */}
                         <div className="flex items-start gap-3 min-w-0 flex-1">
-                          <div className={`w-5 h-5 mt-0.5 shrink-0 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-white/20"}`}>
+                          <div className={`w-5 h-5 mt-0.5 shrink-0 rounded border flex items-center justify-center ${isSelected ? "bg-accent border-accent" : "border-border"}`}>
                             {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -461,7 +461,7 @@ export default function CreateBundle() {
                               <div className="text-xs text-muted-foreground">per invoke</div>
                             </>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] border-white/10 text-muted-foreground">
+                            <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
                               {skill.mintStatus}
                             </Badge>
                           )}
@@ -486,13 +486,13 @@ export default function CreateBundle() {
               </div>
               {/* Show selected skills as reference */}
               {selectedSkills.length > 0 && (
-                <div className="bg-background border border-white/10 rounded-xl p-3">
+                <div className="bg-background border border-border rounded-xl p-3">
                   <p className="text-xs text-muted-foreground mb-2 font-medium">
                     Skills in this Bundle ({selectedSkills.length}):
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedSkills.map((s, i) => (
-                      <span key={s.skillId} className="text-xs bg-white/5 border border-white/10 rounded px-2 py-0.5">
+                      <span key={s.skillId} className="text-xs bg-muted border border-border rounded px-2 py-0.5">
                         <span className="text-muted-foreground mr-1">{i + 1}.</span>
                         {skillDisplayName(s)}
                       </span>
@@ -509,7 +509,7 @@ export default function CreateBundle() {
                   value={form.workflow}
                   onChange={(e) => update("workflow", e.target.value)}
                   placeholder={`Example:\n1. Call market-scanner with { query: "ETH whale movements" } → get whale wallet list\n2. Call risk-analyzer with { wallets: <result from step 1> } → get risk scores\n3. Call portfolio-optimizer with { risk_scores: <result from step 2> } → get recommendations\n\nEach skill returns decrypted content you execute locally.`}
-                  className="bg-background border-white/10 min-h-[200px] font-mono text-sm"
+                  className="bg-background border-border min-h-[200px] font-mono text-sm"
                   data-testid="input-bundle-workflow"
                 />
               </div>
@@ -543,7 +543,7 @@ export default function CreateBundle() {
                     placeholder="0.00 — free"
                     value={form.servicePriceW0G}
                     onChange={(e) => update("servicePriceW0G", e.target.value)}
-                    className="bg-background border-white/10 pr-14"
+                    className="bg-background border-border pr-14"
                     data-testid="input-service-price"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60 pointer-events-none">
@@ -569,7 +569,7 @@ export default function CreateBundle() {
               <h2 className="text-xl font-semibold mb-5">Review & Deploy</h2>
               {deployState === "idle" && (
                 <>
-                  <div className="bg-background border border-white/10 rounded-xl p-5 space-y-3">
+                  <div className="bg-background border border-border rounded-xl p-5 space-y-3">
                     {[
                       { label: "Bundle Name",          value: form.name || "—" },
                       { label: "Skills",               value: `${selectedSkills.length} selected` },
@@ -617,7 +617,7 @@ export default function CreateBundle() {
                         key={ds.key}
                         className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
                           isDone ? "border-emerald-500/30 bg-emerald-500/5" :
-                          isActive ? "border-accent/40 bg-accent/5" : "border-white/10"
+                          isActive ? "border-accent/40 bg-accent/5" : "border-border"
                         }`}
                         data-testid={`deploy-step-${ds.key}`}
                       >
@@ -625,7 +625,7 @@ export default function CreateBundle() {
                           ? <CheckCircle className="w-5 h-5 text-emerald-400" />
                           : isActive
                             ? <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-                            : <div className="w-5 h-5 rounded-full border border-white/20" />}
+                            : <div className="w-5 h-5 rounded-full border border-border" />}
                         <span className={`text-sm ${isDone ? "text-emerald-400" : isActive ? "text-accent" : "text-muted-foreground"}`}>
                           {ds.label}
                         </span>
@@ -671,7 +671,7 @@ export default function CreateBundle() {
                         )}
                         <Button
                           variant="outline"
-                          className="border-white/20"
+                          className="border-border"
                           onClick={() => {
                             setStep(0);
                             setDeployState("idle");
@@ -696,7 +696,7 @@ export default function CreateBundle() {
             <div className="flex justify-between mt-8">
               <Button
                 variant="outline"
-                className="border-white/20 gap-2"
+                className="border-border gap-2"
                 onClick={() => setStep((s) => Math.max(s - 1, 0))}
                 disabled={step === 0}
                 data-testid="button-prev-step"

@@ -73,7 +73,7 @@ function getStatusConfig(status: AuthStatus): StatusConfig {
       return {
         label: "Not authorized",
         icon:  <Clock className="w-3.5 h-3.5" />,
-        className: "border-muted-foreground/30 text-muted-foreground bg-white/5",
+        className: "border-muted-foreground/30 text-muted-foreground bg-muted",
       };
     case "revoked":
       return {
@@ -209,9 +209,9 @@ function SkillRow({ skill }: SkillRowProps) {
         displayStatus === "needs_reauth"
           ? "border-amber-500/20 bg-amber-500/5"
           : displayStatus === "active"
-          ? "border-white/10 hover:border-white/20"
+          ? "border-border hover:border-border"
           : displayStatus === "pending"
-          ? "border-dashed border-white/10"
+          ? "border-dashed border-border"
           : "border-red-500/20 bg-red-500/5"
       }`}
       data-testid={`auth-row-${skill.tokenId}`}
@@ -269,7 +269,7 @@ function SkillRow({ skill }: SkillRowProps) {
             data-testid={`button-authorize-${skill.tokenId}`}
             className={
               displayStatus === "active"
-                ? "border-white/20 text-sm"
+                ? "border-border text-sm"
                 : callerIsOwner
                 ? "bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3"
                 : skill.isClaimed
@@ -500,7 +500,7 @@ function ManageBundleSkillsPanel({ bundleId, onClose, onSaved }: ManageBundleSki
               const isConfirming   = confirmRemoveId === s.skillId;
               const isRemovingThis = removing === s.skillId;
               return (
-                <div key={s.skillId} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02]">
+                <div key={s.skillId} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/10">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-medium truncate">{name}</span>
@@ -545,7 +545,7 @@ function ManageBundleSkillsPanel({ bundleId, onClose, onSaved }: ManageBundleSki
               );
             })}
           </div>
-          <div className="border-t border-white/[0.06]" />
+          <div className="border-t border-border" />
         </div>
       )}
 
@@ -557,7 +557,7 @@ function ManageBundleSkillsPanel({ bundleId, onClose, onSaved }: ManageBundleSki
           placeholder="Search skills to add…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-white/10 bg-white/5 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
+          className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40"
         />
       </div>
 
@@ -603,12 +603,12 @@ function ManageBundleSkillsPanel({ bundleId, onClose, onSaved }: ManageBundleSki
                 className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
                   checked
                     ? "border-primary/40 bg-primary/10"
-                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/20 hover:bg-white/5"
+                    : "border-border bg-muted/10 hover:border-border hover:bg-muted"
                 }`}
               >
                 {/* Checkbox indicator */}
                 <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                  checked ? "border-primary bg-primary" : "border-white/20"
+                  checked ? "border-primary bg-primary" : "border-border"
                 }`}>
                   {checked && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
                 </div>
@@ -628,7 +628,7 @@ function ManageBundleSkillsPanel({ bundleId, onClose, onSaved }: ManageBundleSki
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center justify-between pt-1 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between pt-1 border-t border-border">
         <span className="text-[11px] text-muted-foreground/50">
           {selected.size > 0
             ? `${selected.size} skill${selected.size !== 1 ? "s" : ""} selected`
@@ -669,7 +669,7 @@ interface PillProps {
 const PILL_COLORS: Record<PillProps["color"], string> = {
   emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
   amber:   "text-amber-400 bg-amber-500/10 border-amber-500/30",
-  muted:   "text-muted-foreground bg-white/5 border-white/10",
+  muted:   "text-muted-foreground bg-muted border-border",
   red:     "text-red-400 bg-red-500/10 border-red-500/30",
 };
 
@@ -847,7 +847,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
       className={`rounded-2xl border transition-all ${
         hasUrgent
           ? "border-amber-500/30 bg-amber-500/[0.04]"
-          : "border-white/10 bg-card"
+          : "border-border bg-card"
       }`}
       data-testid={`bundle-card-${bundle.bundleId}`}
     >
@@ -894,7 +894,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                   placeholder="0 = Free"
                   value={priceInput}
                   onChange={(e) => setPriceInput(e.target.value)}
-                  className="h-6 w-24 font-mono text-xs bg-background border-white/20 px-2 py-0"
+                  className="h-6 w-24 font-mono text-xs bg-background border-border px-2 py-0"
                   disabled={savingPrice}
                   autoFocus
                   onKeyDown={(e) => {
@@ -988,7 +988,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
 
       {/* Expanded panel */}
       {expanded && (
-        <div className="border-t border-white/[0.06] px-5 pb-5 pt-4 space-y-3">
+        <div className="border-t border-border px-5 pb-5 pt-4 space-y-3">
           {/* Info tip */}
           <div className="flex items-start gap-2 p-3 bg-primary/5 border border-primary/15 rounded-xl text-xs text-muted-foreground leading-relaxed">
             <Info className="w-3.5 h-3.5 text-primary/60 shrink-0 mt-0.5" />
@@ -1017,7 +1017,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-white/20 text-xs"
+                  className="border-border text-xs"
                   onClick={() => setLocation(`/app/bundle/${bundle.bundleId}`)}
                 >
                   Manage bundle skills
@@ -1058,7 +1058,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                   value={infoFields.name}
                   onChange={e => setInfo("name", e.target.value)}
                   placeholder="Bundle name"
-                  className="h-8 text-xs bg-white/5 border-white/10"
+                  className="h-8 text-xs bg-muted border-border"
                 />
               </div>
 
@@ -1070,7 +1070,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                   onChange={e => setInfo("description", e.target.value)}
                   placeholder="What this bundle does"
                   rows={3}
-                  className="text-xs bg-white/5 border-white/10 resize-none"
+                  className="text-xs bg-muted border-border resize-none"
                 />
               </div>
 
@@ -1082,7 +1082,7 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                   onChange={e => setInfo("workflow", e.target.value)}
                   placeholder="Describe how agents should use the skills in this bundle together"
                   rows={4}
-                  className="text-xs bg-white/5 border-white/10 resize-none"
+                  className="text-xs bg-muted border-border resize-none"
                 />
               </div>
 
@@ -1341,7 +1341,7 @@ export default function CuratorSkills() {
             <Button
               size="sm"
               variant="outline"
-              className="border-white/20 gap-1"
+              className="border-border gap-1"
               onClick={() => void refetch()}
               disabled={isFetching}
               data-testid="button-refresh-authorizations"
@@ -1400,7 +1400,7 @@ export default function CuratorSkills() {
         /* No bundles */
         ) : myBundles.length === 0 ? (
           <div className="text-center py-20 space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-muted/20 border border-white/10 flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-muted/20 border border-border flex items-center justify-center mx-auto">
               <Layers className="w-8 h-8 text-muted-foreground/40" />
             </div>
             <div>

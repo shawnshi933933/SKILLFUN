@@ -88,7 +88,7 @@ function SetSkillNFTPanel({ isOwner }: { isOwner: boolean }) {
 
       {/* Current → target */}
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 mb-4">
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+        <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
           <p className="text-xs text-muted-foreground mb-0.5">Current skillNFT</p>
           <p className="text-xs font-mono text-foreground/70 truncate">
             {currentSkillNFT ? String(currentSkillNFT) : "Loading…"}
@@ -280,7 +280,7 @@ function ClaimRow({ claim, isAuthorized, onAction, actionLoading }: ClaimRowProp
   });
 
   return (
-    <div className="border border-white/10 rounded-xl bg-white/[0.03] overflow-hidden">
+    <div className="border border-border rounded-xl bg-muted/20 overflow-hidden">
       {/* Main row */}
       <div className="flex items-center gap-4 px-5 py-4">
         {/* Token ID */}
@@ -372,7 +372,7 @@ function ClaimRow({ claim, isAuthorized, onAction, actionLoading }: ClaimRowProp
 
       {/* Expanded: detail for approved claims */}
       {expanded && claim.status === "approved" && (
-        <div className="px-5 pb-4 border-t border-white/5 pt-3">
+        <div className="px-5 pb-4 border-t border-border/50 pt-3">
           <p className="text-xs text-muted-foreground">
             Token <span className="font-mono text-foreground/70">#{claim.tokenId}</span> approved.
             {oracleWritten
@@ -384,7 +384,7 @@ function ClaimRow({ claim, isAuthorized, onAction, actionLoading }: ClaimRowProp
 
       {/* Expanded: nothing special for rejected */}
       {expanded && claim.status === "rejected" && (
-        <div className="px-5 pb-4 border-t border-white/5 pt-3">
+        <div className="px-5 pb-4 border-t border-border/50 pt-3">
           <p className="text-xs text-muted-foreground">This claim was rejected. The creator may re-submit.</p>
         </div>
       )}
@@ -636,7 +636,7 @@ export default function AdminClaims() {
             </div>
 
             {/* Oracle info */}
-            <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+            <div className="mt-8 rounded-xl border border-border bg-muted/10 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Terminal className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-muted-foreground">Oracle contract</span>

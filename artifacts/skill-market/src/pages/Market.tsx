@@ -133,7 +133,7 @@ export default function Market() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-card border border-white/10 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
               <button
                 onClick={() => { setTab("skills"); setSelectedTags(new Set()); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "skills" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
@@ -158,7 +158,7 @@ export default function Market() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search skills, bundles..."
-              className="pl-9 bg-card border-white/10"
+              className="pl-9 bg-card border-border"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               data-testid="input-search"
@@ -171,7 +171,7 @@ export default function Market() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 encryptedOnly
                   ? "bg-primary/20 border-primary/30 text-primary"
-                  : "bg-card border-white/10 text-muted-foreground hover:text-foreground"
+                  : "bg-card border-border text-muted-foreground hover:text-foreground"
               }`}
               data-testid="filter-encrypted"
             >
@@ -194,7 +194,7 @@ export default function Market() {
                   className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
                     active
                       ? "bg-accent/20 text-accent border-accent/40"
-                      : "bg-card border-white/10 text-muted-foreground hover:text-foreground hover:border-white/30"
+                      : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-border"
                   }`}
                 >
                   {active && <span className="mr-1">✕</span>}
@@ -228,7 +228,7 @@ export default function Market() {
                   className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
                     active
                       ? "bg-accent/20 text-accent border-accent/40"
-                      : "bg-card border-white/10 text-muted-foreground hover:text-foreground hover:border-white/30"
+                      : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-border"
                   }`}
                 >
                   {active && <span className="mr-1">✕</span>}

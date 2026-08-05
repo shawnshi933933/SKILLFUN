@@ -69,7 +69,7 @@ export default function Flywheel() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
           {STATS.map((s) => (
-            <div key={s.label} className="bg-card border border-white/10 rounded-xl p-4" data-testid={`stat-${s.label.toLowerCase().replace(/\s/g, "-")}`}>
+            <div key={s.label} className="bg-card border border-border rounded-xl p-4" data-testid={`stat-${s.label.toLowerCase().replace(/\s/g, "-")}`}>
               <div className="mb-2">{s.icon}</div>
               <div className="text-xl font-bold font-mono">{s.value}</div>
               <div className="text-xs text-muted-foreground mt-0.5">{s.label}</div>
@@ -79,7 +79,7 @@ export default function Flywheel() {
         </div>
 
         {/* Flow Diagram */}
-        <div className="bg-card border border-white/10 rounded-2xl p-8 mb-8">
+        <div className="bg-card border border-border rounded-2xl p-8 mb-8">
           <h2 className="font-semibold text-lg mb-8 text-center">The 5-Node Economic Flywheel</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-center">
             {FLOW_NODES.map((node, i) => (
@@ -90,7 +90,7 @@ export default function Flywheel() {
                   <div className="text-xs opacity-70">{node.sub}</div>
                 </div>
                 {i < FLOW_NODES.length - 1 && (
-                  <div className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 z-10 text-white/30 text-lg">→</div>
+                  <div className="hidden lg:block absolute -right-4 top-1/2 -translate-y-1/2 z-10 text-muted-foreground/40 text-lg">→</div>
                 )}
               </div>
             ))}
@@ -104,11 +104,11 @@ export default function Flywheel() {
         </div>
 
         {/* Fee breakdown callout */}
-        <div className="bg-card border border-white/10 rounded-2xl p-6 mb-8">
+        <div className="bg-card border border-border rounded-2xl p-6 mb-8">
           <h2 className="font-semibold mb-4">Fee Split Per Invocation</h2>
           <div className="grid md:grid-cols-5 gap-4">
             {[
-              { label: "Platform (10% off total invoice)", pct: "10%", color: "text-muted-foreground bg-white/5 border-white/10" },
+              { label: "Platform Fee", pct: "10%", color: "text-muted-foreground bg-muted border-border" },
               { label: "Creator Royalty (10% of net Base)", pct: "~9% net", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
               { label: "Owner Income (90% of net Base)", pct: "~81% net", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
               { label: "Curator Share (50% of net Markup)", pct: "~45% of Markup", color: "text-accent bg-accent/10 border-accent/20" },
@@ -124,14 +124,14 @@ export default function Flywheel() {
 
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           {/* Volume Chart */}
-          <div className="lg:col-span-2 bg-card border border-white/10 rounded-2xl p-6">
+          <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6">
             <h2 className="font-semibold mb-5">7-Day Platform Activity</h2>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={volumeData} barGap={4}>
-                <XAxis dataKey="day" tick={{ fill: "hsl(215,20.2%,65.1%)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="day" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis hide />
                 <Tooltip
-                  contentStyle={{ background: "hsl(222,47%,10%)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "12px" }}
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                   formatter={(v: number, name: string) => [
                     name === "volume" ? `${(v / 1000).toFixed(1)}K ETH` : v.toLocaleString(),
                     name === "volume" ? "Volume" : "Agent Invocations",
@@ -148,14 +148,14 @@ export default function Flywheel() {
           </div>
 
           {/* Live Feed */}
-          <div className="bg-card border border-white/10 rounded-2xl p-6 flex flex-col">
+          <div className="bg-card border border-border rounded-2xl p-6 flex flex-col">
             <div className="flex items-center gap-2 mb-5">
               <h2 className="font-semibold">Live Activity</h2>
               <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
             </div>
             <div className="flex-1 space-y-2 overflow-hidden">
               {feedItems.map((item, i) => (
-                <div key={`${tick}-${i}`} className={`text-xs py-2 border-b border-white/5 last:border-0 ${item.color} transition-all`} data-testid={`feed-item-${i}`}>
+                <div key={`${tick}-${i}`} className={`text-xs py-2 border-b border-border/50 last:border-0 ${item.color} transition-all`} data-testid={`feed-item-${i}`}>
                   <span>{item.msg}</span>
                   <span className="text-muted-foreground ml-2">{item.time}</span>
                 </div>
@@ -165,7 +165,7 @@ export default function Flywheel() {
         </div>
 
         {/* Security Model */}
-        <div className="bg-card border border-white/10 rounded-2xl p-8">
+        <div className="bg-card border border-border rounded-2xl p-8">
           <h2 className="font-semibold text-lg mb-6">Three-Layer Security Model</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[

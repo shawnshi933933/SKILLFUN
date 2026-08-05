@@ -250,11 +250,11 @@ export default function Claim() {
             { label: "Claim",  done: myClaims.some((c) => c.status === "completed") },
           ].map((step, i) => (
             <div key={step.label} className="flex items-center gap-3">
-              {i > 0 && <div className="w-8 h-px bg-white/10" />}
+              {i > 0 && <div className="w-8 h-px bg-border" />}
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
                 step.done
                   ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
-                  : "border-white/10 text-muted-foreground"
+                  : "border-border text-muted-foreground"
               }`}>
                 {step.done && <CheckCircle className="w-3 h-3" />}
                 {step.label}
@@ -273,15 +273,15 @@ export default function Claim() {
 
         {/* ── Step 1: GitHub OAuth ── */}
         {pageState === "no-github" && (
-          <div className="bg-card border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-2xl p-8 flex flex-col items-center text-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center">
               <Github className="w-7 h-7" />
             </div>
             <div>
               <h2 className="text-lg font-semibold mb-1">Connect GitHub</h2>
               <p className="text-sm text-muted-foreground max-w-sm">
                 We verify that you own the GitHub account listed as{" "}
-                <code className="text-xs bg-white/5 px-1 rounded">manifestOwner</code> on the Skill NFT.
+                <code className="text-xs bg-muted px-1 rounded">manifestOwner</code> on the Skill NFT.
               </p>
             </div>
             <Button className="gap-2 bg-white text-black hover:bg-white/90" onClick={handleGithubLogin}>
@@ -294,7 +294,7 @@ export default function Claim() {
         {/* ── Step 2: Link Wallet ── */}
         {pageState === "no-wallet" && (
           <div className="space-y-4">
-            <div className="bg-card border border-white/10 rounded-2xl p-6 flex items-center gap-4">
+            <div className="bg-card border border-border rounded-2xl p-6 flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
                 <CheckCircle className="w-5 h-5 text-emerald-400" />
               </div>
@@ -304,7 +304,7 @@ export default function Claim() {
               </div>
             </div>
 
-            <div className="bg-card border border-white/10 rounded-2xl p-8 flex flex-col items-center text-center gap-5">
+            <div className="bg-card border border-border rounded-2xl p-8 flex flex-col items-center text-center gap-5">
               <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Wallet className="w-7 h-7 text-primary" />
               </div>
@@ -344,12 +344,12 @@ export default function Claim() {
         {pageState === "ready" && (
           <div className="space-y-4">
             {/* Session info */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-white/10 rounded-xl text-sm">
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-border rounded-xl text-sm">
               <div className="flex items-center gap-2 text-emerald-400">
                 <CheckCircle className="w-4 h-4" />
                 <span>@{githubUser}</span>
               </div>
-              <div className="w-px h-4 bg-white/10" />
+              <div className="w-px h-4 bg-border" />
               <div className="text-muted-foreground font-mono text-xs">
                 {linkedWallet?.slice(0, 8)}…{linkedWallet?.slice(-6)}
               </div>
@@ -366,12 +366,12 @@ export default function Claim() {
 
             {/* Claimable skills */}
             {skills.length === 0 && myClaims.length === 0 ? (
-              <div className="bg-card border border-white/10 rounded-2xl p-10 flex flex-col items-center text-center gap-3">
+              <div className="bg-card border border-border rounded-2xl p-10 flex flex-col items-center text-center gap-3">
                 <AlertCircle className="w-8 h-8 text-muted-foreground" />
                 <div>
                   <div className="font-semibold mb-1">No claimable Skills found</div>
                   <p className="text-sm text-muted-foreground max-w-sm">
-                    No minted Skills have <code className="text-xs bg-white/5 px-1 rounded">@{githubUser}</code>{" "}
+                    No minted Skills have <code className="text-xs bg-muted px-1 rounded">@{githubUser}</code>{" "}
                     as their owner. If you just minted one, it may still be processing.
                   </p>
                 </div>
@@ -381,12 +381,12 @@ export default function Claim() {
                 {skills.map((skill) => {
                   const existing = claimForToken(skill.tokenId!);
                   return (
-                    <div key={skill.skillId} className="bg-card border border-white/10 rounded-2xl p-6">
+                    <div key={skill.skillId} className="bg-card border border-border rounded-2xl p-6">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold">{skillName(skill)}</span>
-                            <Badge variant="outline" className="border-white/10 text-muted-foreground text-[10px]">
+                            <Badge variant="outline" className="border-border text-muted-foreground text-[10px]">
                               Token #{skill.tokenId}
                             </Badge>
                           </div>
@@ -446,7 +446,7 @@ export default function Claim() {
                                 )}
                               </div>
                             ) : (
-                              <Button size="sm" variant="outline" className="border-white/10" disabled>
+                              <Button size="sm" variant="outline" className="border-border" disabled>
                                 <Clock className="w-3.5 h-3.5 mr-1.5" />
                                 {existing.status === "pending" ? "Under review" : "Rejected"}
                               </Button>
@@ -475,7 +475,7 @@ export default function Claim() {
                 {myClaims
                   .filter((c) => !skills.find((s) => s.tokenId === c.tokenId))
                   .map((claim) => (
-                    <div key={claim.id} className="bg-card border border-white/10 rounded-2xl p-6">
+                    <div key={claim.id} className="bg-card border border-border rounded-2xl p-6">
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
@@ -532,7 +532,7 @@ export default function Claim() {
         )}
 
         {/* How it works */}
-        <div className="mt-10 bg-card border border-white/10 rounded-2xl p-6">
+        <div className="mt-10 bg-card border border-border rounded-2xl p-6">
           <h3 className="font-semibold text-sm mb-4 text-muted-foreground uppercase tracking-wider">How claiming works</h3>
           <div className="space-y-3 text-sm text-muted-foreground">
             <div className="flex gap-3">

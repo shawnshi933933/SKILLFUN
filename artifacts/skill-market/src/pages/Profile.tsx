@@ -63,9 +63,9 @@ export default function Profile() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 pt-24 pb-16">
         {/* Wallet Header */}
-        <div className="bg-card border border-white/10 rounded-2xl p-6 mb-8">
+        <div className="bg-card border border-border rounded-2xl p-6 mb-8">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/30 border border-white/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/30 border border-border flex items-center justify-center">
               <Wallet className="w-8 h-8 text-primary" />
             </div>
             <div className="flex-1">
@@ -103,7 +103,7 @@ export default function Profile() {
 
         {/* Tabs */}
         <Tabs defaultValue="purchased">
-          <TabsList className="bg-card border border-white/10 mb-6">
+          <TabsList className="bg-card border border-border mb-6">
             <TabsTrigger value="purchased" data-testid="tab-purchased">
               Owned Skills ({purchasedSkills.length})
             </TabsTrigger>
@@ -137,7 +137,7 @@ export default function Profile() {
             {purchasedSkills.length === 0 && (
               <div className="text-center py-16">
                 <p className="text-muted-foreground mb-4">No Skill NFTs owned yet.</p>
-                <Button variant="outline" className="border-white/20" onClick={() => setLocation("/app/market")} data-testid="button-browse-market">
+                <Button variant="outline" className="border-border" onClick={() => setLocation("/app/market")} data-testid="button-browse-market">
                   Browse Market
                 </Button>
               </div>
@@ -150,7 +150,7 @@ export default function Profile() {
           <TabsContent value="created">
             <div className="grid md:grid-cols-2 gap-5">
               {createdSkills.map((skill) => (
-                <div key={skill.id} className="bg-card border border-white/10 rounded-2xl p-5">
+                <div key={skill.id} className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div>
                       <h3 className="font-bold mb-1">{skill.name}</h3>
@@ -177,7 +177,7 @@ export default function Profile() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="border-white/20 flex-1 gap-1" onClick={() => setLocation(`/app/skill/${skill.id}`)} data-testid={`button-view-skill-${skill.id}`}>
+                    <Button size="sm" variant="outline" className="border-border flex-1 gap-1" onClick={() => setLocation(`/app/skill/${skill.id}`)} data-testid={`button-view-skill-${skill.id}`}>
                       <ExternalLink className="w-3 h-3" /> View
                     </Button>
                     <Button size="sm" variant="outline" className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 flex-1 gap-1" data-testid={`button-withdraw-${skill.id}`}>
@@ -219,13 +219,13 @@ export default function Profile() {
                 <Coins className="w-8 h-8 mx-auto mb-3 opacity-30" />
                 No staking positions yet.
                 <div className="mt-4">
-                  <Button variant="outline" className="border-white/20" onClick={() => setLocation("/app/stake")}>Stake SKILL Tokens</Button>
+                  <Button variant="outline" className="border-border" onClick={() => setLocation("/app/stake")}>Stake SKILL Tokens</Button>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
                 {stakedBundles.map((b) => (
-                  <div key={b.id} className="bg-card border border-white/10 rounded-xl p-5" data-testid={`staked-position-${b.id}`}>
+                  <div key={b.id} className="bg-card border border-border rounded-xl p-5" data-testid={`staked-position-${b.id}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <h3 className="font-semibold">{b.name}</h3>
@@ -244,7 +244,7 @@ export default function Profile() {
                           <div className="font-mono font-semibold text-accent">+{((b.myStaked ?? 0) * b.apy / 100 / 365).toFixed(2)} SKILL</div>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline" className="border-white/20 gap-1" onClick={() => setLocation(`/app/bundle/${b.id}`)} data-testid={`button-view-staked-${b.id}`}>
+                      <Button size="sm" variant="outline" className="border-border gap-1" onClick={() => setLocation(`/app/bundle/${b.id}`)} data-testid={`button-view-staked-${b.id}`}>
                         <ExternalLink className="w-3 h-3" /> View
                       </Button>
                     </div>
