@@ -159,7 +159,7 @@ export interface ConfirmMintResponse {
 }
 
 export const skillsApi = {
-  list: (params?: { status?: MintStatus; owner?: string; repo?: string }) =>
+  list: (params?: { status?: MintStatus; owner?: string; repo?: string; tag?: string }) =>
     apiFetch<{ skills: DbSkill[] }>(
       "/skills" + (params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "")
     ),

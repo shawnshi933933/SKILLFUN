@@ -1427,6 +1427,8 @@ function buildTool(bundleSubdomain: string, skill: typeof skillsTable.$inferSele
       contentVersion: skill.contentVersion,
       /** AI-generated list of MCP tool / function names this skill exposes. */
       capabilities: Array.isArray(meta.capabilities) ? (meta.capabilities as string[]) : [],
+      /** AI-generated tags for this skill — agents can filter the /api/skills endpoint by tag. */
+      tags: Array.isArray(meta.tags) ? (meta.tags as string[]) : [],
       payment: "x402-W0G",
     },
   };

@@ -41,13 +41,16 @@ async function fetchGithubStars(repoUrl: string): Promise<number> {
 }
 
 // GET /api/skills
+// Query params: status, owner, repo, tag (filter by tag in meta.tags JSONB array)
 router.get("/skills", async (req, res) => {
-  const { status, owner, repo } = req.query as Record<string, string | undefined>;
+  const { status, owner, repo, tag } = req.query as Record<string, string | undefined>;
 
   const conditions: SQL[] = [];
   if (status) conditions.push(eq(skillsTable.mintStatus, status as "pending" | "minting" | "minted" | "claimed"));
   if (owner) conditions.push(eq(skillsTable.ownerAddress, owner.toLowerCase()));
   if (repo)  conditions.push(sql`lower(rtrim(${skillsTable.repoUrl}, '/')) = lower(${repo.replace(/\/+$/, "")})`);
+  // JSONB containment: meta->'tags' @> '["blockchain"]'
+  if (tag)   conditions.push(sql`${skillsTable.meta}->'tags' @> ${JSON.stringify([tag.toLowerCase().trim()])}::jsonb`);
 
   // Include bundle count via LEFT JOIN
   const rows = await db
