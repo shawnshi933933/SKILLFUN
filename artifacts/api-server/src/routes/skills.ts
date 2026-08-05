@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { skillsTable, paymentProofsTable, curatorAuthorizationsTable, bundleSkillsTable } from "@workspace/db";
+import { skillsTable, paymentProofsTable, curatorAuthorizationsTable, bundleSkillsTable, skillContentCacheTable } from "@workspace/db";
+import { analyzeSkillContent } from "../services/ai.js";
 import { eq, desc, and, SQL, count, isNull, getTableColumns, sql } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
@@ -1080,6 +1081,82 @@ router.post("/skills/:id/prepare-sync", async (req, res) => {
     curatorsMarked:     rowCount ?? 0,
     noChange:           false,
   });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/skills/:id/ai-re-analyze
+//
+// Re-analyzes the skill's cached content with AI and updates tags + capabilities.
+// Owner-only (EIP-712 auth).  No blockchain transaction required.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/skills/:id/ai-re-analyze", authMiddleware("update-skill"), async (req, res) => {
+  const skillId = req.params.id as string;
+
+  const [existing] = await db
+    .select()
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!existing) { apiError(res, ErrorCode.NOT_FOUND, "Skill not found"); return; }
+  if (existing.ownerAddress?.toLowerCase() !== req.walletAddress?.toLowerCase()) {
+    apiError(res, ErrorCode.FORBIDDEN, "Not the skill owner"); return;
+  }
+  if (!existing.tokenId) {
+    apiError(res, ErrorCode.INVALID_INPUT, "Skill must be minted before AI can analyze it"); return;
+  }
+
+  // Fetch cached decrypted content (populated by fetch-skill-content endpoint)
+  const [cache] = await db
+    .select()
+    .from(skillContentCacheTable)
+    .where(eq(skillContentCacheTable.tokenId, existing.tokenId))
+    .limit(1);
+
+  if (!cache) {
+    apiError(res, ErrorCode.NOT_FOUND, "No cached skill content found. Open the skill detail page to load its content first.");
+    return;
+  }
+
+  // Collect existing marketplace tags so AI can prefer reusing them
+  const rows = await db.select({ meta: skillsTable.meta }).from(skillsTable);
+  const existingDbTags = Array.from(new Set(
+    rows
+      .flatMap(r => {
+        const m = r.meta as Record<string, unknown> | null;
+        const t = m?.tags;
+        return Array.isArray(t) ? (t as string[]) : [];
+      })
+      .map(s => String(s).toLowerCase().trim())
+      .filter(Boolean)
+  )).slice(0, 60);
+
+  // Detect file type from content
+  const rawContent = cache.decryptedContent;
+  const fileType   = rawContent.trimStart().startsWith("{") ? "skillfun.json" : "skill.md";
+
+  // Call AI service
+  let aiResult;
+  try {
+    aiResult = await analyzeSkillContent(rawContent, fileType, existing.repoUrl ?? "unknown", existingDbTags);
+  } catch (err) {
+    logger.error({ err, skillId }, "ai-re-analyze: AI call failed");
+    apiError(res, ErrorCode.INTERNAL, "AI analysis failed — please try again later");
+    return;
+  }
+
+  // Patch skill meta — only tags and capabilities (preserve all other meta fields)
+  const currentMeta = (existing.meta as Record<string, unknown>) ?? {};
+  const newMeta = { ...currentMeta, tags: aiResult.tags, capabilities: aiResult.capabilities };
+
+  await db
+    .update(skillsTable)
+    .set({ meta: newMeta, updatedAt: new Date() })
+    .where(eq(skillsTable.skillId, skillId));
+
+  logger.info({ skillId, tags: aiResult.tags, capCount: aiResult.capabilities.length }, "ai-re-analyze: updated skill tags + capabilities");
+
+  res.json({ tags: aiResult.tags, capabilities: aiResult.capabilities });
 });
 
 export default router;

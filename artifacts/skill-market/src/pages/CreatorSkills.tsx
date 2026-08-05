@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Wand2, DollarSign, RefreshCw, ExternalLink, Loader2,
   ChevronDown, ChevronUp, FileText, CheckCircle2, AlertTriangle,
-  Zap, Github, RotateCcw, Pencil, Users, Coins, Info,
+  Zap, Github, RotateCcw, Pencil, Users, Coins, Info, Sparkles,
 } from "lucide-react";
 
 const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT as `0x${string}`;
@@ -321,20 +321,24 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
   const sign = useEip712Sign();
 
   const m = skill.meta as Record<string, unknown>;
+
+  // Editable fields — tags and capabilities intentionally excluded (AI-managed)
   const [fields, setFields] = useState({
     name:         (m.name         as string) ?? skill.skillName ?? "",
     description:  (m.description  as string) ?? "",
     category:     (m.category     as string) ?? "",
     version:      (m.version      as string) ?? "1.0.0",
-    capabilities: Array.isArray(m.capabilities)
-                    ? (m.capabilities as string[]).join(", ")
-                    : (m.capabilities as string) ?? "",
-    tags:         Array.isArray(m.tags)
-                    ? (m.tags as string[]).join(", ")
-                    : (m.tags as string) ?? "",
     instructions: (m.instructions as string) ?? "",
   });
-  const [saving, setSaving] = useState(false);
+  const [saving,      setSaving]      = useState(false);
+  const [aiStatus,    setAiStatus]    = useState<"idle" | "loading" | "done" | "error">("idle");
+
+  // Live-update AI-managed fields after re-analyze without refreshing the whole page
+  const [aiTags,         setAiTags]         = useState<string[] | null>(null);
+  const [aiCapabilities, setAiCapabilities] = useState<string[] | null>(null);
+
+  const currentTags:   string[] = aiTags         ?? (Array.isArray(m.tags)         ? (m.tags         as string[]) : []);
+  const currentCaps:   string[] = aiCapabilities ?? (Array.isArray(m.capabilities) ? (m.capabilities as string[]) : []);
 
   const set = (k: keyof typeof fields, v: string) =>
     setFields(s => ({ ...s, [k]: v }));
@@ -347,13 +351,11 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
     try {
       const sigHeader = await sign("update-skill");
       const newMeta: Record<string, unknown> = {
-        ...m,
+        ...m,                               // preserves AI-managed tags & capabilities
         name:         fields.name.trim(),
         description:  fields.description.trim(),
         category:     fields.category.trim(),
         version:      fields.version.trim(),
-        capabilities: fields.capabilities.split(",").map(s => s.trim()).filter(Boolean),
-        tags:         fields.tags.split(",").map(s => s.trim()).filter(Boolean),
         instructions: fields.instructions.trim(),
       };
       await creatorApi.updateMeta(skill.skillId, newMeta, sigHeader);
@@ -367,6 +369,29 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAiReAnalyze = async () => {
+    setAiStatus("loading");
+    try {
+      const sigHeader = await sign("update-skill");
+      const result = await creatorApi.aiReAnalyze(skill.skillId, sigHeader);
+      setAiTags(result.tags);
+      setAiCapabilities(result.capabilities);
+      setAiStatus("done");
+      toast({
+        title: "AI analysis complete",
+        description: `${result.tags.length} tags · ${result.capabilities.length} capabilities updated.`,
+      });
+      onSuccess(); // refresh parent to show updated meta
+    } catch (err) {
+      setAiStatus("error");
+      toast({
+        title: "AI re-analyze failed",
+        description: (err as Error).message?.slice(0, 140) ?? "Unknown error",
+        variant: "destructive",
+      });
     }
   };
 
@@ -429,28 +454,6 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
         />
       </div>
 
-      {/* Capabilities */}
-      <div className="space-y-1">
-        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Capabilities</label>
-        <Input
-          value={fields.capabilities}
-          onChange={e => set("capabilities", e.target.value)}
-          placeholder="e.g. price-checking, trading, analysis (comma-separated)"
-          className="h-8 text-xs bg-white/5 border-white/10"
-        />
-      </div>
-
-      {/* Tags */}
-      <div className="space-y-1">
-        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Tags</label>
-        <Input
-          value={fields.tags}
-          onChange={e => set("tags", e.target.value)}
-          placeholder="e.g. defi, blockchain, web3 (comma-separated)"
-          className="h-8 text-xs bg-white/5 border-white/10"
-        />
-      </div>
-
       <Button
         size="sm"
         onClick={handleSave}
@@ -464,6 +467,73 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
       <p className="text-[10px] text-muted-foreground/40 leading-relaxed">
         Updates the off-chain record only — no gas required. Curators and agents will see the new info immediately.
       </p>
+
+      {/* ── AI-managed section: Tags + Capabilities ───────────────────────────── */}
+      <div className="mt-4 pt-3 border-t border-white/8 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wide flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-violet-400" /> AI-Managed Fields
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleAiReAnalyze}
+            disabled={aiStatus === "loading"}
+            className={`h-6 px-2 text-[10px] gap-1 transition-colors ${
+              aiStatus === "done"
+                ? "border-violet-500/40 text-violet-300 bg-violet-500/10"
+                : aiStatus === "error"
+                ? "border-red-500/30 text-red-400"
+                : "border-white/10 text-muted-foreground hover:text-violet-300"
+            }`}
+          >
+            {aiStatus === "loading"
+              ? <><Loader2 className="w-2.5 h-2.5 animate-spin" /> Analyzing…</>
+              : <><Sparkles className="w-2.5 h-2.5" /> Re-analyze with AI</>}
+          </Button>
+        </div>
+
+        {/* Capabilities (read-only) */}
+        <div className="space-y-1">
+          <label className="text-[10px] text-muted-foreground/50 uppercase tracking-wide">Capabilities</label>
+          {currentCaps.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 p-2 bg-white/4 border border-white/8 rounded-lg min-h-[34px] items-center">
+              {currentCaps.map(cap => (
+                <code key={cap} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] text-primary">
+                  {cap}
+                </code>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-2 bg-white/4 border border-dashed border-white/8 rounded-lg min-h-[34px] text-[10px] text-muted-foreground/30">
+              <Sparkles className="w-3 h-3" /> Click "Re-analyze with AI" to generate
+            </div>
+          )}
+        </div>
+
+        {/* Tags (read-only) */}
+        <div className="space-y-1">
+          <label className="text-[10px] text-muted-foreground/50 uppercase tracking-wide">Tags</label>
+          {currentTags.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5 p-2 bg-white/4 border border-white/8 rounded-lg min-h-[34px] items-center">
+              {currentTags.map(tag => (
+                <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[10px] text-violet-300">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-2 bg-white/4 border border-dashed border-white/8 rounded-lg min-h-[34px] text-[10px] text-muted-foreground/30">
+              <Sparkles className="w-3 h-3" /> Click "Re-analyze with AI" to generate
+            </div>
+          )}
+        </div>
+
+        <p className="text-[10px] text-muted-foreground/30 leading-relaxed flex items-start gap-1">
+          <Info className="w-3 h-3 shrink-0 mt-0.5" />
+          Tags and capabilities are AI-generated and cannot be edited manually. Use "Re-analyze" after a content sync to refresh them.
+        </p>
+      </div>
     </div>
   );
 }

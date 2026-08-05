@@ -11,6 +11,8 @@ import { Router } from "express";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
 import { analyzeSkillContent } from "../services/ai.js";
+import { db } from "@workspace/db";
+import { skillsTable } from "@workspace/db";
 
 const router = Router();
 
@@ -376,12 +378,30 @@ router.post("/github/ai-analyze", async (req, res) => {
     return;
   }
 
+  // ── Fetch existing marketplace tags to help AI reuse them ─────────────────
+  let existingDbTags: string[] = [];
+  try {
+    const rows = await db.select({ meta: skillsTable.meta }).from(skillsTable);
+    existingDbTags = Array.from(new Set(
+      rows.flatMap(r => {
+        const m = r.meta as Record<string, unknown> | null;
+        const t = m?.tags;
+        return Array.isArray(t) ? (t as string[]) : [];
+      })
+        .map(s => String(s).toLowerCase().trim())
+        .filter(Boolean)
+    )).slice(0, 60);
+  } catch (e) {
+    logger.warn({ err: e }, "ai-analyze: could not fetch existing tags — proceeding without");
+  }
+
   // ── Call AI service ───────────────────────────────────────────────────────
   try {
     const result = await analyzeSkillContent(
       rawContent.slice(0, MAX_RAW_BYTES), // enforce cap server-side too
       fileType,
-      typeof repoUrl === "string" ? repoUrl : "unknown"
+      typeof repoUrl === "string" ? repoUrl : "unknown",
+      existingDbTags
     );
     res.json(result);
   } catch (err) {

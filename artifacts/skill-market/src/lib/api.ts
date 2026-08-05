@@ -561,6 +561,16 @@ export const creatorApi = {
       headers: { "X-Wallet-Signature": sigHeader },
       body:    JSON.stringify(options),
     }),
+
+  /**
+   * Re-analyze the skill's cached content with AI and save new tags + capabilities.
+   * Owner-only. Returns { tags, capabilities }.
+   */
+  aiReAnalyze: (skillId: string, sigHeader: string) =>
+    apiFetch<{ tags: string[]; capabilities: string[] }>(`/skills/${skillId}/ai-re-analyze`, {
+      method:  "POST",
+      headers: { "X-Wallet-Signature": sigHeader },
+    }),
 };
 
 // ---------------------------------------------------------------------------

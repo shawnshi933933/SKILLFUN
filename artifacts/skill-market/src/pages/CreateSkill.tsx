@@ -162,6 +162,7 @@ export default function CreateSkill() {
       });
 
       // Auto-fill from parsed data — never overwrite manually-edited fields
+      // NOTE: capabilities and tags are AI-only — not prefilled from manifest
       const p = result.parsed;
       const slugName = repo.split("/").pop()!.replace(/[-_]/g, " ").trim();
       setFs((s) => ({
@@ -174,10 +175,14 @@ export default function CreateSkill() {
           category:     s.data.category !== "Code"  ? s.data.category : (p.category || "Code"),
           basePrice:    s.data.basePrice !== "0.01" ? s.data.basePrice
                           : (p.basePrice != null ? String(p.basePrice) : "0.01"),
-          capabilities: s.data.capabilities || (p.capabilities?.join(", ") || ""),
-          tags:         s.data.tags         || (p.tags?.join(", ")          || ""),
+          // capabilities and tags intentionally omitted — filled by AI only
         },
       }));
+
+      // Auto-trigger AI analyze immediately after content is found
+      if (result.found && result.rawContent && result.fileType) {
+        void analyzeWithAi(result.rawContent, result.fileType);
+      }
     } catch (err) {
       console.error("[GitHubFetch] error:", err);
       setGh({ ...INITIAL_GH, status: "error", fetchedForRepo: null, warning: "Could not reach GitHub. Fill in the form manually." });
@@ -191,22 +196,27 @@ export default function CreateSkill() {
   // RACE-SAFE: overwrite conditions evaluated inside functional setFs updater,
   // which always receives the LATEST state — even if the user edited fields
   // while the async AI call was in-flight.
+  //
+  // Accepts optional rawContent/fileType so it can be called from handleRepoUrlBlur
+  // (where we already have the content in local variables, before React updates gh state).
 
-  const analyzeWithAi = async () => {
-    if (!gh.rawContent || !gh.fileType) return;
+  const analyzeWithAi = async (rawContent?: string, fileType?: string) => {
+    const content = rawContent ?? gh.rawContent;
+    const type    = fileType    ?? gh.fileType;
+    if (!content || !type) return;
     setAiStatus("loading");
 
     try {
       const result = await githubApi.aiAnalyze({
-        rawContent: gh.rawContent,
-        fileType:   gh.fileType,
+        rawContent: content,
+        fileType:   type,
         repoUrl:    fs.data.repoUrl,
       });
 
       setFs((s) => {
         // Evaluate against LATEST s.data and s.aiFields at response time
         const updates: Partial<FormData> = {};
-        const newAiFields = new Set<string>();
+        const newAiFields = new Set(s.aiFields);
 
         if (result.description && (!s.data.description || s.aiFields.has("description"))) {
           updates.description = result.description;
@@ -216,11 +226,12 @@ export default function CreateSkill() {
           updates.instructions = result.instructions;
           newAiFields.add("instructions");
         }
-        if (result.capabilities.length && (!s.data.capabilities || s.aiFields.has("capabilities"))) {
+        // Tags and capabilities are always AI-managed — always overwrite
+        if (result.capabilities.length) {
           updates.capabilities = result.capabilities.join(", ");
           newAiFields.add("capabilities");
         }
-        if (result.tags.length && (!s.data.tags || s.aiFields.has("tags"))) {
+        if (result.tags.length) {
           updates.tags = result.tags.join(", ");
           newAiFields.add("tags");
         }
@@ -535,20 +546,42 @@ export default function CreateSkill() {
                 />
               </Field>
 
-              <Field label="Capabilities (comma-separated)" hint="MCP tool names this skill exposes" aiActive={aiFields.has("capabilities")}>
-                <Input
-                  placeholder="answer_question, process_data, generate_report"
-                  value={form.capabilities}
-                  onChange={(e) => update("capabilities", e.target.value)}
-                />
+              {/* Capabilities — AI-only, read-only display */}
+              <Field label="Capabilities" hint="MCP tool names — filled by AI · not editable" aiActive={aiFields.has("capabilities")}>
+                {form.capabilities ? (
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-white/5 border border-white/10 rounded-lg min-h-[38px] items-center">
+                    {form.capabilities.split(",").map(c => c.trim()).filter(Boolean).map(cap => (
+                      <code key={cap} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary">
+                        {cap}
+                      </code>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-2.5 bg-white/5 border border-dashed border-white/10 rounded-lg min-h-[38px] text-xs text-muted-foreground/40">
+                    {aiStatus === "loading"
+                      ? <><Loader2 className="w-3 h-3 animate-spin" /> AI analyzing…</>
+                      : <><Sparkles className="w-3 h-3" /> AI will extract tool names from your skill file</>}
+                  </div>
+                )}
               </Field>
 
-              <Field label="Tags (optional)" aiActive={aiFields.has("tags")}>
-                <Input
-                  placeholder="llm, python, finance"
-                  value={form.tags}
-                  onChange={(e) => update("tags", e.target.value)}
-                />
+              {/* Tags — AI-only, read-only display */}
+              <Field label="Tags" hint="AI-generated from skill content · not editable" aiActive={aiFields.has("tags")}>
+                {form.tags ? (
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-white/5 border border-white/10 rounded-lg min-h-[38px] items-center">
+                    {form.tags.split(",").map(t => t.trim()).filter(Boolean).map(tag => (
+                      <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs text-violet-300">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-2.5 bg-white/5 border border-dashed border-white/10 rounded-lg min-h-[38px] text-xs text-muted-foreground/40">
+                    {aiStatus === "loading"
+                      ? <><Loader2 className="w-3 h-3 animate-spin" /> AI analyzing…</>
+                      : <><Sparkles className="w-3 h-3" /> AI will generate tags from your skill content</>}
+                  </div>
+                )}
               </Field>
             </div>
           )}
