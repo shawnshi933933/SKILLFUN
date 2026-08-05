@@ -188,10 +188,10 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
         args: [BigInt(skill.tokenId), hashBytes32, 0n],
       });
 
-      // Step 3: Wait for confirmation
+      // Step 3: Wait for confirmation (0G Chain can be slow — use 120 s timeout)
       setPhase("confirming");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await waitForTransactionReceipt(wagmiConfig as any, { hash: tx });
+      await waitForTransactionReceipt(wagmiConfig as any, { hash: tx, timeout: 120_000 });
 
       setPhase("done");
       toast({

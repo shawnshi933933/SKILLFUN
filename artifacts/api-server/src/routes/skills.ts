@@ -242,6 +242,12 @@ router.post("/skills/prepare-mint", async (req, res) => {
     return;
   }
 
+  // Compute content SHA-256 so the first sync can detect no-change correctly.
+  // Only set when real skill file content was provided (not just the manifest envelope).
+  const contentSha256 = skillFileContent
+    ? crypto.createHash("sha256").update(skillFileContent.trim(), "utf8").digest("hex")
+    : undefined;
+
   // Create DB record (pending — confirmed after user's tx lands)
   // aesKey is stored in DB only — never sent to client or on-chain
   const [skill] = await db
@@ -259,6 +265,7 @@ router.post("/skills/prepare-mint", async (req, res) => {
         ownerMode,
         ...(uploadResult.txSeq != null ? { storeTxSeq: uploadResult.txSeq } : {}),
         storageUploaded: uploadResult.uploaded,
+        ...(contentSha256 ? { contentSha256 } : {}),
       } as Record<string, unknown>,
     })
     .returning();
