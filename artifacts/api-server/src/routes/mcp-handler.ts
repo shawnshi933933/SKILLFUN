@@ -142,19 +142,21 @@ function send402(
       freeAccess: {
         instructions:
           "This Bundle is free — no W0G transfer needed. " +
+          "IMPORTANT: use your wallet address in ALL LOWERCASE when building the signMessage string and in agentWallet fields (e.g. address.toLowerCase()). " +
           "Sign the message in `signMessage` with your agent wallet (EIP-191 personal_sign / eth_sign / signMessage), " +
-          "then POST the fields in `proveBody` (with your actual address and signature) to the proveEndpoint. " +
+          "then POST the fields in `proveBody` (with your actual lowercase address and signature) to the proveEndpoint. " +
           "You will receive a `proof` token; include it as the `X-402-Payment-Proof` header and your wallet as `X-402-Agent-Wallet` on the next tools/call.",
-        signMessage: `SkillFun free access: ${bundle.bundleId}:${skill.tokenId}:{YOUR_WALLET_ADDRESS}`,
+        signMessage: `SkillFun free access: ${bundle.bundleId}:${skill.tokenId}:{your_wallet_address_LOWERCASE}`,
+        addressNote: "Replace {your_wallet_address_LOWERCASE} with address.toLowerCase() — the server always lowercases before verifying. Using checksummed (mixed-case) address will cause signature mismatch.",
         proveBody: {
           tokenId:     skill.tokenId,
           bundleId:    bundle.bundleId,
-          agentWallet: "{YOUR_WALLET_ADDRESS}",
+          agentWallet: "{your_wallet_address_LOWERCASE}",
           signature:   "{YOUR_EIP191_SIGNATURE}",
         },
         retryWith: {
           header_X_402_Payment_Proof: "{proof from proveEndpoint response}",
-          header_X_402_Agent_Wallet:  "{YOUR_WALLET_ADDRESS}",
+          header_X_402_Agent_Wallet:  "{your_wallet_address_LOWERCASE}",
         },
       },
     }),
@@ -526,8 +528,9 @@ Check \`accepts[0].amount\`:
 
 **Sign this EIP-191 message with your agent wallet:**
 \`\`\`
-SkillFun free access: {BUNDLE_ID}:{TOKEN_ID}:{YOUR_WALLET_ADDRESS}
+SkillFun free access: {BUNDLE_ID}:{TOKEN_ID}:{your_wallet_address_LOWERCASE}
 \`\`\`
+⚠️ **Address must be all-lowercase** (\`address.toLowerCase()\`). The server lowercases before verifying — using checksummed (mixed-case) address causes a signature mismatch error.
 
 **POST to prove endpoint:**
 \`\`\`http
@@ -537,7 +540,7 @@ Content-Type: application/json
 {
   "tokenId":     {TOKEN_ID},
   "bundleId":    "{BUNDLE_ID}",
-  "agentWallet": "{YOUR_WALLET_ADDRESS}",
+  "agentWallet": "{your_wallet_address_LOWERCASE}",
   "signature":   "{YOUR_SIGNATURE}"
 }
 \`\`\`
@@ -656,9 +659,9 @@ const data402 = r1.status === 402 ? await r1.json() : null;
 let proof: string;
 if (!data402 || data402.accepts[0].amount === "0") {
   // Free flow
-  const sig = await sign(\`SkillFun free access: \${bundleId}:\${tokenId}:\${account.address}\`);
+  const sig = await sign(\`SkillFun free access: \${bundleId}:\${tokenId}:\${account.address.toLowerCase()}\`);
   const p = await fetch(PROVE_URL, { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tokenId, bundleId, agentWallet: account.address, signature: sig }) }).then(r => r.json());
+    body: JSON.stringify({ tokenId, bundleId, agentWallet: account.address.toLowerCase(), signature: sig }) }).then(r => r.json());
   proof = p.proof;
 } else {
   // Paid flow
@@ -838,9 +841,9 @@ Server replies with HTTP 402 and a JSON body. Ignore the payment amount — for 
 
 **Step 3 — Sign the free-access message (EIP-191 personal_sign)**
 \`\`\`
-Message: "SkillFun free access: ${bundleId}:${egTokenId}:{YOUR_WALLET_ADDRESS}"
+Message: "SkillFun free access: ${bundleId}:${egTokenId}:{your_wallet_address_LOWERCASE}"
 \`\`\`
-Replace \`{YOUR_WALLET_ADDRESS}\` with your agent wallet's checksummed address.
+⚠️ **Address MUST be all-lowercase** — use \`address.toLowerCase()\`. The server lowercases the address before verifying the signature. Using checksummed (mixed-case EIP-55) address will always fail with a signature mismatch, even if the signature itself is valid.
 Use \`eth_sign\` / \`personal_sign\` / \`account.signMessage()\` — standard EIP-191.
 
 **Step 4 — POST to prove endpoint**
@@ -851,7 +854,7 @@ Content-Type: application/json
 {
   "tokenId":     ${egTokenId},
   "bundleId":    "${bundleId}",
-  "agentWallet": "{YOUR_WALLET_ADDRESS}",
+  "agentWallet": "{your_wallet_address_LOWERCASE}",
   "signature":   "{YOUR_SIGNATURE}"
 }
 \`\`\`
@@ -1007,11 +1010,11 @@ async function callSkill() {
   if (r1.status !== 402) throw new Error("Expected 402");
 
 ${isFree ? `  // 2. Free proof
-  const freeSig = await sign(\`SkillFun free access: \${BUNDLE_ID}:\${TOKEN_ID}:\${account.address}\`);
+  const freeSig = await sign(\`SkillFun free access: \${BUNDLE_ID}:\${TOKEN_ID}:\${account.address.toLowerCase()}\`);
   const prove = await fetch(PROVE_URL, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ tokenId: TOKEN_ID, bundleId: BUNDLE_ID,
-      agentWallet: account.address, signature: freeSig }),
+      agentWallet: account.address.toLowerCase(), signature: freeSig }),
   }).then(r => r.json());` : `  // 2. Send W0G transfer
   const erc20 = parseAbi(["function transfer(address to, uint256 amount) returns (bool)"]);
   const txHash = await walletClient.writeContract({
