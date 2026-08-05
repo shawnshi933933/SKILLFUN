@@ -207,6 +207,29 @@ router.post("/skills/prepare-mint", async (req, res) => {
     return;
   }
 
+  // ── Repo uniqueness guard ────────────────────────────────────────────────
+  // Block minting if this repo already has a minted or claimed Skill NFT.
+  // Pending records (not yet on-chain) are ignored — they may be stale drafts.
+  const [existing] = await db
+    .select({ skillId: skillsTable.skillId, tokenId: skillsTable.tokenId })
+    .from(skillsTable)
+    .where(
+      and(
+        eq(skillsTable.repoUrl, repoUrl.trim()),
+        inArray(skillsTable.mintStatus, ["minted", "claimed"]),
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    apiError(res, ErrorCode.CONFLICT,
+      `This repo already has a minted Skill NFT (skillId: ${existing.skillId}` +
+      (existing.tokenId != null ? `, token #${existing.tokenId}` : "") + "). Each repo can only be minted once.",
+    );
+    return;
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const skillId          = generateId("sk");
   const resolvedMeta     = meta ?? {};
   const resolvedOwner    = ownerMode === "mine" ? callerAddress : callerAddress; // always record submitter

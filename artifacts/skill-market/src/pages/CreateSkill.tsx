@@ -244,7 +244,7 @@ export default function CreateSkill() {
   // ── Validation ─────────────────────────────────────────────────────────────
 
   const canNext = () => {
-    if (step === 0) return !duplicate && form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
+    if (step === 0) return gh.status !== "loading" && !duplicate && form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
     if (step === 1) return !!address;                          // Ownership — wallet must be connected
     if (step === 2) return parseFloat(form.basePrice) >= 0;   // Economics — only shown for "mine"
     return true;
