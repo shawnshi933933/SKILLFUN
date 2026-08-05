@@ -35,6 +35,8 @@ function adaptSkill(s: DbSkill) {
     ownerAddress:      s.ownerAddress,
     // Live badge = minted on-chain
     isLive:            s.mintStatus === "minted" || s.mintStatus === "claimed",
+    // AI-generated tags from meta
+    tags:              (meta.tags as string[] | undefined) ?? [],
   };
 }
 
@@ -66,9 +68,10 @@ export default function Market() {
     setTab(params.get("tab") === "bundles" ? "bundles" : "skills");
   }, [urlSearch]);
 
-  const [search, setSearch]             = useState("");
-  const [category, setCategory]         = useState<string>("All");
+  const [search, setSearch]               = useState("");
+  const [category, setCategory]           = useState<string>("All");
   const [encryptedOnly, setEncryptedOnly] = useState(false);
+  const [selectedTags, setSelectedTags]   = useState<Set<string>>(new Set());
 
   const { data: skillsData, isLoading: skillsLoading, error: skillsError } = useSkills();
   const { data: bundlesData, isLoading: bundlesLoading, error: bundlesError } = useBundles();
@@ -76,11 +79,26 @@ export default function Market() {
   const skills  = (skillsData?.skills  ?? []).map(adaptSkill);
   const bundles = (bundlesData?.bundles ?? []).map(adaptBundle);
 
+  // Collect all unique tags across all skills, sorted alphabetically
+  const allTags = Array.from(
+    new Set(skills.flatMap((s) => s.tags))
+  ).sort();
+
+  function toggleTag(tag: string) {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  }
+
   const filteredSkills = skills.filter((s) => {
     const matchSearch    = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
     const matchCategory  = category === "All" || s.category === category;
     const matchEncrypted = !encryptedOnly || s.encryptionEnabled;
-    return matchSearch && matchCategory && matchEncrypted;
+    const matchTags      = selectedTags.size === 0 || [...selectedTags].every((t) => s.tags.includes(t));
+    return matchSearch && matchCategory && matchEncrypted && matchTags;
   });
 
   const filteredBundles = bundles.filter((b) =>
@@ -173,6 +191,40 @@ export default function Market() {
             </>
           )}
         </div>
+
+        {/* Tag cloud — shown only on skills tab when there are tags */}
+        {tab === "skills" && allTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-6" data-testid="tag-cloud">
+            <span className="text-xs text-muted-foreground mr-1">Tags:</span>
+            {allTags.map((tag) => {
+              const active = selectedTags.has(tag);
+              return (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  data-testid={`tag-${tag}`}
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                    active
+                      ? "bg-accent/20 text-accent border-accent/40"
+                      : "bg-card border-white/10 text-muted-foreground hover:text-foreground hover:border-white/30"
+                  }`}
+                >
+                  {active && <span className="mr-1">✕</span>}
+                  {tag}
+                </button>
+              );
+            })}
+            {selectedTags.size > 0 && (
+              <button
+                onClick={() => setSelectedTags(new Set())}
+                className="ml-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                data-testid="tag-clear"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Loading states */}
         {(skillsLoading || bundlesLoading) && (
