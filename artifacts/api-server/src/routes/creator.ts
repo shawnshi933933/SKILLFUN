@@ -9,8 +9,8 @@
 import { Router } from "express";
 import { createPublicClient, http, formatUnits } from "viem";
 import { db } from "@workspace/db";
-import { skillsTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { skillsTable, curatorAuthorizationsTable } from "@workspace/db";
+import { eq, and, inArray, isNull } from "drizzle-orm";
 import { SkillNFT_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
@@ -131,6 +131,51 @@ router.get("/creator/skills", async (req, res) => {
   }
 
   res.json({ skills, wallet });
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/creator/skills/:skillId/authorizations
+// Returns the list of curators who have authorized this skill + counts.
+// Public-read — data is visible on-chain anyway.
+// ---------------------------------------------------------------------------
+
+router.get("/creator/skills/:skillId/authorizations", async (req, res) => {
+  const { skillId } = req.params;
+
+  const [skill] = await db
+    .select({ tokenId: skillsTable.tokenId })
+    .from(skillsTable)
+    .where(eq(skillsTable.skillId, skillId))
+    .limit(1);
+
+  if (!skill || skill.tokenId == null) {
+    res.json({ curators: [], activeCount: 0, revokedCount: 0 });
+    return;
+  }
+
+  const rows = await db
+    .select({
+      curatorWallet: curatorAuthorizationsTable.curatorWallet,
+      authorizedAt:  curatorAuthorizationsTable.authorizedAt,
+      revokedAt:     curatorAuthorizationsTable.revokedAt,
+      authEpoch:     curatorAuthorizationsTable.authEpoch,
+    })
+    .from(curatorAuthorizationsTable)
+    .where(eq(curatorAuthorizationsTable.tokenId, skill.tokenId))
+    .orderBy(curatorAuthorizationsTable.authorizedAt);
+
+  const curators = rows.map((r) => ({
+    curatorWallet: r.curatorWallet,
+    authorizedAt:  r.authorizedAt?.toISOString() ?? null,
+    revokedAt:     r.revokedAt?.toISOString() ?? null,
+    isActive:      r.revokedAt === null && r.authEpoch !== -1,
+  }));
+
+  res.json({
+    curators,
+    activeCount:  curators.filter((c) => c.isActive).length,
+    revokedCount: curators.filter((c) => !c.isActive).length,
+  });
 });
 
 export default router;
