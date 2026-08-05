@@ -21,7 +21,7 @@ import { useLocation } from "wouter";
 import {
   Shield, AlertTriangle, CheckCircle2, Clock, RefreshCw,
   ExternalLink, Loader2, ChevronDown, ChevronRight, Layers, RotateCcw, Info,
-  Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins, Upload, Trash2,
+  Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins, Upload, Trash2, Zap,
 } from "lucide-react";
 import { useCuratorAuthorizations, useAuthorizeSkill, useSyncUnclaimedSkill, type AuthorizePhase, type SyncPhase } from "@/hooks/use-curator";
 import { bundlesApi, skillsApi, curatorApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
@@ -715,6 +715,13 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
   const sign = useEip712Sign();
   const queryClient = useQueryClient();
 
+  // Analytics (invocations + W0G earned for this bundle)
+  const { data: analytics } = useQuery({
+    queryKey:  ["bundle-analytics", bundle.bundleId],
+    queryFn:   () => bundlesApi.analytics(bundle.bundleId),
+    staleTime: 60_000,
+  });
+
   // Price editing state
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceInput,   setPriceInput]   = useState("");
@@ -933,6 +940,26 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                   </button>
                 )}
               </span>
+            )}
+
+            {/* Analytics chips */}
+            {analytics && analytics.invocations > 0 && (
+              <>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  {analytics.invocations.toLocaleString()} calls
+                </span>
+              </>
+            )}
+            {analytics && analytics.revenueW0G > 0 && (
+              <>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="text-emerald-400/80 flex items-center gap-1">
+                  <Coins className="w-3 h-3" />
+                  {analytics.revenueW0G.toFixed(4)} W0G earned
+                </span>
+              </>
             )}
           </div>
         </div>

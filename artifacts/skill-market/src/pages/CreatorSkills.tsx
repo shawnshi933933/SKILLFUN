@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Wand2, DollarSign, RefreshCw, ExternalLink, Loader2,
   ChevronDown, ChevronUp, FileText, CheckCircle2, AlertTriangle,
-  Zap, Github, RotateCcw, Pencil,
+  Zap, Github, RotateCcw, Pencil, Users, Coins, Info,
 } from "lucide-react";
 
 const SKILL_NFT_ADDRESS = getAddresses(16661).SkillNFT as `0x${string}`;
@@ -469,11 +469,98 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
 }
 
 // ---------------------------------------------------------------------------
+// CuratorsPanel — shows who authorized this skill + estimated auth-fee revenue
+// ---------------------------------------------------------------------------
+
+function CuratorsPanel({ skill }: { skill: CreatorSkill }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey:  ["skill-authorizations", skill.skillId],
+    queryFn:   () => creatorApi.listAuthorizations(skill.skillId),
+    staleTime: 60_000,
+  });
+
+  const maskWallet = (w: string) =>
+    w.length >= 10 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w;
+
+  const estimatedRevenueW0G = (() => {
+    if (!data || data.activeCount === 0) return null;
+    try {
+      const price = Number(BigInt(skill.basePrice)) / 1e18;
+      return price > 0 ? (data.activeCount * price).toFixed(4) : null;
+    } catch { return null; }
+  })();
+
+  if (isLoading) return (
+    <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading authorizations…
+    </div>
+  );
+
+  if (error || !data) return (
+    <p className="text-xs text-destructive py-2">Failed to load authorizations.</p>
+  );
+
+  return (
+    <div className="space-y-3">
+      {/* Summary chips */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+          <CheckCircle2 className="w-3 h-3" /> {data.activeCount} Active
+        </span>
+        {data.revokedCount > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-medium text-red-400">
+            {data.revokedCount} Revoked
+          </span>
+        )}
+        {estimatedRevenueW0G && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-medium text-amber-400">
+            <Coins className="w-3 h-3" /> ~{estimatedRevenueW0G} W0G auth fees
+          </span>
+        )}
+      </div>
+
+      {data.curators.length === 0 ? (
+        <p className="text-xs text-muted-foreground/50 py-1">
+          No curators have authorized this skill yet.
+        </p>
+      ) : (
+        <div className="divide-y divide-white/5 rounded-lg border border-white/8 overflow-hidden">
+          {data.curators.map((c) => (
+            <div key={c.curatorWallet}
+              className="flex items-center justify-between px-3 py-2 text-xs hover:bg-white/[0.03] transition-colors"
+            >
+              <span className="font-mono text-muted-foreground/80">{maskWallet(c.curatorWallet)}</span>
+              <div className="flex items-center gap-2">
+                {c.isActive ? (
+                  <span className="text-emerald-400 text-[10px]">Active</span>
+                ) : (
+                  <span className="text-red-400/70 text-[10px]">Revoked</span>
+                )}
+                {c.authorizedAt && (
+                  <span className="text-muted-foreground/40 text-[10px]">
+                    {new Date(c.authorizedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-[10px] text-muted-foreground/30 leading-relaxed flex items-center gap-1">
+        <Info className="w-3 h-3 shrink-0" />
+        Auth fee estimate = active curators × current base price. Actual fees paid may differ if the price changed.
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // SkillCard
 // ---------------------------------------------------------------------------
 
 function SkillCard({ skill, onRefresh }: { skill: CreatorSkill; onRefresh: () => void }) {
-  const [expanded, setExpanded] = useState<null | "price" | "content" | "edit">(null);
+  const [expanded, setExpanded] = useState<null | "price" | "content" | "edit" | "curators">(null);
 
   const basePriceDisplay = (() => {
     try {
@@ -556,6 +643,21 @@ function SkillCard({ skill, onRefresh }: { skill: CreatorSkill; onRefresh: () =>
             Edit
             {expanded === "edit" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className={`h-7 px-2 text-xs gap-1 border transition-colors ${
+              expanded === "curators"
+                ? "border-emerald-500/40 text-emerald-300 bg-emerald-500/10"
+                : "border-white/10 text-muted-foreground hover:text-emerald-300"
+            }`}
+            onClick={() => setExpanded(expanded === "curators" ? null : "curators")}
+            data-testid={`button-expand-curators-${skill.tokenId}`}
+          >
+            <Users className="w-3 h-3" />
+            Curators
+            {expanded === "curators" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
           <a
             href={`${ZEROG_SCAN}/nft/${SKILL_NFT_ADDRESS}/${skill.tokenId}`}
             target="_blank"
@@ -595,6 +697,16 @@ function SkillCard({ skill, onRefresh }: { skill: CreatorSkill; onRefresh: () =>
             <Pencil className="w-3 h-3 text-violet-400" /> Edit Skill Info
           </p>
           <EditMetaPanel skill={skill} onSuccess={() => { setExpanded(null); onRefresh(); }} />
+        </div>
+      )}
+
+      {/* Expanded: Curators */}
+      {expanded === "curators" && (
+        <div className="px-4 pb-4 border-t border-white/5 pt-3">
+          <p className="text-xs text-muted-foreground mb-3 font-medium flex items-center gap-1">
+            <Users className="w-3 h-3 text-emerald-400" /> Authorized Curators
+          </p>
+          <CuratorsPanel skill={skill} />
         </div>
       )}
     </div>

@@ -495,11 +495,30 @@ export interface CreatorSkill {
   meta:           Record<string, unknown>;
 }
 
+export interface SkillCuratorEntry {
+  curatorWallet: string;
+  authorizedAt:  string | null;
+  revokedAt:     string | null;
+  isActive:      boolean;
+}
+
+export interface SkillAuthorizationsResponse {
+  curators:     SkillCuratorEntry[];
+  activeCount:  number;
+  revokedCount: number;
+}
+
 export const creatorApi = {
   /** List all minted Skill NFTs currently owned by the given wallet (live on-chain check). */
   listOwned: (wallet: string) =>
     apiFetch<{ skills: CreatorSkill[]; wallet: string }>(
       `/creator/skills?wallet=${encodeURIComponent(wallet)}`
+    ),
+
+  /** List curators who authorized a given skill (from curator_authorizations). */
+  listAuthorizations: (skillId: string) =>
+    apiFetch<SkillAuthorizationsResponse>(
+      `/creator/skills/${encodeURIComponent(skillId)}/authorizations`
     ),
 
   /**
