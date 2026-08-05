@@ -228,6 +228,7 @@ if (attempt.status === 402) {
                 MCP Endpoint
               </div>
               <div className="space-y-2">
+                {/* Primary: POST MCP endpoint (JSON-RPC 2.0) */}
                 <div className="flex items-center gap-2">
                   <div className="flex-1 font-mono text-xs bg-background border border-white/10 rounded-lg px-3 py-2 text-muted-foreground truncate">
                     {mcpUrl}
@@ -235,12 +236,18 @@ if (attempt.status === 402) {
                   <CopyButton text={mcpUrl} />
                   <Badge variant="outline" className="border-primary/30 text-primary text-[10px] shrink-0">JSON-RPC 2.0</Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 font-mono text-xs bg-background border border-white/10 rounded-lg px-3 py-2 text-muted-foreground truncate">
+                {/* Secondary: GET tools shortcut — shown as a small text link, not a duplicate URL box */}
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50">
+                  <span>Tools list (GET):</span>
+                  <a
+                    href={toolsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-primary/60 hover:text-primary transition-colors truncate max-w-[260px]"
+                  >
                     {toolsUrl}
-                  </div>
+                  </a>
                   <CopyButton text={toolsUrl} />
-                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-[10px] shrink-0">GET · free</Badge>
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
@@ -507,7 +514,7 @@ if (attempt.status === 402) {
                   <button
                     onClick={async () => {
                       try {
-                        const guideUrl = `https://${devDomain}/mcp/agent-guide.md`;
+                        const guideUrl = `https://${devDomain}/mcp/${bundle.bundleId}/agent-guide.md`;
                         await navigator.clipboard.writeText(guideUrl);
                         toast({ title: "Link copied!", description: "Paste this URL into your agent — it will read the guide automatically." });
                       } catch {
