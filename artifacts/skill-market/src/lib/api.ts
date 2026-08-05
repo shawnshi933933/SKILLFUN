@@ -58,6 +58,8 @@ export interface DbBundle {
   subdomain:    string;
   name:         string;
   description:  string | null;
+  /** Markdown describing how agents should use the skills in this bundle. */
+  workflow:     string | null;
   ownerAddress: string;
   /** W0G wei (integer string) agents pay per proof. null = free. */
   servicePrice: string | null;

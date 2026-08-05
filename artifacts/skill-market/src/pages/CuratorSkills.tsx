@@ -13,6 +13,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAccount, useReadContracts } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -706,6 +707,18 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
   const [priceInput,   setPriceInput]   = useState("");
   const [savingPrice,  setSavingPrice]  = useState(false);
 
+  // Info editing state
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [infoFields,  setInfoFields]  = useState({
+    name:        bundle.name ?? "",
+    description: bundle.description ?? "",
+    workflow:    bundle.workflow ?? "",
+  });
+  const [savingInfo, setSavingInfo] = useState(false);
+
+  const setInfo = (k: keyof typeof infoFields, v: string) =>
+    setInfoFields(s => ({ ...s, [k]: v }));
+
   const isOwner = !!address && address.toLowerCase() === bundle.ownerAddress.toLowerCase();
 
   const handleEditPrice = (e: React.MouseEvent) => {
@@ -739,6 +752,32 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
   const handleCancelPrice = (e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingPrice(false);
+  };
+
+  const handleSaveInfo = async () => {
+    if (!infoFields.name.trim()) {
+      toast({ title: "Name is required", variant: "destructive" }); return;
+    }
+    setSavingInfo(true);
+    try {
+      const sigHeader = await sign("update-bundle");
+      await bundlesApi.update(
+        bundle.bundleId,
+        {
+          name:        infoFields.name.trim(),
+          description: infoFields.description.trim() || undefined,
+          workflow:    infoFields.workflow.trim() || undefined,
+        },
+        sigHeader,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["bundles-list"] });
+      setEditingInfo(false);
+      toast({ title: "Bundle info updated" });
+    } catch (err) {
+      toast({ title: "Save failed", description: (err as Error).message?.slice(0, 140), variant: "destructive" });
+    } finally {
+      setSavingInfo(false);
+    }
   };
 
   const openPicker  = (e: React.MouseEvent) => { e.stopPropagation(); setExpanded(true); setPickerOpen(true); };
@@ -946,18 +985,98 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
             />
           )}
 
+          {/* Inline Edit Info form */}
+          {editingInfo && isOwner && (
+            <div className="border border-violet-500/20 bg-violet-500/5 rounded-xl p-4 space-y-3">
+              <p className="text-xs font-medium text-violet-300 flex items-center gap-1">
+                <Pencil className="w-3 h-3" /> Edit Bundle Info
+              </p>
+
+              {/* Name */}
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Name</label>
+                <Input
+                  value={infoFields.name}
+                  onChange={e => setInfo("name", e.target.value)}
+                  placeholder="Bundle name"
+                  className="h-8 text-xs bg-white/5 border-white/10"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Description</label>
+                <Textarea
+                  value={infoFields.description}
+                  onChange={e => setInfo("description", e.target.value)}
+                  placeholder="What this bundle does"
+                  rows={3}
+                  className="text-xs bg-white/5 border-white/10 resize-none"
+                />
+              </div>
+
+              {/* Workflow */}
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Workflow</label>
+                <Textarea
+                  value={infoFields.workflow}
+                  onChange={e => setInfo("workflow", e.target.value)}
+                  placeholder="Describe how agents should use the skills in this bundle together"
+                  rows={4}
+                  className="text-xs bg-white/5 border-white/10 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  size="sm"
+                  onClick={() => void handleSaveInfo()}
+                  disabled={savingInfo}
+                  className="h-7 px-3 text-xs"
+                >
+                  {savingInfo
+                    ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    : <Check className="w-3 h-3 mr-1" />}
+                  {savingInfo ? "Saving…" : "Save"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditingInfo(false)}
+                  disabled={savingInfo}
+                  className="h-7 px-3 text-xs text-muted-foreground"
+                >
+                  <X className="w-3 h-3 mr-1" /> Cancel
+                </Button>
+                <span className="text-[10px] text-muted-foreground/40 ml-1">No gas required</span>
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="flex items-center justify-between pt-1">
-            {!pickerOpen && (
-              <button
-                onClick={openPicker}
-                className="text-xs text-muted-foreground/40 hover:text-primary flex items-center gap-1 transition-colors"
-                data-testid={`button-add-skills-footer-${bundle.bundleId}`}
-              >
-                <Plus className="w-3 h-3" />
-                Add skills
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {!pickerOpen && (
+                <button
+                  onClick={openPicker}
+                  className="text-xs text-muted-foreground/40 hover:text-primary flex items-center gap-1 transition-colors"
+                  data-testid={`button-add-skills-footer-${bundle.bundleId}`}
+                >
+                  <Plus className="w-3 h-3" />
+                  Add skills
+                </button>
+              )}
+              {isOwner && !editingInfo && (
+                <button
+                  onClick={() => setEditingInfo(true)}
+                  className="text-xs text-muted-foreground/40 hover:text-violet-400 flex items-center gap-1 transition-colors"
+                  data-testid={`button-edit-info-${bundle.bundleId}`}
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit info
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setLocation(`/app/bundle/${bundle.bundleId}`)}
               className="text-xs text-muted-foreground/40 hover:text-muted-foreground flex items-center gap-1 transition-colors ml-auto"
