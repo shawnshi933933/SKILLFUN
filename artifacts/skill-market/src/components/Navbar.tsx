@@ -16,6 +16,7 @@ export default function Navbar() {
     { href: "/app/curator/skills", label: "Curator", external: false },
     { href: "/app/claim", label: "Claim", external: false },
     { href: "/app/stake", label: "Stake", external: false },
+    { href: "/docs/user-guide.md", label: "Guide", external: true },
     { href: "/mcp/agent-guide.md", label: "Agent Guide", external: true },
   ];
 
