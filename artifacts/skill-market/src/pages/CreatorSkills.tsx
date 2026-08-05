@@ -313,7 +313,7 @@ function UpdateContentPanel({ skill, onSuccess }: { skill: CreatorSkill; onSucce
 }
 
 // ---------------------------------------------------------------------------
-// EditMetaPanel — edit name/description/category/version/capabilities/tags
+// EditMetaPanel — edit name/description/instructions (tags & capabilities are AI-managed)
 // ---------------------------------------------------------------------------
 
 function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: () => void }) {
@@ -326,8 +326,6 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
   const [fields, setFields] = useState({
     name:         (m.name         as string) ?? skill.skillName ?? "",
     description:  (m.description  as string) ?? "",
-    category:     (m.category     as string) ?? "",
-    version:      (m.version      as string) ?? "1.0.0",
     instructions: (m.instructions as string) ?? "",
   });
   const [saving,      setSaving]      = useState(false);
@@ -354,8 +352,6 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
         ...m,                               // preserves AI-managed tags & capabilities
         name:         fields.name.trim(),
         description:  fields.description.trim(),
-        category:     fields.category.trim(),
-        version:      fields.version.trim(),
         instructions: fields.instructions.trim(),
       };
       await creatorApi.updateMeta(skill.skillId, newMeta, sigHeader);
@@ -397,35 +393,13 @@ function EditMetaPanel({ skill, onSuccess }: { skill: CreatorSkill; onSuccess: (
 
   return (
     <div className="space-y-3">
-      {/* Name + Version row */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-2 space-y-1">
-          <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Name</label>
-          <Input
-            value={fields.name}
-            onChange={e => set("name", e.target.value)}
-            placeholder="Skill name"
-            className="h-8 text-xs bg-white/5 border-white/10"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Version</label>
-          <Input
-            value={fields.version}
-            onChange={e => set("version", e.target.value)}
-            placeholder="1.0.0"
-            className="h-8 text-xs bg-white/5 border-white/10"
-          />
-        </div>
-      </div>
-
-      {/* Category */}
+      {/* Name */}
       <div className="space-y-1">
-        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Category</label>
+        <label className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Name</label>
         <Input
-          value={fields.category}
-          onChange={e => set("category", e.target.value)}
-          placeholder="e.g. Code, Finance, Data…"
+          value={fields.name}
+          onChange={e => set("name", e.target.value)}
+          placeholder="Skill name"
           className="h-8 text-xs bg-white/5 border-white/10"
         />
       </div>

@@ -19,7 +19,6 @@ import { githubApi, skillsApi, type GitHubManifestResult, type DbSkill } from "@
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STEPS = ["Basic Info", "Ownership", "Economics", "Review & Mint"] as const;
-const CATEGORIES = ["Code", "Analysis", "Writing", "Trading", "Research", "Social"] as const;
 const ZEROG_SCAN     = "https://chainscan.0g.ai";
 import { getAddresses } from "@workspace/abi";
 const SKILL_NFT_ADDR = getAddresses(16661).SkillNFT;
@@ -31,8 +30,6 @@ interface FormData {
   name:         string;
   description:  string;
   instructions: string;
-  category:     string;
-  version:      string;
   basePrice:    string;
   capabilities: string;
   tags:         string;
@@ -44,8 +41,6 @@ const INITIAL_FORM: FormData = {
   name:         "",
   description:  "",
   instructions: "",
-  category:     "Code",
-  version:      "1.0.0",
   basePrice:    "0.01",
   capabilities: "",
   tags:         "",
@@ -171,18 +166,12 @@ export default function CreateSkill() {
           ...s.data,
           name:         s.data.name        || p.name         || slugName,
           description:  s.data.description || p.description  || "",
-          version:      s.data.version !== "1.0.0" ? s.data.version : (p.version   || "1.0.0"),
-          category:     s.data.category !== "Code"  ? s.data.category : (p.category || "Code"),
           basePrice:    s.data.basePrice !== "0.01" ? s.data.basePrice
                           : (p.basePrice != null ? String(p.basePrice) : "0.01"),
           // capabilities and tags intentionally omitted — filled by AI only
         },
       }));
 
-      // Auto-trigger AI analyze immediately after content is found
-      if (result.found && result.rawContent && result.fileType) {
-        void analyzeWithAi(result.rawContent, result.fileType);
-      }
     } catch (err) {
       console.error("[GitHubFetch] error:", err);
       setGh({ ...INITIAL_GH, status: "error", fetchedForRepo: null, warning: "Could not reach GitHub. Fill in the form manually." });
@@ -298,8 +287,6 @@ export default function CreateSkill() {
           name:         form.name.trim(),
           description:  form.description.trim(),
           instructions: form.instructions.trim() || undefined,
-          category:     form.category,
-          version:      form.version.trim(),
           basePrice:    parseFloat(effectiveBasePrice),
           capabilities,
           tags,
@@ -454,39 +441,6 @@ export default function CreateSkill() {
                     </div>
                   )}
 
-                  {/* ✨ AI Analyze button — shown once we have raw content */}
-                  {gh.status === "found" && gh.rawContent && (
-                    <div className="flex items-center gap-2 pt-0.5">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className={`gap-1.5 text-xs h-7 px-3 border transition-colors ${
-                          aiStatus === "done"
-                            ? "border-violet-500/40 text-violet-400 bg-violet-500/10"
-                            : "border-white/10 text-muted-foreground hover:text-foreground"
-                        }`}
-                        onClick={analyzeWithAi}
-                        disabled={aiStatus === "loading"}
-                      >
-                        {aiStatus === "loading" ? (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing…</>
-                        ) : aiStatus === "done" ? (
-                          <><Sparkles className="w-3 h-3" /> Re-analyze with AI</>
-                        ) : (
-                          <><Sparkles className="w-3 h-3" /> Analyze with AI</>
-                        )}
-                      </Button>
-                      {aiStatus === "done" && (
-                        <span className="text-xs text-violet-400/80">
-                          AI filled {aiFields.size} field{aiFields.size !== 1 ? "s" : ""}
-                        </span>
-                      )}
-                      {aiStatus === "error" && (
-                        <span className="text-xs text-destructive/80">Analysis failed — try again</span>
-                      )}
-                    </div>
-                  )}
                 </div>
               </Field>
 
@@ -508,81 +462,96 @@ export default function CreateSkill() {
                 />
               </Field>
 
-              <Field label="Instructions for Agents" hint="How should AI agents invoke this skill? (optional)" aiActive={aiFields.has("instructions")}>
-                <Textarea
-                  placeholder="Call this skill when you need to… Pass the following parameters…"
-                  rows={3}
-                  className="resize-none"
-                  value={form.instructions}
-                  onChange={(e) => update("instructions", e.target.value)}
-                />
-              </Field>
-
-              <Field label="Category">
-                <div className="flex flex-wrap gap-1.5">
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat}
+              {/* ─── AI Analysis section ─────────────────────────────── */}
+              <div className="space-y-4 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">AI Analysis</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Fetch your GitHub repo first, then let AI fill these fields
+                    </p>
+                  </div>
+                  {gh.status === "found" && gh.rawContent && (
+                    <Button
                       type="button"
-                      onClick={() => update("category", cat)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                        form.category === cat
-                          ? "bg-primary/20 border-primary/40 text-primary"
-                          : "bg-white/5 border-white/10 text-muted-foreground hover:text-foreground"
+                      size="sm"
+                      variant="outline"
+                      className={`gap-1.5 text-xs h-7 px-3 border transition-colors ${
+                        aiStatus === "done"
+                          ? "border-violet-500/40 text-violet-400 bg-violet-500/10"
+                          : "border-white/10 text-muted-foreground hover:text-foreground"
                       }`}
+                      onClick={analyzeWithAi}
+                      disabled={aiStatus === "loading"}
                     >
-                      {cat}
-                    </button>
-                  ))}
+                      {aiStatus === "loading" ? (
+                        <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing…</>
+                      ) : aiStatus === "done" ? (
+                        <><Sparkles className="w-3 h-3" /> Re-analyze with AI</>
+                      ) : (
+                        <><Sparkles className="w-3 h-3" /> Analyze with AI</>
+                      )}
+                    </Button>
+                  )}
                 </div>
-              </Field>
-
-              <Field label="Version">
-                <Input
-                  placeholder="1.0.0"
-                  value={form.version}
-                  onChange={(e) => update("version", e.target.value)}
-                  className="w-32"
-                />
-              </Field>
-
-              {/* Capabilities — AI-only, read-only display */}
-              <Field label="Capabilities" hint="MCP tool names — filled by AI · not editable" aiActive={aiFields.has("capabilities")}>
-                {form.capabilities ? (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-white/5 border border-white/10 rounded-lg min-h-[38px] items-center">
-                    {form.capabilities.split(",").map(c => c.trim()).filter(Boolean).map(cap => (
-                      <code key={cap} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary">
-                        {cap}
-                      </code>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 p-2.5 bg-white/5 border border-dashed border-white/10 rounded-lg min-h-[38px] text-xs text-muted-foreground/40">
-                    {aiStatus === "loading"
-                      ? <><Loader2 className="w-3 h-3 animate-spin" /> AI analyzing…</>
-                      : <><Sparkles className="w-3 h-3" /> AI will extract tool names from your skill file</>}
-                  </div>
+                {aiStatus === "done" && (
+                  <p className="text-xs text-violet-400/80 -mt-2">
+                    AI filled {aiFields.size} field{aiFields.size !== 1 ? "s" : ""}
+                  </p>
                 )}
-              </Field>
-
-              {/* Tags — AI-only, read-only display */}
-              <Field label="Tags" hint="AI-generated from skill content · not editable" aiActive={aiFields.has("tags")}>
-                {form.tags ? (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-white/5 border border-white/10 rounded-lg min-h-[38px] items-center">
-                    {form.tags.split(",").map(t => t.trim()).filter(Boolean).map(tag => (
-                      <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs text-violet-300">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 p-2.5 bg-white/5 border border-dashed border-white/10 rounded-lg min-h-[38px] text-xs text-muted-foreground/40">
-                    {aiStatus === "loading"
-                      ? <><Loader2 className="w-3 h-3 animate-spin" /> AI analyzing…</>
-                      : <><Sparkles className="w-3 h-3" /> AI will generate tags from your skill content</>}
-                  </div>
+                {aiStatus === "error" && (
+                  <p className="text-xs text-destructive/80 -mt-2">Analysis failed — try again</p>
                 )}
-              </Field>
+
+                {/* Instructions for Agents — AI-filled, user-editable */}
+                <Field label="Instructions for Agents" hint="How should AI agents invoke this skill? (optional)" aiActive={aiFields.has("instructions")}>
+                  <Textarea
+                    placeholder="Call this skill when you need to… Pass the following parameters…"
+                    rows={3}
+                    className="resize-none"
+                    value={form.instructions}
+                    onChange={(e) => update("instructions", e.target.value)}
+                  />
+                </Field>
+
+                {/* Capabilities — AI-only, read-only display */}
+                <Field label="Capabilities" hint="MCP tool names — filled by AI · not editable" aiActive={aiFields.has("capabilities")}>
+                  {form.capabilities ? (
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-white/5 border border-white/10 rounded-lg min-h-[38px] items-center">
+                      {form.capabilities.split(",").map(c => c.trim()).filter(Boolean).map(cap => (
+                        <code key={cap} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary">
+                          {cap}
+                        </code>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-2.5 bg-white/5 border border-dashed border-white/10 rounded-lg min-h-[38px] text-xs text-muted-foreground/40">
+                      {aiStatus === "loading"
+                        ? <><Loader2 className="w-3 h-3 animate-spin" /> AI analyzing…</>
+                        : <><Sparkles className="w-3 h-3" /> AI will extract tool names from your skill file</>}
+                    </div>
+                  )}
+                </Field>
+
+                {/* Tags — AI-only, read-only display */}
+                <Field label="Tags" hint="AI-generated from skill content · not editable" aiActive={aiFields.has("tags")}>
+                  {form.tags ? (
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-white/5 border border-white/10 rounded-lg min-h-[38px] items-center">
+                      {form.tags.split(",").map(t => t.trim()).filter(Boolean).map(tag => (
+                        <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs text-violet-300">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-2.5 bg-white/5 border border-dashed border-white/10 rounded-lg min-h-[38px] text-xs text-muted-foreground/40">
+                      {aiStatus === "loading"
+                        ? <><Loader2 className="w-3 h-3 animate-spin" /> AI analyzing…</>
+                        : <><Sparkles className="w-3 h-3" /> AI will generate tags from your skill content</>}
+                    </div>
+                  )}
+                </Field>
+              </div>
             </div>
           )}
 
@@ -697,8 +666,6 @@ export default function CreateSkill() {
               <div className="space-y-2 text-sm">
                 <ReviewRow label="Repo"         value={form.repoUrl} />
                 <ReviewRow label="Name"         value={form.name} />
-                <ReviewRow label="Category"     value={form.category} />
-                <ReviewRow label="Version"      value={form.version} />
                 {form.ownerMode === "mine" && (
                   <ReviewRow label="Base Price" value={`${form.basePrice} W0G`} />
                 )}
