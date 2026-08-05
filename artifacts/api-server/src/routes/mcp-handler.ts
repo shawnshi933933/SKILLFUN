@@ -28,8 +28,9 @@ import {
   skillsTable,
   paymentProofsTable,
   skillContentCacheTable,
+  invocationLogsTable,
 } from "@workspace/db";
-import { eq, asc, and, sql } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { downloadSkillContent } from "../services/storage.js"; // used in getSkillContent helper
 import { getAddresses, ZEROG_MAINNET, SkillNFT_ABI } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
@@ -1251,13 +1252,15 @@ router.post("/:bundleId/mcp", async (req, res) => {
         // ── fetch + decrypt content (cache-first) ─────────────────────────
         try {
           const content = await getSkillContent(skill);
-          // Increment call_count on the proof used — fire-and-forget so it never blocks the response
-          if (proofToken) {
-            db.update(paymentProofsTable)
-              .set({ callCount: sql`${paymentProofsTable.callCount} + 1` })
-              .where(eq(paymentProofsTable.token, proofToken))
-              .catch((err) => logger.warn({ err, proofToken }, "mcp: failed to increment call_count"));
-          }
+          // Log the invocation — fire-and-forget so it never blocks the response.
+          // One row per tools/call; drives both the Invocations counter and the Activity feed.
+          db.insert(invocationLogsTable).values({
+            id:          `inv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+            skillId:     skill.skillId,
+            bundleId,
+            agentWallet: agentWallet?.toLowerCase() ?? "unknown",
+            proofToken:  proofToken ?? null,
+          }).catch((err) => logger.warn({ err, skillId: skill.skillId }, "mcp: failed to log invocation"));
           logger.info({ bundleId, toolName, skillId: skill.skillId }, "mcp tools/call success");
           res.json(jsonRpcOk(id, {
             content: [{ type: "text", text: content }],

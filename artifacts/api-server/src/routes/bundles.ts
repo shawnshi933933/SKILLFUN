@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { bundlesTable, bundleSkillsTable, skillsTable, paymentProofsTable } from "@workspace/db";
-import { eq, desc, asc, inArray, count, sum, and, sql } from "drizzle-orm";
+import { bundlesTable, bundleSkillsTable, skillsTable, paymentProofsTable, invocationLogsTable } from "@workspace/db";
+import { eq, desc, asc, inArray, count, and, sql } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -113,27 +113,26 @@ router.get("/bundles/:id/analytics", async (req, res) => {
     return;
   }
 
-  const [rawActivity, countsBySkill, paidCountsBySkill] = await Promise.all([
-    // Only select non-sensitive columns — never pull token or txHash for public responses
+  const [rawActivity, invocCountsBySkill, paidCountsBySkill] = await Promise.all([
+    // Recent tools/call events → Activity feed (newest first, limit 50)
     db
       .select({
-        skillId:        paymentProofsTable.skillId,
-        agentWallet:    paymentProofsTable.agentWallet,
-        contentVersion: paymentProofsTable.contentVersion,
-        issuedAt:       paymentProofsTable.issuedAt,
+        skillId:     invocationLogsTable.skillId,
+        agentWallet: invocationLogsTable.agentWallet,
+        calledAt:    invocationLogsTable.calledAt,
       })
-      .from(paymentProofsTable)
-      .where(inArray(paymentProofsTable.skillId, skillIds))
-      .orderBy(desc(paymentProofsTable.issuedAt))
+      .from(invocationLogsTable)
+      .where(inArray(invocationLogsTable.skillId, skillIds))
+      .orderBy(desc(invocationLogsTable.calledAt))
       .limit(50),
-    // SUM(call_count) per skill → true Invocations (each tools/call increments by 1)
+    // COUNT of invocation_log rows per skill → Invocations counter
     db
-      .select({ skillId: paymentProofsTable.skillId, total: sum(paymentProofsTable.callCount) })
-      .from(paymentProofsTable)
-      .where(inArray(paymentProofsTable.skillId, skillIds))
-      .groupBy(paymentProofsTable.skillId),
-    // COUNT of paid proofs (tx_hash starts with 0x) → W0G Earned
-    // Free proofs use a synthetic key like "free:wallet:bundleId:tokenId"
+      .select({ skillId: invocationLogsTable.skillId, total: count() })
+      .from(invocationLogsTable)
+      .where(inArray(invocationLogsTable.skillId, skillIds))
+      .groupBy(invocationLogsTable.skillId),
+    // COUNT of paid proofs (txHash starts with 0x) → W0G Earned
+    // Free proofs use a synthetic key "free:wallet:bundleId:tokenId"
     db
       .select({ skillId: paymentProofsTable.skillId, total: count() })
       .from(paymentProofsTable)
@@ -146,7 +145,7 @@ router.get("/bundles/:id/analytics", async (req, res) => {
 
   const skillMap = Object.fromEntries(bundleSkills.map((r) => [r.skill.skillId, r.skill]));
 
-  // Sanitize activity: mask agent wallet, omit token + txHash entirely
+  // Activity: one entry per actual tools/call, mask wallet
   const recentActivity = rawActivity.map((row) => {
     const skill     = skillMap[row.skillId];
     const meta      = (skill?.meta as Record<string, unknown>) ?? {};
@@ -155,36 +154,33 @@ router.get("/bundles/:id/analytics", async (req, res) => {
       skillId:           row.skillId,
       skillName,
       agentWalletMasked: maskWallet(row.agentWallet),
-      contentVersion:    row.contentVersion,
-      issuedAt:          row.issuedAt,
+      issuedAt:          row.calledAt,   // keep field name for frontend compatibility
     };
   });
 
   // W0G Earned = paid proofs (txHash starts with 0x) × servicePrice.
-  // Free proofs use a synthetic key "free:wallet:bundleId:tokenId" — those have
-  // no on-chain transfer and must not be counted as revenue.
+  // Free proofs use a synthetic key "free:wallet:bundleId:tokenId" — no real transfer.
   const servicePriceW0G = bundle.servicePrice && bundle.servicePrice !== "0"
     ? Number(BigInt(bundle.servicePrice)) / 1e18
     : null;
 
-  // Build a lookup: skillId → paid proof count
   const paidCountMap = Object.fromEntries(
     paidCountsBySkill.map((r) => [r.skillId, Number(r.total)])
   );
+  const invocsMap = Object.fromEntries(
+    invocCountsBySkill.map((r) => [r.skillId, Number(r.total)])
+  );
 
-  const skillBreakdown = countsBySkill.map((row) => {
-    const skill     = skillMap[row.skillId];
-    const meta      = (skill?.meta as Record<string, unknown>) ?? {};
-    const skillName = (meta.name as string | undefined) ?? row.skillId;
-    const paidCount = paidCountMap[row.skillId] ?? 0;
-    // sum() returns string | null in Drizzle — coerce to number
-    const invocations = Number(row.total ?? 0);
-    // Revenue only from real on-chain payments; 0 if bundle is free
-    const priceW0G  = servicePriceW0G ?? 0;
+  const skillBreakdown = bundleSkills.map(({ skill }) => {
+    const meta      = (skill.meta as Record<string, unknown>) ?? {};
+    const skillName = (meta.name as string | undefined) ?? skill.skillId;
+    const paidCount   = paidCountMap[skill.skillId]  ?? 0;
+    const invocations = invocsMap[skill.skillId]     ?? 0;
+    const priceW0G    = servicePriceW0G ?? 0;
     return {
-      skillId:     row.skillId,
+      skillId:     skill.skillId,
       skillName,
-      invocations,           // actual tools/call count (SUM of call_count)
+      invocations,           // actual tools/call count from invocation_logs
       paidProofs:  paidCount,// on-chain paid proofs only
       revenueW0G:  paidCount * priceW0G,
     };

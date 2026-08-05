@@ -187,9 +187,6 @@ export const paymentProofsTable = pgTable(
     bundleId:       text("bundle_id"),
     issuedAt:       timestamp("issued_at").notNull().defaultNow(),
     expiresAt:      timestamp("expires_at"),                     // null = version-gated only
-    /** Incremented on every successful tools/call that uses this proof.
-     *  0 at issuance; first actual call bumps it to 1. Use SUM(callCount) for true invocation counts. */
-    callCount:      integer("call_count").notNull().default(0),
   },
   (t) => [
     index("payment_proofs_skill_idx").on(t.skillId),
@@ -202,6 +199,29 @@ export const paymentProofsTable = pgTable(
 );
 
 export type PaymentProof = typeof paymentProofsTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// invocation_logs  (one row per successful MCP tools/call — drives Invocations counter + Activity feed)
+// ---------------------------------------------------------------------------
+export const invocationLogsTable = pgTable(
+  "invocation_logs",
+  {
+    id:          text("id").primaryKey(),                        // inv_xxxx
+    skillId:     text("skill_id").notNull().references(() => skillsTable.skillId, { onDelete: "cascade" }),
+    bundleId:    text("bundle_id").notNull(),
+    agentWallet: text("agent_wallet").notNull(),                 // lowercased EVM address
+    proofToken:  text("proof_token"),                            // null for legacy / free proofs
+    calledAt:    timestamp("called_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("invocation_logs_skill_idx").on(t.skillId),
+    index("invocation_logs_bundle_idx").on(t.bundleId),
+    index("invocation_logs_wallet_idx").on(t.agentWallet),
+    index("invocation_logs_called_at_idx").on(t.calledAt),
+  ]
+);
+
+export type InvocationLog = typeof invocationLogsTable.$inferSelect;
 
 // ---------------------------------------------------------------------------
 // curator_authorizations  (tracks who authorized which skill + epoch)
