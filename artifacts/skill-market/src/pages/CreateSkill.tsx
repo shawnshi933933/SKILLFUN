@@ -15,6 +15,7 @@ import { useSelfMint, type MintPhase } from "@/hooks/use-self-mint";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { githubApi, skillsApi, type GitHubManifestResult, type DbSkill } from "@/lib/api";
+import { useAuthMe } from "@/hooks/use-skills";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ export default function CreateSkill() {
   const [, setLocation] = useLocation();
   const { address } = useAccount();
   const { state: mintState, mint, reset } = useSelfMint();
+  const { data: authMe } = useAuthMe();
 
   const [step, setStep]   = useState(0);
   const [fs, setFs]       = useState<FormState>(INITIAL_FS);
@@ -614,6 +616,21 @@ export default function CreateSkill() {
                   </div>
                 </button>
               </div>
+
+              {/* ── Ownership mismatch warning ─────────────────────── */}
+              {(() => {
+                const repoOwner = form.repoUrl.split("/")[0].toLowerCase();
+                const ghUser = authMe?.githubUsername?.toLowerCase();
+                return form.ownerMode === "mine" && ghUser && repoOwner && ghUser !== repoOwner ? (
+                  <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/8 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-amber-300 font-medium">This repo belongs to <code>{repoOwner}</code>, not your GitHub account (<code>{authMe?.githubUsername}</code>).</span>
+                      <span className="text-muted-foreground ml-1">If you are not the actual owner, select <strong>Community Registration</strong> instead — the real owner can claim the NFT later via the Oracle flow.</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
               {!address ? (
                 <div className="space-y-3">

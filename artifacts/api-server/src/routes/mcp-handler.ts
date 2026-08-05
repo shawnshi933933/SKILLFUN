@@ -1408,7 +1408,9 @@ function skillDisplayName(skill: typeof skillsTable.$inferSelect, bundleSubdomai
 
 function buildTool(bundleSubdomain: string, skill: typeof skillsTable.$inferSelect) {
   const meta = (skill.meta as Record<string, unknown>) ?? {};
-  const description = (meta.description as string) || (meta.name as string) || skill.repoUrl;
+  const base = (meta.description as string) || (meta.name as string) || skill.repoUrl;
+  const instructions = (meta.instructions as string | undefined)?.trim() ?? "";
+  const description = instructions ? `${base}\n\nAgent instructions: ${instructions}` : base;
   return {
     name: `${bundleSubdomain}:${skill.tokenId ?? skill.skillId}`,
     description,
