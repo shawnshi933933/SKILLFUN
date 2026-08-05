@@ -66,6 +66,10 @@ export default function Market() {
   useEffect(() => {
     const params = new URLSearchParams(urlSearch);
     setTab(params.get("tab") === "bundles" ? "bundles" : "skills");
+    const tagParam = params.get("tag");
+    if (tagParam) {
+      setSelectedTags(new Set([tagParam]));
+    }
   }, [urlSearch]);
 
   const [search, setSearch]               = useState("");

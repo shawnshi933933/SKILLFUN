@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Lock, Package, Zap } from "lucide-react";
 
@@ -36,9 +36,18 @@ export interface SkillCardData {
 }
 
 export default function SkillCard({ skill }: { skill: SkillCardData }) {
-  const tags         = skill.tags         ?? [];
-  const bundleCount  = skill.bundleCount  ?? 0;
-  const mcpToolName  = skill.mcpToolName  ?? skill.name.toLowerCase().replace(/\s+/g, "_");
+  const [, navigate]  = useLocation();
+  const tags          = skill.tags         ?? [];
+  const bundleCount   = skill.bundleCount  ?? 0;
+  const mcpToolName   = skill.mcpToolName  ?? skill.name.toLowerCase().replace(/\s+/g, "_");
+  const visibleTags   = tags.slice(0, 3);
+  const extraTagCount = tags.length - visibleTags.length;
+
+  function handleTagClick(e: React.MouseEvent, tag: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/app/market?tag=${encodeURIComponent(tag)}`);
+  }
 
   return (
     <Link href={`/app/skill/${skill.id}`} data-testid={`card-skill-${skill.id}`}>
@@ -79,11 +88,20 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
 
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
-            {tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10">
+            {visibleTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={(e) => handleTagClick(e, tag)}
+                className="text-xs px-2 py-0.5 rounded-full bg-card border border-white/10 text-muted-foreground hover:text-foreground hover:border-white/30 transition-colors"
+              >
                 {tag}
-              </span>
+              </button>
             ))}
+            {extraTagCount > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-muted-foreground/60">
+                +{extraTagCount} more
+              </span>
+            )}
           </div>
         )}
 
