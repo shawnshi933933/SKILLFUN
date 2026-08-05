@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Layers, Coins } from "lucide-react";
 
@@ -36,6 +36,13 @@ function formatServicePrice(wei: string | null | undefined): string {
 export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
   const tags       = bundle.tags ?? [];
   const skillCount = bundle.skillCount ?? 0;
+  const [, navigate] = useLocation();
+
+  function handleTagClick(e: React.MouseEvent, tag: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/app/market?tab=bundles&tag=${encodeURIComponent(tag)}`);
+  }
 
   return (
     <Link href={`/app/bundle/${bundle.id}`} data-testid={`card-bundle-${bundle.id}`}>
@@ -69,10 +76,19 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
             {tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10">
+              <button
+                key={tag}
+                onClick={(e) => handleTagClick(e, tag)}
+                className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10 hover:border-accent/40 hover:text-accent hover:bg-accent/10 transition-colors"
+              >
                 {tag}
-              </span>
+              </button>
             ))}
+            {tags.length > 3 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground/50 border border-white/10">
+                +{tags.length - 3} more
+              </span>
+            )}
           </div>
         )}
 

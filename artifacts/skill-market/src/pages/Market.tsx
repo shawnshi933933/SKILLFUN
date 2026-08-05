@@ -88,6 +88,11 @@ export default function Market() {
     new Set(skills.flatMap((s) => s.tags))
   ).sort();
 
+  // Collect all unique tags across all bundles, sorted alphabetically
+  const allBundleTags = Array.from(
+    new Set(bundles.flatMap((b) => b.tags))
+  ).sort();
+
   function toggleTag(tag: string) {
     setSelectedTags((prev) => {
       const next = new Set(prev);
@@ -105,10 +110,12 @@ export default function Market() {
     return matchSearch && matchCategory && matchEncrypted && matchTags;
   });
 
-  const filteredBundles = bundles.filter((b) =>
-    b.name.toLowerCase().includes(search.toLowerCase()) ||
-    (b.description ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredBundles = bundles.filter((b) => {
+    const matchSearch = b.name.toLowerCase().includes(search.toLowerCase()) ||
+      (b.description ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchTags = selectedTags.size === 0 || [...selectedTags].every((t) => b.tags.includes(t));
+    return matchSearch && matchTags;
+  });
 
   const totalInvocations = skills.reduce((s, k) => s + k.invocations, 0);
 
@@ -133,14 +140,14 @@ export default function Market() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 bg-card border border-white/10 rounded-lg p-1">
               <button
-                onClick={() => setTab("skills")}
+                onClick={() => { setTab("skills"); setSelectedTags(new Set()); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "skills" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
                 data-testid="tab-skills"
               >
                 <Zap className="w-3.5 h-3.5" /> Skills
               </button>
               <button
-                onClick={() => setTab("bundles")}
+                onClick={() => { setTab("bundles"); setSelectedTags(new Set()); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "bundles" ? "bg-accent/20 text-accent" : "text-muted-foreground hover:text-foreground"}`}
                 data-testid="tab-bundles"
               >
@@ -223,6 +230,40 @@ export default function Market() {
                 onClick={() => setSelectedTags(new Set())}
                 className="ml-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
                 data-testid="tag-clear"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Tag cloud — shown only on bundles tab when there are tags */}
+        {tab === "bundles" && allBundleTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-6" data-testid="bundle-tag-cloud">
+            <span className="text-xs text-muted-foreground mr-1">Tags:</span>
+            {allBundleTags.map((tag) => {
+              const active = selectedTags.has(tag);
+              return (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  data-testid={`bundle-tag-${tag}`}
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                    active
+                      ? "bg-accent/20 text-accent border-accent/40"
+                      : "bg-card border-white/10 text-muted-foreground hover:text-foreground hover:border-white/30"
+                  }`}
+                >
+                  {active && <span className="mr-1">✕</span>}
+                  {tag}
+                </button>
+              );
+            })}
+            {selectedTags.size > 0 && (
+              <button
+                onClick={() => setSelectedTags(new Set())}
+                className="ml-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                data-testid="bundle-tag-clear"
               >
                 Clear
               </button>
