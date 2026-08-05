@@ -10,8 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, Bot, Layers, Zap, Loader2, AlertCircle } from "lucide-react";
 
-const CATEGORIES = ["All", "Trading", "Writing", "Analysis", "Code", "Research", "Social"] as const;
-
 /** Adapt a DbSkill to the shape SkillCard expects */
 function adaptSkill(s: DbSkill) {
   const meta = s.meta as Record<string, unknown>;
@@ -19,8 +17,6 @@ function adaptSkill(s: DbSkill) {
     id:                s.skillId,
     name:              (meta.name as string | undefined) ?? s.repoUrl.split("/").pop() ?? s.skillId,
     description:       (meta.description as string | undefined) ?? s.repoUrl,
-    category:          (meta.category as string | undefined) ?? "Code",
-    version:           (meta.version as string | undefined) ?? "1.0.0",
     basePrice:         (meta.basePrice as number | undefined) ?? 0,
     invocations:       (meta.invocations as number | undefined) ?? 0,
     volume:            (meta.volume as number | undefined) ?? 0,
@@ -37,6 +33,7 @@ function adaptSkill(s: DbSkill) {
     isLive:            s.mintStatus === "minted" || s.mintStatus === "claimed",
     // AI-generated tags from meta
     tags:              (meta.tags as string[] | undefined) ?? [],
+    bundleCount:       s.bundleCount ?? 0,
   };
 }
 
@@ -73,7 +70,6 @@ export default function Market() {
   }, [urlSearch]);
 
   const [search, setSearch]               = useState("");
-  const [category, setCategory]           = useState<string>("All");
   const [encryptedOnly, setEncryptedOnly] = useState(false);
   const [selectedTags, setSelectedTags]   = useState<Set<string>>(new Set());
 
@@ -104,10 +100,9 @@ export default function Market() {
 
   const filteredSkills = skills.filter((s) => {
     const matchSearch    = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
-    const matchCategory  = category === "All" || s.category === category;
     const matchEncrypted = !encryptedOnly || s.encryptionEnabled;
     const matchTags      = selectedTags.size === 0 || [...selectedTags].every((t) => s.tags.includes(t));
-    return matchSearch && matchCategory && matchEncrypted && matchTags;
+    return matchSearch && matchEncrypted && matchTags;
   });
 
   const filteredBundles = bundles.filter((b) => {
@@ -171,35 +166,17 @@ export default function Market() {
           </div>
 
           {tab === "skills" && (
-            <>
-              <div className="flex flex-wrap gap-1.5">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategory(cat)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                      category === cat
-                        ? "bg-primary/20 text-primary border border-primary/30"
-                        : "bg-card border border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/5"
-                    }`}
-                    data-testid={`filter-category-${cat.toLowerCase()}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setEncryptedOnly(!encryptedOnly)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  encryptedOnly
-                    ? "bg-primary/20 border-primary/30 text-primary"
-                    : "bg-card border-white/10 text-muted-foreground hover:text-foreground"
-                }`}
-                data-testid="filter-encrypted"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" /> Encrypted
-              </button>
-            </>
+            <button
+              onClick={() => setEncryptedOnly(!encryptedOnly)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                encryptedOnly
+                  ? "bg-primary/20 border-primary/30 text-primary"
+                  : "bg-card border-white/10 text-muted-foreground hover:text-foreground"
+              }`}
+              data-testid="filter-encrypted"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Encrypted
+            </button>
           )}
         </div>
 

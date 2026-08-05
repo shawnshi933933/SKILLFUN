@@ -157,7 +157,6 @@ export default function Profile() {
                       <p className="text-xs font-mono text-muted-foreground/60 mb-1">{skill.mcpToolName}()</p>
                       <p className="text-sm text-muted-foreground line-clamp-2">{skill.description}</p>
                     </div>
-                    <Badge variant="outline" className="border-primary/30 text-primary shrink-0">{skill.category}</Badge>
                   </div>
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     <div className="bg-background rounded-lg p-3">

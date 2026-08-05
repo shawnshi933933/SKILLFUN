@@ -23,8 +23,6 @@ function skillToCard(s: DbSkill): SkillCardData {
     id:                s.skillId,
     name:              (meta.name as string)         || s.repoUrl.split("/").pop() || s.repoUrl,
     description:       (meta.description as string)  || "",
-    category:          (meta.category as string)     || "Code",
-    version:           (meta.version as string)      || "1.0.0",
     basePrice:         (meta.basePrice as number)    ?? 0,
     invocations:       0,
     creatorShare:      10,

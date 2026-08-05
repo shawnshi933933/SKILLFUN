@@ -2,21 +2,10 @@ import { Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Lock, Package, Zap } from "lucide-react";
 
-const categoryColors: Record<string, string> = {
-  Trading:  "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
-  Writing:  "border-blue-500/40 text-blue-400 bg-blue-500/10",
-  Analysis: "border-purple-500/40 text-purple-400 bg-purple-500/10",
-  Code:     "border-green-500/40 text-green-400 bg-green-500/10",
-  Research: "border-orange-500/40 text-orange-400 bg-orange-500/10",
-  Social:   "border-pink-500/40 text-pink-400 bg-pink-500/10",
-};
-
 export interface SkillCardData {
   id:                string;
   name:              string;
   description:       string;
-  category:          string;
-  version:           string;
   basePrice:         number;
   invocations:       number;
   creatorShare:      number;
@@ -61,11 +50,8 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
           </div>
         )}
 
-        {/* Category + encryption */}
+        {/* Encryption + live badges */}
         <div className="flex items-start gap-1.5 mb-3">
-          <Badge variant="outline" className={`text-xs ${categoryColors[skill.category] ?? "border-white/20 text-muted-foreground"}`}>
-            {skill.category}
-          </Badge>
           {skill.encryptionEnabled && (
             <Badge variant="outline" className="text-xs border-cyan-500/40 text-cyan-400 bg-cyan-500/10 gap-1">
               <Lock className="w-3 h-3" /> Encrypted

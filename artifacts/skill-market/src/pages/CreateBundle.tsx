@@ -113,8 +113,6 @@ export default function CreateBundle() {
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     availableSkills.forEach((s) => {
-      const cat = getMeta<string>(s, "category", "");
-      if (cat) tags.add(cat);
       const skillTags = getMeta<string[]>(s, "tags", []);
       skillTags.forEach((t) => tags.add(t));
     });
@@ -133,9 +131,8 @@ export default function CreateBundle() {
     }
     if (activeTag) {
       list = list.filter((s) => {
-        const cat  = getMeta<string>(s, "category", "");
         const tags = getMeta<string[]>(s, "tags", []);
-        return cat === activeTag || tags.includes(activeTag);
+        return tags.includes(activeTag);
       });
     }
     return sortSkills(list, sortKey);
@@ -406,7 +403,6 @@ export default function CreateBundle() {
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                   {filteredSkills.map((skill) => {
                     const name        = skillDisplayName(skill);
-                    const category    = getMeta<string>(skill, "category", "");
                     const description = getMeta<string>(skill, "description", "");
                     const basePrice   = getMeta<number>(skill, "basePrice", 0);
                     const invocations = getMeta<number>(skill, "invocations", 0);
@@ -442,9 +438,6 @@ export default function CreateBundle() {
 
                             {/* Stats row — always shown */}
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
-                              {category && (
-                                <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px]">{category}</span>
-                              )}
                               <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
                                 <Star className={`w-3 h-3 ${stars > 0 ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/40"}`} />
                                 {stars > 0 ? starsLabel : "—"}

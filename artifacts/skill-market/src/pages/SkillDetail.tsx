@@ -78,7 +78,6 @@ export default function SkillDetail() {
 
   const name        = (meta.name as string | undefined) ?? skill.repoUrl.split("/").pop() ?? skill.skillId;
   const description = (meta.description as string | undefined) ?? `Registered from ${skill.repoUrl}`;
-  const category    = (meta.category as string | undefined) ?? "Code";
   const version     = (meta.version as string | undefined) ?? "1.0.0";
   // Prefer chain-read basePrice (from stats); fall back to meta until stats load
   const basePrice = statsData?.basePriceWei != null
@@ -174,7 +173,6 @@ export default function SkillDetail() {
             {/* Header */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <Badge variant="outline" className="border-primary/30 text-primary">{category}</Badge>
                 <Badge variant="outline" className="border-white/20 text-muted-foreground">v{version}</Badge>
                 {isMinted && (
                   <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 gap-1">
