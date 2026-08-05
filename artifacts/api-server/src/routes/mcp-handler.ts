@@ -118,6 +118,8 @@ function send402(
     return;
   }
 
+  const isFreeBundle = !bundle.servicePrice || bundle.servicePrice === "0";
+
   res.status(402).json({
     error: "Payment required",
     reason,
@@ -136,6 +138,26 @@ function send402(
       },
     ],
     proveEndpoint: "/api/mcp/payment/prove",
+    ...(isFreeBundle && {
+      freeAccess: {
+        instructions:
+          "This Bundle is free — no W0G transfer needed. " +
+          "Sign the message in `signMessage` with your agent wallet (EIP-191 personal_sign / eth_sign / signMessage), " +
+          "then POST the fields in `proveBody` (with your actual address and signature) to the proveEndpoint. " +
+          "You will receive a `proof` token; include it as the `X-402-Payment-Proof` header and your wallet as `X-402-Agent-Wallet` on the next tools/call.",
+        signMessage: `SkillFun free access: ${bundle.bundleId}:${skill.tokenId}:{YOUR_WALLET_ADDRESS}`,
+        proveBody: {
+          tokenId:     skill.tokenId,
+          bundleId:    bundle.bundleId,
+          agentWallet: "{YOUR_WALLET_ADDRESS}",
+          signature:   "{YOUR_EIP191_SIGNATURE}",
+        },
+        retryWith: {
+          header_X_402_Payment_Proof: "{proof from proveEndpoint response}",
+          header_X_402_Agent_Wallet:  "{YOUR_WALLET_ADDRESS}",
+        },
+      },
+    }),
   });
 }
 
