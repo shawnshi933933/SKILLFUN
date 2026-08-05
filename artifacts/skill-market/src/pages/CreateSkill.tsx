@@ -251,9 +251,12 @@ export default function CreateSkill() {
 
   // ── Validation ─────────────────────────────────────────────────────────────
 
+  // "My Repo" requires a GitHub session to verify ownership
+  const needsGithubAuth = form.ownerMode === "mine" && !authMe?.githubUsername;
+
   const canNext = () => {
     if (step === 0) return gh.status !== "loading" && !duplicate && form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
-    if (step === 1) return !!address && !ownershipMismatch;    // Ownership — wallet connected + no verified mismatch
+    if (step === 1) return !!address && !ownershipMismatch && !needsGithubAuth;    // Ownership — wallet connected + GitHub verified (for "mine") + no mismatch
     if (step === 2) return parseFloat(form.basePrice) >= 0;   // Economics — only shown for "mine"
     return true;
   };
@@ -622,6 +625,25 @@ export default function CreateSkill() {
                   </div>
                 </button>
               </div>
+
+              {/* ── GitHub sign-in required for "My Repo" ──────────── */}
+              {needsGithubAuth && (
+                <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-sky-500/40 bg-sky-500/10 text-xs">
+                  <Github className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1.5">
+                    <p className="text-sky-300 font-medium">GitHub sign-in required to verify ownership</p>
+                    <p className="text-muted-foreground">
+                      We need to confirm you own <code className="font-mono text-foreground">{form.repoUrl.split("/")[0]}</code> before minting the iNFT to your wallet.
+                    </p>
+                    <a
+                      href={`/api/auth/github?return_to=${encodeURIComponent(window.location.pathname)}`}
+                      className="inline-flex items-center gap-1.5 text-sky-400 hover:text-sky-300 font-medium underline underline-offset-2 transition-colors"
+                    >
+                      <Github className="w-3 h-3" /> Sign in with GitHub
+                    </a>
+                  </div>
+                </div>
+              )}
 
               {/* ── Ownership mismatch warning ─────────────────────── */}
               {ownershipMismatch && (
