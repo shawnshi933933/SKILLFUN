@@ -215,6 +215,26 @@ router.post("/skills/prepare-mint", async (req, res) => {
   // and "owner/repo" are treated as the same repo everywhere in the system.
   const normalizedRepoUrl = repoUrl.trim().replace(/\/+$/, "");
 
+  // ── Server-side GitHub ownership guard (ownerMode: "mine") ──────────────
+  // Prevents anyone from minting someone else's repo as their own by calling
+  // the API directly (bypassing the frontend ownership check).
+  if (ownerMode === "mine") {
+    const sessionGithubUser = (req.session as Record<string, unknown>)?.githubUsername as string | undefined;
+    if (!sessionGithubUser) {
+      apiError(res, ErrorCode.UNAUTHORIZED,
+        "GitHub login required to mint in 'My Repo' mode. Complete GitHub OAuth in the Create flow first.");
+      return;
+    }
+    // repoUrl format: "owner/repo[/tree/branch/...]" — owner is always first segment
+    const repoOwner = normalizedRepoUrl.split("/")[0].toLowerCase();
+    if (sessionGithubUser.toLowerCase() !== repoOwner) {
+      apiError(res, ErrorCode.FORBIDDEN,
+        `GitHub ownership mismatch: repo belongs to '${repoOwner}' but you are authenticated as '${sessionGithubUser}'. Use 'Not My Repo' mode to mint repos you don't own.`);
+      return;
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   // ── Repo uniqueness guard ────────────────────────────────────────────────
   // Block minting if this repo already has a minted or claimed Skill NFT.
   // Pending records (not yet on-chain) are ignored — they may be stale drafts.
