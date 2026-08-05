@@ -29,10 +29,10 @@ router.get("/bundles", async (_req, res) => {
         .where(inArray(bundleSkillsTable.bundleId, bundleIds))
         .groupBy(bundleSkillsTable.bundleId),
       db
-        .select({ bundleId: paymentProofsTable.bundleId, cnt: count() })
-        .from(paymentProofsTable)
-        .where(inArray(paymentProofsTable.bundleId, bundleIds))
-        .groupBy(paymentProofsTable.bundleId),
+        .select({ bundleId: invocationLogsTable.bundleId, cnt: count() })
+        .from(invocationLogsTable)
+        .where(inArray(invocationLogsTable.bundleId, bundleIds))
+        .groupBy(invocationLogsTable.bundleId),
     ]);
     for (const row of skillRows)  skillCounts[row.bundleId]      = Number(row.cnt);
     for (const row of invokeRows) invocationCounts[row.bundleId] = Number(row.cnt);
