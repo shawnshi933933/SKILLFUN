@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { bundlesTable, bundleSkillsTable, skillsTable, paymentProofsTable } from "@workspace/db";
-import { eq, desc, asc, inArray, count } from "drizzle-orm";
+import { eq, desc, asc, inArray, count, and, sql } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -113,7 +113,7 @@ router.get("/bundles/:id/analytics", async (req, res) => {
     return;
   }
 
-  const [rawActivity, countsBySkill] = await Promise.all([
+  const [rawActivity, countsBySkill, paidCountsBySkill] = await Promise.all([
     // Only select non-sensitive columns — never pull token or txHash for public responses
     db
       .select({
@@ -126,10 +126,21 @@ router.get("/bundles/:id/analytics", async (req, res) => {
       .where(inArray(paymentProofsTable.skillId, skillIds))
       .orderBy(desc(paymentProofsTable.issuedAt))
       .limit(50),
+    // All proofs → Invocations counter
     db
       .select({ skillId: paymentProofsTable.skillId, total: count() })
       .from(paymentProofsTable)
       .where(inArray(paymentProofsTable.skillId, skillIds))
+      .groupBy(paymentProofsTable.skillId),
+    // Only paid proofs (tx_hash starts with 0x) → W0G Earned
+    // Free proofs use a synthetic key like "free:wallet:bundleId:tokenId"
+    db
+      .select({ skillId: paymentProofsTable.skillId, total: count() })
+      .from(paymentProofsTable)
+      .where(and(
+        inArray(paymentProofsTable.skillId, skillIds),
+        sql`${paymentProofsTable.txHash} LIKE '0x%'`,
+      ))
       .groupBy(paymentProofsTable.skillId),
   ]);
 
@@ -149,26 +160,31 @@ router.get("/bundles/:id/analytics", async (req, res) => {
     };
   });
 
-  // Revenue = invocations × bundle servicePrice (W0G wei → W0G decimal).
-  // We use servicePrice rather than meta.basePrice because that's what agents
-  // actually pay per proof. Fall back to meta.basePrice only when servicePrice
-  // is not set (free bundles still might charge per-skill).
-  const servicePriceW0G = bundle.servicePrice
+  // W0G Earned = paid proofs (txHash starts with 0x) × servicePrice.
+  // Free proofs use a synthetic key "free:wallet:bundleId:tokenId" — those have
+  // no on-chain transfer and must not be counted as revenue.
+  const servicePriceW0G = bundle.servicePrice && bundle.servicePrice !== "0"
     ? Number(BigInt(bundle.servicePrice)) / 1e18
     : null;
+
+  // Build a lookup: skillId → paid proof count
+  const paidCountMap = Object.fromEntries(
+    paidCountsBySkill.map((r) => [r.skillId, Number(r.total)])
+  );
 
   const skillBreakdown = countsBySkill.map((row) => {
     const skill     = skillMap[row.skillId];
     const meta      = (skill?.meta as Record<string, unknown>) ?? {};
     const skillName = (meta.name as string | undefined) ?? row.skillId;
-    // Per-invocation price: prefer bundle servicePrice, fall back to skill basePrice
-    const priceW0G  = servicePriceW0G
-      ?? ((meta.basePrice as number | undefined) ?? 0);
+    const paidCount = paidCountMap[row.skillId] ?? 0;
+    // Revenue only from real on-chain payments; 0 if bundle is free
+    const priceW0G  = servicePriceW0G ?? 0;
     return {
       skillId:     row.skillId,
       skillName,
-      invocations: row.total,
-      revenueW0G:  row.total * priceW0G,
+      invocations: row.total,      // all proofs (free + paid)
+      paidProofs:  paidCount,      // on-chain paid proofs only
+      revenueW0G:  paidCount * priceW0G,
     };
   });
 
