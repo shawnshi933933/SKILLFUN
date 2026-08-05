@@ -94,12 +94,6 @@ export default function CreateSkill() {
   const { state: mintState, mint, reset } = useSelfMint();
   const { data: authMe } = useAuthMe();
 
-  // Ownership mismatch: GitHub is linked AND the repo owner != logged-in GitHub user
-  const repoOwner = form.repoUrl.split("/")[0].toLowerCase();
-  const ghUser    = authMe?.githubUsername?.toLowerCase() ?? "";
-  const ownershipMismatch =
-    form.ownerMode === "mine" && !!ghUser && !!repoOwner && ghUser !== repoOwner;
-
   const [step, setStep]   = useState(0);
   const [fs, setFs]       = useState<FormState>(INITIAL_FS);
   const [gh, setGh]       = useState<GitHubState>(INITIAL_GH);
@@ -108,6 +102,12 @@ export default function CreateSkill() {
   // Convenience aliases
   const form     = fs.data;
   const aiFields = fs.aiFields;
+
+  // Ownership mismatch: GitHub is linked AND the repo owner != logged-in GitHub user
+  const repoOwner = form.repoUrl.split("/")[0].toLowerCase();
+  const ghUser    = authMe?.githubUsername?.toLowerCase() ?? "";
+  const ownershipMismatch =
+    form.ownerMode === "mine" && !!ghUser && !!repoOwner && ghUser !== repoOwner;
 
   type AiStatus = "idle" | "loading" | "done" | "error";
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
