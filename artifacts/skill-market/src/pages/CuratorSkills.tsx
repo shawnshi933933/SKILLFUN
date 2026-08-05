@@ -24,7 +24,7 @@ import {
   Package, Globe, ZapOff, Pencil, Check, Plus, X, Search, Coins, Upload, Trash2,
 } from "lucide-react";
 import { useCuratorAuthorizations, useAuthorizeSkill, useSyncUnclaimedSkill, type AuthorizePhase, type SyncPhase } from "@/hooks/use-curator";
-import { bundlesApi, skillsApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
+import { bundlesApi, skillsApi, curatorApi, type DbBundle, type CuratorAuthorization, type AuthStatus } from "@/lib/api";
 import { useEip712Sign } from "@/hooks/use-eip712";
 import { formatUnits } from "viem";
 import { getAddresses } from "@workspace/abi";
@@ -729,6 +729,25 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
   });
   const [savingInfo, setSavingInfo] = useState(false);
 
+  // Delete state
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const sigHeader = await sign("delete-bundle");
+      await curatorApi.deleteBundle(bundle.bundleId, sigHeader);
+      toast({ title: "Bundle deleted", description: `"${bundle.name}" has been removed.` });
+      void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+    } catch (err) {
+      toast({ title: "Delete failed", description: (err as Error).message, variant: "destructive" });
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const setInfo = (k: keyof typeof infoFields, v: string) =>
     setInfoFields(s => ({ ...s, [k]: v }));
 
@@ -1088,6 +1107,35 @@ function BundleCard({ bundle, skills, defaultOpen = false }: BundleCardProps) {
                   <Pencil className="w-3 h-3" />
                   Edit info
                 </button>
+              )}
+              {isOwner && !confirmDelete && (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-xs text-muted-foreground/40 hover:text-red-400 flex items-center gap-1 transition-colors"
+                  data-testid={`button-delete-${bundle.bundleId}`}
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Delete bundle
+                </button>
+              )}
+              {isOwner && confirmDelete && (
+                <span className="flex items-center gap-2 text-xs">
+                  <span className="text-red-400/80">Delete "{bundle.name}"?</span>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="text-red-400 hover:text-red-300 font-medium flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                    {deleting ? "Deleting…" : "Confirm"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-muted-foreground/50 hover:text-muted-foreground"
+                  >
+                    Cancel
+                  </button>
+                </span>
               )}
             </div>
             <button

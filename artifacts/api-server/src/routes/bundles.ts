@@ -341,4 +341,29 @@ router.put("/bundles/:id/skills", authMiddleware("update-bundle-skills"), async 
   res.json({ success: true, count: skillIds.length });
 });
 
+// DELETE /api/bundles/:id — delete bundle (owner only)
+// Cascades to bundle_skills and payment_proofs via FK onDelete: cascade.
+router.delete("/bundles/:id", authMiddleware("delete-bundle"), async (req, res) => {
+  const bundleId = req.params.id as string;
+  const [bundle] = await db
+    .select()
+    .from(bundlesTable)
+    .where(eq(bundlesTable.bundleId, bundleId))
+    .limit(1);
+
+  if (!bundle) {
+    apiError(res, ErrorCode.NOT_FOUND, "Bundle not found");
+    return;
+  }
+  if (bundle.ownerAddress.toLowerCase() !== req.walletAddress?.toLowerCase()) {
+    apiError(res, ErrorCode.FORBIDDEN, "Not the bundle owner");
+    return;
+  }
+
+  await db.delete(bundlesTable).where(eq(bundlesTable.bundleId, bundleId));
+
+  logger.info({ bundleId, owner: req.walletAddress }, "bundle deleted");
+  res.json({ success: true });
+});
+
 export default router;

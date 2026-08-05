@@ -454,6 +454,13 @@ export const curatorApi = {
       `/curator/authorizations/${tokenId}/status?wallet=${encodeURIComponent(wallet)}`
     ),
 
+  /** Delete a bundle (owner only). Cascades to skills list and payment proofs. */
+  deleteBundle: (bundleId: string, sigHeader: string) =>
+    apiFetch<{ success: boolean }>(`/bundles/${bundleId}`, {
+      method:  "DELETE",
+      headers: { "X-Wallet-Signature": sigHeader },
+    }),
+
   /**
    * Curator-triggered content sync for an unclaimed skill.
    * Fetches latest GitHub content, uploads to 0G Storage, updates DB.
