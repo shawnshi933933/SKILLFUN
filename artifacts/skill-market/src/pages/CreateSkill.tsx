@@ -94,6 +94,12 @@ export default function CreateSkill() {
   const { state: mintState, mint, reset } = useSelfMint();
   const { data: authMe } = useAuthMe();
 
+  // Ownership mismatch: GitHub is linked AND the repo owner != logged-in GitHub user
+  const repoOwner = form.repoUrl.split("/")[0].toLowerCase();
+  const ghUser    = authMe?.githubUsername?.toLowerCase() ?? "";
+  const ownershipMismatch =
+    form.ownerMode === "mine" && !!ghUser && !!repoOwner && ghUser !== repoOwner;
+
   const [step, setStep]   = useState(0);
   const [fs, setFs]       = useState<FormState>(INITIAL_FS);
   const [gh, setGh]       = useState<GitHubState>(INITIAL_GH);
@@ -247,7 +253,7 @@ export default function CreateSkill() {
 
   const canNext = () => {
     if (step === 0) return gh.status !== "loading" && !duplicate && form.repoUrl.trim().includes("/") && form.name.trim().length > 0;
-    if (step === 1) return !!address;                          // Ownership — wallet must be connected
+    if (step === 1) return !!address && !ownershipMismatch;    // Ownership — wallet connected + no verified mismatch
     if (step === 2) return parseFloat(form.basePrice) >= 0;   // Economics — only shown for "mine"
     return true;
   };
@@ -618,19 +624,19 @@ export default function CreateSkill() {
               </div>
 
               {/* ── Ownership mismatch warning ─────────────────────── */}
-              {(() => {
-                const repoOwner = form.repoUrl.split("/")[0].toLowerCase();
-                const ghUser = authMe?.githubUsername?.toLowerCase();
-                return form.ownerMode === "mine" && ghUser && repoOwner && ghUser !== repoOwner ? (
-                  <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/8 text-xs">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="text-amber-300 font-medium">This repo belongs to <code>{repoOwner}</code>, not your GitHub account (<code>{authMe?.githubUsername}</code>).</span>
-                      <span className="text-muted-foreground ml-1">If you are not the actual owner, select <strong>Community Registration</strong> instead — the real owner can claim the NFT later via the Oracle flow.</span>
-                    </div>
+              {ownershipMismatch && (
+                <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-xs">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-amber-300 font-medium">
+                      This repo belongs to <code className="font-mono">{repoOwner}</code>, not your GitHub account (<code className="font-mono">{authMe?.githubUsername}</code>).
+                    </p>
+                    <p className="text-muted-foreground">
+                      Select <strong className="text-foreground">Community Registration</strong> instead — the real owner can claim the NFT later via the Oracle flow.
+                    </p>
                   </div>
-                ) : null;
-              })()}
+                </div>
+              )}
 
               {!address ? (
                 <div className="space-y-3">
