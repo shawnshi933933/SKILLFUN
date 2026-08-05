@@ -128,8 +128,13 @@ interface SkillRowProps {
 function SkillRow({ skill }: SkillRowProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { address } = useAccount();
   const { state, authorize, reset }              = useAuthorizeSkill();
   const { state: syncState, sync, reset: syncReset } = useSyncUnclaimedSkill();
+
+  // If the connected wallet IS the skill owner, we use authorizeUsage — free, no payment
+  const callerIsOwner = !!address && !!skill.nftOwner &&
+    address.toLowerCase() === skill.nftOwner.toLowerCase();
 
   // Optimistic status: show "active" immediately after tx confirms, before server refetch
   const displayStatus: typeof skill.status = state.phase === "done" ? "active" : skill.status;
@@ -180,6 +185,7 @@ function SkillRow({ skill }: SkillRowProps) {
         tokenId:   skill.tokenId,
         isClaimed: skill.isClaimed,
         basePrice: skill.basePrice,
+        nftOwner:  skill.nftOwner,
       });
       toast({
         title: "Authorization successful",
@@ -227,8 +233,13 @@ function SkillRow({ skill }: SkillRowProps) {
           {basePriceW0G && (
             <span className="text-amber-400/80">{basePriceW0G} / invoke</span>
           )}
-          {skill.nftOwner && skill.isClaimed && (
+          {skill.nftOwner && skill.isClaimed && !callerIsOwner && (
             <span className="font-mono">owner: {short(skill.nftOwner)}</span>
+          )}
+          {callerIsOwner && skill.isClaimed && (
+            <span className="text-emerald-400/80 flex items-center gap-1">
+              <Shield className="w-3 h-3" /> Your skill — free to authorize
+            </span>
           )}
           {!skill.isClaimed && <span className="text-blue-400/70">Unclaimed — free to authorize</span>}
         </div>
@@ -259,6 +270,8 @@ function SkillRow({ skill }: SkillRowProps) {
             className={
               displayStatus === "active"
                 ? "border-white/20 text-sm"
+                : callerIsOwner
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3"
                 : skill.isClaimed
                 ? "bg-amber-500 hover:bg-amber-600 text-black text-xs px-3"
                 : "bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3"

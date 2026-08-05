@@ -46,6 +46,17 @@ const SKILL_NFT_ABI_FRAGMENT = [
     outputs: [],
   },
   {
+    // Owner of the skill NFT can directly authorize any curator address for free
+    name: "authorizeUsage",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "curator", type: "address" },
+    ],
+    outputs: [],
+  },
+  {
     name: "authorizedUpdateDataHash",
     type: "function",
     stateMutability: "nonpayable",
@@ -142,12 +153,32 @@ export function useAuthorizeSkill() {
 
   const [state, setState] = useState<AuthorizeState>(IDLE_STATE);
 
-  const authorize = useCallback(async (skill: Pick<CuratorAuthorization, "tokenId" | "isClaimed" | "basePrice">) => {
+  const authorize = useCallback(async (skill: Pick<CuratorAuthorization, "tokenId" | "isClaimed" | "basePrice" | "nftOwner">) => {
     if (!address) throw new Error("Wallet not connected");
     setState({ phase: "approving_w0g", txHash: null, error: null });
 
     try {
       const basePriceBigInt = BigInt(skill.basePrice);
+
+      // If the connected wallet IS the skill owner, use authorizeUsage(tokenId, self) — free, no payment needed
+      const callerIsOwner = !!skill.nftOwner && address.toLowerCase() === skill.nftOwner.toLowerCase();
+
+      if (callerIsOwner) {
+        // Owner path: authorizeUsage(tokenId, curatorAddress) — no W0G approval needed
+        setState((s) => ({ ...s, phase: "authorizing", txHash: null }));
+        const authTx = await writeContractAsync({
+          address:      SKILL_NFT_ADDRESS,
+          abi:          SKILL_NFT_ABI_FRAGMENT,
+          functionName: "authorizeUsage",
+          args:         [BigInt(skill.tokenId), address],
+        });
+        setState((s) => ({ ...s, phase: "waiting_auth", txHash: authTx }));
+        await waitForTx(authTx);
+        setState({ phase: "done", txHash: authTx, error: null });
+        void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] });
+        setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["curator-authorizations"] }), 5_000);
+        return authTx;
+      }
 
       // Step 1: ERC-20 approve (only for claimed skills with non-zero price)
       if (skill.isClaimed && basePriceBigInt > 0n) {
