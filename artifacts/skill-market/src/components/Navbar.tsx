@@ -10,17 +10,18 @@ export default function Navbar() {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   const navLinks = [
-    { href: "/app/market", label: "Skills", external: false },
-    { href: "/app/market?tab=bundles", label: "Bundles", external: false },
-    { href: "/app/creator/skills", label: "Creator", external: false },
-    { href: "/app/curator/skills", label: "Curator", external: false },
-    { href: "/app/claim", label: "Claim", external: false },
-    { href: "/app/stake", label: "Stake", external: false },
-    { href: "/docs/user-guide.md", label: "Guide", external: true },
+    { href: "/app/market", label: "Market", external: false },
+    { href: "/app/dashboard", label: "Dashboard", external: false },
+    { href: "/app/claim", label: "Claim Skill", external: false },
     { href: "/mcp/agent-guide.md", label: "Agent Guide", external: true },
   ];
 
-  const isActive = (href: string) => location === href || location.startsWith(href.split("?")[0] + "/");
+  const isActive = (href: string) => {
+    const base = href.split("?")[0];
+    if (base === "/app/market") return location === "/app/market" || location.startsWith("/app/skill/") || location.startsWith("/app/bundle/");
+    if (base === "/app/dashboard") return location === "/app/dashboard" || location.startsWith("/app/creator") || location.startsWith("/app/curator");
+    return location === base || location.startsWith(base + "/");
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">

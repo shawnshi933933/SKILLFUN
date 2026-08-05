@@ -8,6 +8,7 @@ import { wagmiConfig } from "@/lib/wagmi";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Market from "@/pages/Market";
+import Dashboard from "@/pages/Dashboard";
 import SkillDetail from "@/pages/SkillDetail";
 import BundleDetail from "@/pages/BundleDetail";
 import CreateSkill from "@/pages/CreateSkill";
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/app/claim" component={Claim} />
       <Route path="/app/flywheel" component={Flywheel} />
       <Route path="/app/profile" component={Profile} />
+      <Route path="/app/dashboard" component={Dashboard} />
       <Route path="/app/curator/skills" component={CuratorSkills} />
       <Route path="/app/creator/skills" component={CreatorSkills} />
       <Route path="/app/admin/claims" component={AdminClaims} />

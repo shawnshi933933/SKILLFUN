@@ -761,7 +761,7 @@ function SkillCard({ skill, onRefresh }: { skill: CreatorSkill; onRefresh: () =>
 // Main page
 // ---------------------------------------------------------------------------
 
-export default function CreatorSkills() {
+export default function CreatorSkills({ asPanel = false }: { asPanel?: boolean }) {
   const { address } = useAccount();
   const queryClient = useQueryClient();
 
@@ -775,29 +775,31 @@ export default function CreatorSkills() {
   const skills = data?.skills ?? [];
 
   if (!address) {
+    const inner = (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
+        <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <Wand2 className="w-10 h-10 text-primary" />
+        </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Creator Dashboard</h1>
+          <p className="text-muted-foreground max-w-sm">
+            Connect your wallet to manage your Skill NFTs on 0G Chain.
+          </p>
+        </div>
+        <ConnectButton />
+      </div>
+    );
+    if (asPanel) return inner;
     return (
       <div className="min-h-screen bg-background text-foreground">
         <Navbar />
-        <div className="flex flex-col items-center justify-center min-h-screen gap-6 px-4">
-          <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <Wand2 className="w-10 h-10 text-primary" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-2">Creator Dashboard</h1>
-            <p className="text-muted-foreground max-w-sm">
-              Connect your wallet to manage your Skill NFTs on 0G Chain.
-            </p>
-          </div>
-          <ConnectButton />
-        </div>
+        {inner}
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
-      <div className="max-w-4xl mx-auto px-4 pt-24 pb-16">
+  const content = (
+    <div className="max-w-4xl mx-auto px-4 pb-16" style={{ paddingTop: asPanel ? "1.5rem" : "6rem" }}>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -901,6 +903,13 @@ export default function CreatorSkills() {
           </p>
         )}
       </div>
+  );
+
+  if (asPanel) return content;
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      {content}
     </div>
   );
 }
