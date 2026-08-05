@@ -481,7 +481,7 @@ export default function CreateSkill() {
                           ? "border-violet-500/40 text-violet-400 bg-violet-500/10"
                           : "border-white/10 text-muted-foreground hover:text-foreground"
                       }`}
-                      onClick={analyzeWithAi}
+                      onClick={() => analyzeWithAi()}
                       disabled={aiStatus === "loading"}
                     >
                       {aiStatus === "loading" ? (
