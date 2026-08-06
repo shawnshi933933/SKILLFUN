@@ -575,8 +575,6 @@ export default function CreateBundle() {
                       { label: "Skills",               value: `${selectedSkills.length} selected` },
                       { label: "Workflow",             value: form.workflow ? `${form.workflow.slice(0, 60)}…` : "None" },
                       { label: "Access Fee",           value: (form.servicePriceW0G && parseFloat(form.servicePriceW0G) > 0) ? `${parseFloat(form.servicePriceW0G).toFixed(6)} W0G / version` : "Free" },
-                      { label: "Total Base Price",     value: `${totalBasePrice.toFixed(4)} W0G/invoke` },
-                      { label: "Curator Earning (est.)", value: curatorEarning > 0 ? `~${curatorEarning.toFixed(4)} W0G/invoke` : "—" },
                     ].map((r) => (
                       <div key={r.label} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{r.label}</span>
@@ -587,8 +585,8 @@ export default function CreateBundle() {
                   <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-xs text-muted-foreground">
                     <Bot className="w-3 h-3 inline mr-1 text-accent" />
                     Deploying creates a Bundle with a single MCP endpoint. Agents discover Skills via{" "}
-                    <span className="font-mono">tools/list</span>, pay W0G via{" "}
-                    <span className="font-mono">invokeSkill</span>, and receive decrypted Skill content
+                    <span className="font-mono">tools/list</span>, pay per invocation via{" "}
+                    <span className="font-mono">x402</span>, and receive decrypted Skill content
                     to run locally.
                   </div>
                   {deployError && (
