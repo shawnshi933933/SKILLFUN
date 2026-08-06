@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { useAuthMe } from "@/hooks/use-skills";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STEPS = ["Basic Info", "Ownership", "Economics", "Review & Mint"] as const;
+const DRAFT_KEY = "create-skill-draft";
 const ZEROG_SCAN     = "https://chainscan.0g.ai";
 import { getAddresses } from "@workspace/abi";
 const SKILL_NFT_ADDR = getAddresses(16661).SkillNFT;
@@ -98,6 +99,27 @@ export default function CreateSkill() {
   const [fs, setFs]       = useState<FormState>(INITIAL_FS);
   const [gh, setGh]       = useState<GitHubState>(INITIAL_GH);
   const [duplicate, setDuplicate] = useState<DbSkill | null>(null);
+
+  // ── Restore draft after GitHub OAuth redirect ──────────────────────────────
+  useEffect(() => {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw);
+      if (saved.fs)   setFs({ data: saved.fs.data, aiFields: new Set(saved.fs.aiFields ?? []) });
+      if (saved.step != null) setStep(saved.step);
+    } catch { /* corrupt, ignore */ }
+    sessionStorage.removeItem(DRAFT_KEY);
+  }, []);
+
+  // Save current draft to sessionStorage then navigate (survives OAuth redirect)
+  const saveAndGo = (href: string) => {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+      fs:   { data: fs.data, aiFields: [...fs.aiFields] },
+      step,
+    }));
+    window.location.href = href;
+  };
 
   // Convenience aliases
   const form     = fs.data;
@@ -427,7 +449,7 @@ export default function CreateSkill() {
                     onBlur={handleRepoUrlBlur}
                   />
                   {/* GitHub fetch status badge */}
-                  <GitHubBadge gh={gh} />
+                  <GitHubBadge gh={gh} onAuthRedirect={saveAndGo} />
 
                   {/* ── Already registered banner ───────────────────────── */}
                   {duplicate && (
@@ -635,12 +657,13 @@ export default function CreateSkill() {
                     <p className="text-muted-foreground">
                       We need to confirm you own <code className="font-mono text-foreground">{form.repoUrl.split("/")[0]}</code> before minting the iNFT to your wallet.
                     </p>
-                    <a
-                      href={`/api/auth/github?return_to=${encodeURIComponent(window.location.pathname)}`}
+                    <button
+                      type="button"
+                      onClick={() => saveAndGo(`/api/auth/github?return_to=${encodeURIComponent(window.location.pathname)}`)}
                       className="inline-flex items-center gap-1.5 text-sky-400 hover:text-sky-300 font-medium underline underline-offset-2 transition-colors"
                     >
                       <Github className="w-3 h-3" /> Sign in with GitHub
-                    </a>
+                    </button>
                   </div>
                 </div>
               )}
@@ -815,7 +838,7 @@ export default function CreateSkill() {
 
 // ─── GitHub fetch badge ───────────────────────────────────────────────────────
 
-function GitHubBadge({ gh }: { gh: GitHubState }) {
+function GitHubBadge({ gh, onAuthRedirect }: { gh: GitHubState; onAuthRedirect?: (href: string) => void }) {
   if (gh.status === "idle") return null;
 
   if (gh.status === "loading") {
@@ -854,7 +877,7 @@ function GitHubBadge({ gh }: { gh: GitHubState }) {
   if (gh.status === "not_found") {
     if (gh.possiblyPrivate) {
       // Repo may be private — suggest re-auth with repo scope
-      const returnTo = encodeURIComponent(window.location.pathname);
+      const repoAuthHref = `/api/auth/github?scope=repo&return_to=${encodeURIComponent(window.location.pathname)}`;
       return (
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-xs text-amber-400/80">
@@ -866,12 +889,13 @@ function GitHubBadge({ gh }: { gh: GitHubState }) {
             <span className="text-xs text-amber-400/90 flex-1">
               Private repo? Grant repository access so we can auto-fill the form.
             </span>
-            <a
-              href={`/api/auth/github?scope=repo&return_to=${returnTo}`}
+            <button
+              type="button"
+              onClick={() => onAuthRedirect ? onAuthRedirect(repoAuthHref) : (window.location.href = repoAuthHref)}
               className="text-xs font-medium text-amber-300 hover:text-amber-200 underline underline-offset-2 shrink-0"
             >
               Grant access →
-            </a>
+            </button>
           </div>
         </div>
       );
