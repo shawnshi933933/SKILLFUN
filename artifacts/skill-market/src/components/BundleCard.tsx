@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Layers, Coins } from "lucide-react";
+import { Bot, Layers } from "lucide-react";
 
 export interface BundleCardData {
   id:             string;
@@ -92,48 +92,32 @@ export default function BundleCard({ bundle }: { bundle: BundleCardData }) {
           </div>
         )}
 
-        <div className="border-t border-border pt-3 mt-auto space-y-2">
+        <div className="border-t border-border pt-3 mt-auto">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Service Price</div>
-              <div className="flex items-center gap-1 font-semibold tabular-nums text-sm">
-                <Coins className="w-3 h-3 text-amber-600" />
+              <div className="font-semibold tabular-nums text-sm">
                 {formatServicePrice(bundle.servicePrice) === "Free"
-                  ? <span className="text-emerald-600">Free</span>
-                  : <span className="text-amber-700">{formatServicePrice(bundle.servicePrice)}</span>
+                  ? <span className="text-emerald-600 text-xs">Free</span>
+                  : <span>{formatServicePrice(bundle.servicePrice)}</span>
                 }
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-muted-foreground mb-0.5">Skills</div>
+              <div className="flex items-center gap-1 tabular-nums text-sm font-semibold">
+                <Layers className="w-3 h-3 text-muted-foreground" />
+                {skillCount > 0 ? skillCount : <span className="text-muted-foreground font-normal text-xs">—</span>}
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs text-muted-foreground mb-0.5">Invocations</div>
-              <div className="flex items-center gap-1 text-accent tabular-nums text-sm">
+              <div className="flex items-center gap-1 text-accent tabular-nums text-sm justify-end">
                 <Bot className="w-3 h-3" />
                 {bundle.invocations.toLocaleString()}
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Layers className="w-3 h-3" />
-              {skillCount} Skill{skillCount !== 1 ? "s" : ""}
-            </span>
-            <span className="flex items-center gap-1 text-emerald-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              MCP endpoint
-            </span>
-          </div>
-          {bundle.skillNames && bundle.skillNames.length > 0 && (
-            <div className="flex items-center gap-1 overflow-hidden">
-              {bundle.skillNames.slice(0, 3).map((name) => (
-                <span key={name} className="text-xs px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground/70 truncate max-w-[80px]">
-                  {name}
-                </span>
-              ))}
-              {bundle.skillNames.length > 3 && (
-                <span className="text-xs text-muted-foreground/50">+{bundle.skillNames.length - 3}</span>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </Link>
