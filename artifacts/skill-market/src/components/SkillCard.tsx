@@ -92,30 +92,27 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
         )}
 
         <div className="border-t border-border pt-3 mt-auto">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between">
             <div>
               <div className="text-xs text-muted-foreground mb-0.5">Base Price</div>
               <div className="font-semibold tabular-nums text-foreground text-sm">
                 {skill.basePrice > 0 ? `${skill.basePrice} W0G` : <span className="text-emerald-600 text-xs">Free</span>}
               </div>
             </div>
+            <div className="text-center">
+              <div className="text-xs text-muted-foreground mb-0.5">Bundles</div>
+              <div className="flex items-center gap-1 tabular-nums text-sm font-semibold">
+                <Package className="w-3 h-3 text-muted-foreground" />
+                {bundleCount > 0 ? bundleCount : <span className="text-muted-foreground font-normal text-xs">—</span>}
+              </div>
+            </div>
             <div className="text-right">
               <div className="text-xs text-muted-foreground mb-0.5">Invocations</div>
-              <div className="flex items-center gap-1 text-accent tabular-nums text-sm">
+              <div className="flex items-center gap-1 text-accent tabular-nums text-sm justify-end">
                 <Bot className="w-3 h-3" />
                 {skill.invocations.toLocaleString()}
               </div>
             </div>
-          </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Package className="w-3 h-3" />
-              {bundleCount > 0 ? `In ${bundleCount} bundle${bundleCount !== 1 ? "s" : ""}` : "No bundles yet"}
-            </span>
-            <span className="flex items-center gap-1 text-primary/70">
-              <Zap className="w-3 h-3" />
-              Auth fee → 100% Owner
-            </span>
           </div>
           {skill.creatorAddress && (
             <div className="mt-1.5 text-xs text-muted-foreground">
