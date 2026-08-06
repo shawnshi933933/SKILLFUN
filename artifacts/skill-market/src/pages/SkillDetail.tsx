@@ -229,7 +229,6 @@ export default function SkillDetail() {
                 {[
                   { label: "Base Price",   value: basePrice > 0 ? `${basePrice} W0G` : "Free" },
                   { label: "Invocations",  value: invocations.toLocaleString() },
-                  { label: "W0G Earned",   value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-card border border-border rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-0.5">{stat.label}</div>
@@ -523,7 +522,7 @@ export default function SkillDetail() {
           </div>
 
           {/* Right — Action panel */}
-          <div className="space-y-4">
+          <div className="space-y-4 pt-14">
             {/* Access card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div className="flex items-baseline justify-between">
