@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CheckCircle, Layers, ArrowRight, ArrowLeft, Bot, X,
   Loader2, Package, Shield, AlertTriangle, Search,
-  Tag, Star, PackageOpen,
+  Tag, Star, PackageOpen, Coins,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSkills } from "@/hooks/use-skills";
