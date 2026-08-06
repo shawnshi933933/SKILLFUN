@@ -55,7 +55,7 @@ const EXAMPLE_PROMPTS: Record<string, string[]> = {
   Social: [
     "Generate 5 viral tweet ideas about the AI Agent economy",
     "Write a LinkedIn post about tokenized AI skills for a VC audience",
-    "Create an engagement hook for a Farcaster cast about ERC-7857 iNFT",
+    "Create an engagement hook for a Farcaster cast about ERC-7857 NFT",
   ],
 };
 
@@ -286,7 +286,7 @@ Input: "${input.slice(0, 80)}${input.length > 80 ? "..." : ""}"
 
 **Tokenomics Model Results**
 
-*Assumptions: 100M total supply, 4-year vesting, ERC-7857 iNFT skill registry integration*
+*Assumptions: 100M total supply, 4-year vesting, ERC-7857 NFT skill registry integration*
 
 **Supply Schedule**
 \`\`\`
@@ -367,7 +367,7 @@ This isn't DeFi. This isn't NFTs.
 
 It's the Machine Economy — where AI agents are economic participants with budgets, identities, and asset portfolios.
 
-We're building the infrastructure layer. ERC-7857 iNFT + ERC-8004 on 0G Chain.
+We're building the infrastructure layer. ERC-7857 NFT + ERC-8004 on 0G Chain.
 
 ---
 
@@ -404,7 +404,7 @@ In the emerging Machine Economy, AI agents discover, purchase, and execute speci
 
 For investors and operators paying attention: the infrastructure layer (identity, payments, skill registries) is where the real moat is being built.
 
-ERC-7857 iNFT and x402 are early standards. The companies that own the rails will define the next decade of AI commerce.
+ERC-7857 NFT and x402 are early standards. The companies that own the rails will define the next decade of AI commerce.
 
 **Farcaster Cast**
 The AI skill market is live on 0G Chain (16661). 847 skills. 12k agent purchases. Real fees flowing to creators.

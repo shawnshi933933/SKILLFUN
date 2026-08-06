@@ -351,9 +351,9 @@ export default function CreateSkill() {
           <h1 className="text-2xl font-bold">Skill Minted!</h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
             {isMine ? (
-              <><span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 iNFT on 0G Chain — owned by your wallet.</>
+              <><span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 NFT on 0G Chain — owned by your wallet.</>
             ) : (
-              <><span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 iNFT on 0G Chain, held in platform custody. The GitHub owner can claim it later.</>
+              <><span className="font-medium text-foreground">{form.name}</span> is now an ERC-7857 NFT on 0G Chain, held in platform custody. The GitHub owner can claim it later.</>
             )}
           </p>
 
@@ -399,9 +399,9 @@ export default function CreateSkill() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-1">Mint a Skill iNFT</h1>
+          <h1 className="text-3xl font-bold mb-1">Mint a Skill NFT</h1>
           <p className="text-muted-foreground text-sm">
-            Mint your AI Agent Skill as an ERC-7857 iNFT on 0G Chain — directly from your wallet.
+            Mint your AI Agent Skill as an ERC-7857 NFT on 0G Chain — directly from your wallet.
           </p>
         </div>
 
@@ -615,7 +615,7 @@ export default function CreateSkill() {
                     <div>
                       <div className="font-semibold text-sm mb-1">My Repo — I own this skill</div>
                       <div className="text-xs text-muted-foreground leading-relaxed">
-                        The iNFT is minted directly to <span className="text-foreground">your wallet</span>. You own it immediately and earn 80% of invocation revenue.
+                        The NFT is minted directly to <span className="text-foreground">your wallet</span>. You own it immediately and earn 80% of invocation revenue.
                       </div>
                       <div className="mt-2 inline-flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full px-2.5 py-0.5">
                         <CheckCircle className="w-3 h-3" /> NFT → your wallet
@@ -640,7 +640,7 @@ export default function CreateSkill() {
                     <div>
                       <div className="font-semibold text-sm mb-1">Community Registration — not my repo</div>
                       <div className="text-xs text-muted-foreground leading-relaxed">
-                        The iNFT is minted to the <span className="text-foreground">SkillNFT contract</span> (platform custody). The real GitHub owner can claim it later via the Oracle flow.
+                        The NFT is minted to the <span className="text-foreground">SkillNFT contract</span> (platform custody). The real GitHub owner can claim it later via the Oracle flow.
                       </div>
                       <div className="mt-2 inline-flex items-center gap-1.5 text-xs bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-full px-2.5 py-0.5">
                         <Shield className="w-3 h-3" /> NFT → platform custody
@@ -657,7 +657,7 @@ export default function CreateSkill() {
                   <div className="space-y-1.5">
                     <p className="text-sky-300 font-medium">GitHub sign-in required to verify ownership</p>
                     <p className="text-muted-foreground">
-                      We need to confirm you own <code className="font-mono text-foreground">{form.repoUrl.split("/")[0]}</code> before minting the iNFT to your wallet.
+                      We need to confirm you own <code className="font-mono text-foreground">{form.repoUrl.split("/")[0]}</code> before minting the NFT to your wallet.
                     </p>
                     <button
                       type="button"
@@ -771,8 +771,8 @@ export default function CreateSkill() {
                 <MintStep n={2} label="Sign transaction in wallet → registerSkill() on 0G Chain" done={["confirming","finalizing","done"].includes(mintState.phase)} />
                 <MintStep n={3}
                   label={form.ownerMode === "mine"
-                    ? "Block confirms → iNFT arrives in your wallet"
-                    : "Block confirms → iNFT held in contract custody"}
+                    ? "Block confirms → NFT arrives in your wallet"
+                    : "Block confirms → NFT held in contract custody"}
                   done={mintState.phase === "done"}
                 />
               </div>
@@ -824,7 +824,7 @@ export default function CreateSkill() {
               {isMinting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> {PHASE_LABEL[mintState.phase] || "Minting…"}</>
               ) : (
-                <><Zap className="w-4 h-4" /> Mint Skill iNFT</>
+                <><Zap className="w-4 h-4" /> Mint Skill NFT</>
               )}
             </Button>
           )}

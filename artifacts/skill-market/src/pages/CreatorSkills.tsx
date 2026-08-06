@@ -875,7 +875,7 @@ export default function CreatorSkills({ asPanel = false }: { asPanel?: boolean }
             <div>
               <p className="text-muted-foreground mb-1">No Skill NFTs in this wallet</p>
               <p className="text-xs text-muted-foreground/60 max-w-sm mx-auto">
-                Mint a Skill iNFT to start. Once minted and confirmed, it will appear here.
+                Mint a Skill NFT to start. Once minted and confirmed, it will appear here.
               </p>
             </div>
             <Button

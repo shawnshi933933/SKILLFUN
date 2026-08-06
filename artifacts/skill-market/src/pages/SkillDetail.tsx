@@ -296,7 +296,7 @@ export default function SkillDetail() {
                       ) : (
                         <Row label="On-Chain Owner" value={onChain.owner ?? "Unknown"} mono />
                       )}
-                      <Row label="iNFT Data Slots" value={String(onChain.intelligentData?.length ?? 0)} />
+                      <Row label="NFT Data Slots" value={String(onChain.intelligentData?.length ?? 0)} />
                       {oracleData && (
                         <Row
                           label="Oracle Verified Owner"
@@ -549,7 +549,7 @@ export default function SkillDetail() {
             {/* Security */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
               <div className="text-xs text-muted-foreground">Security Status</div>
-              <SecurityRow icon={<Lock className="w-4 h-4 text-primary" />} label="ERC-7857 iNFT Standard" />
+              <SecurityRow icon={<Lock className="w-4 h-4 text-primary" />} label="ERC-7857 NFT Standard" />
               <SecurityRow icon={<Shield className="w-4 h-4 text-emerald-400" />} label="0G Chain Mainnet" />
               {skill.rootHash && (
                 <SecurityRow icon={<Lock className="w-4 h-4 text-emerald-400" />} label="Content Hash Locked" />

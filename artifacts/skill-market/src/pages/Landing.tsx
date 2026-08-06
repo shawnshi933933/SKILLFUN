@@ -89,7 +89,7 @@ export default function Landing() {
                 <Code2 className="w-5 h-5 text-primary" />
               </div>
               <div className="font-semibold text-sm mb-1">Mint Skill NFT</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Mint your GitHub repo as an ERC-7857 iNFT. Content is encrypted and stored on 0G Storage.</div>
+              <div className="text-xs text-muted-foreground leading-relaxed">Mint your GitHub repo as an ERC-7857 NFT. Content is encrypted and stored on 0G Storage.</div>
               <div className="mt-3 flex items-center gap-1 text-xs text-primary font-medium">
                 Start creating <ArrowRight className="w-3 h-3" />
               </div>
