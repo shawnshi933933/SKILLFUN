@@ -73,7 +73,7 @@ function sortSkills(skills: DbSkill[], sort: SortKey): DbSkill[] {
       case "price_desc":
         return getMeta<number>(b, "basePrice", 0) - getMeta<number>(a, "basePrice", 0);
       case "most_used":
-        return getMeta<number>(b, "invocations", 0) - getMeta<number>(a, "invocations", 0);
+        return (b.invocationCount ?? 0) - (a.invocationCount ?? 0);
       case "newest":
       default:
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -405,7 +405,7 @@ export default function CreateBundle() {
                     const name        = skillDisplayName(skill);
                     const description = getMeta<string>(skill, "description", "");
                     const basePrice   = getMeta<number>(skill, "basePrice", 0);
-                    const invocations = getMeta<number>(skill, "invocations", 0);
+                    const invocations = skill.invocationCount ?? 0;
                     const stars       = skill.githubStars ?? 0;
                     const bundles     = skill.bundleCount ?? 0;
                     const isSelected  = form.selectedSkillIds.includes(skill.skillId);
@@ -446,9 +446,10 @@ export default function CreateBundle() {
                                 <PackageOpen className={`w-3 h-3 ${bundles > 0 ? "text-accent" : "text-muted-foreground/40"}`} />
                                 {bundles > 0 ? `${bundles} bundle${bundles !== 1 ? "s" : ""}` : "—"}
                               </span>
-                              {invocations > 0 && (
-                                <span className="text-[11px] text-muted-foreground/70">🔥 {invocations.toLocaleString()} uses</span>
-                              )}
+                              <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                                <span className={invocations > 0 ? "text-orange-400" : "text-muted-foreground/40"}>🔥</span>
+                                {invocations > 0 ? invocations.toLocaleString() : "—"}
+                              </span>
                             </div>
                           </div>
                         </div>
