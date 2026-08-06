@@ -124,6 +124,8 @@ export default function Landing() {
       </section>
 
 
+      <div className="bg-primary/5 border-t border-primary/15 py-4" />
+
       <footer className="border-t border-border py-8 px-4 text-center text-sm text-muted-foreground">
         SkillFun — ERC-7857 iNFT Registry · MCP · x402 A2A Payments · Built on 0G Chain
       </footer>
