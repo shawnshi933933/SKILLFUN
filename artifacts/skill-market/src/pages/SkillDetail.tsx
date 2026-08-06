@@ -242,21 +242,15 @@ export default function SkillDetail() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left — Tabs */}
           <div className="lg:col-span-2 min-w-0 overflow-hidden">
-            <Tabs defaultValue="activity">
+            <Tabs defaultValue="meta">
               <TabsList className="bg-card border border-border">
-                <TabsTrigger value="activity">Activity</TabsTrigger>
-                <TabsTrigger value="chain">On-Chain</TabsTrigger>
                 <TabsTrigger value="meta">Metadata</TabsTrigger>
+                <TabsTrigger value="chain">On-Chain</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
               </TabsList>
 
               <TabsContent value="activity" className="mt-4">
                 <div className="space-y-3">
-                  {/* Total invocations */}
-                  <div className="bg-card border border-border rounded-xl p-3">
-                    <div className="text-xs text-muted-foreground mb-0.5">Total Invocations</div>
-                    <div className="font-semibold tabular-nums text-lg">{invocations.toLocaleString()}</div>
-                  </div>
-
                   {/* Recent activity feed */}
                   {statsData?.recentActivity && statsData.recentActivity.length > 0 ? (
                     <>
@@ -522,7 +516,7 @@ export default function SkillDetail() {
           </div>
 
           {/* Right — Action panel */}
-          <div className="space-y-4">
+          <div className="space-y-4 pt-14">
             {/* Access card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div className="flex items-baseline justify-between">
