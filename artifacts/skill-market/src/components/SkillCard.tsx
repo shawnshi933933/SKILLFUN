@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Lock, Package, Zap } from "lucide-react";
+import { Bot, Lock, Package, Star } from "lucide-react";
 
 export interface SkillCardData {
   id:                string;
@@ -21,6 +21,7 @@ export interface SkillCardData {
   tags?:             string[];
   mcpToolName?:      string;
   bundleCount?:      number;
+  githubStars?:      number;
   creatorAddress?:   string;
 }
 
@@ -106,6 +107,17 @@ export default function SkillCard({ skill }: { skill: SkillCardData }) {
                 {bundleCount > 0 ? bundleCount : <span className="text-muted-foreground font-normal text-xs">—</span>}
               </div>
             </div>
+            {skill.githubStars !== undefined && (
+              <div className="text-center">
+                <div className="text-xs text-muted-foreground mb-0.5">Stars</div>
+                <div className="flex items-center gap-1 tabular-nums text-sm font-semibold text-yellow-500 justify-center">
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  {skill.githubStars >= 1000
+                    ? `${(skill.githubStars / 1000).toFixed(1)}k`
+                    : skill.githubStars}
+                </div>
+              </div>
+            )}
             <div className="text-right">
               <div className="text-xs text-muted-foreground mb-0.5">Invocations</div>
               <div className="flex items-center gap-1 text-accent tabular-nums text-sm justify-end">

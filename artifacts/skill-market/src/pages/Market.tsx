@@ -34,6 +34,7 @@ function adaptSkill(s: DbSkill) {
     // AI-generated tags from meta
     tags:              (meta.tags as string[] | undefined) ?? [],
     bundleCount:       s.bundleCount ?? 0,
+    githubStars:       s.githubStars,
   };
 }
 
