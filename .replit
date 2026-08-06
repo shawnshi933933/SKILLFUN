@@ -37,5 +37,21 @@ FRONTEND_URL = "https://013c0644-25f8-44f8-be70-641aa4420c86-00-6xnps71j243t.pik
 channel = "stable-25_05"
 
 [[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
 localPort = 8082
 externalPort = 80
+
+[[ports]]
+localPort = 20247
+externalPort = 3000
+
+[[ports]]
+localPort = 22013
+externalPort = 3001

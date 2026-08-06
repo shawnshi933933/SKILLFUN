@@ -83,7 +83,9 @@ export default function Claim() {
       const user = me.githubUsername.toLowerCase();
       const claimable = (skillsRes.skills ?? []).filter((s) => {
         if (s.tokenId == null) return false;                      // not minted yet
-        if (s.mintStatus === "claimed") return false;             // already claimed
+        if (s.mintStatus === "claimed") return false;             // already claimed via claim flow
+        // Skip skills already owned by the connected wallet (minted directly via "My Repo")
+        if (address && s.ownerAddress?.toLowerCase() === address.toLowerCase()) return false;
         const owner = s.manifestOwner.toLowerCase();
         // match "username/repo" or full URL ending in "/username/repo"
         const parts = owner.split("/").filter(Boolean);
