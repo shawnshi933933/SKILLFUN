@@ -21,19 +21,46 @@ const router = Router();
 const githubStarsCache = new Map<string, { stars: number; fetchedAt: number }>();
 const GITHUB_CACHE_TTL = 60 * 60 * 1000;
 
+/** Extract "owner/repo" from any repoUrl variant:
+ *  - "owner/repo"
+ *  - "owner/repo/subpath/..."    (monorepo skill)
+ *  - "https://github.com/owner/repo"
+ *  - "https://github.com/owner/repo/tree/main/skills/foo"
+ */
+function extractOwnerRepo(repoUrl: string): string | null {
+  // Strip protocol + github.com prefix if present
+  const stripped = repoUrl
+    .replace(/^https?:\/\/github\.com\//, "")
+    .replace(/^github\.com\//, "");
+  const parts = stripped.split("/").filter(Boolean);
+  if (parts.length < 2) return null;
+  return `${parts[0]}/${parts[1]}`;
+}
+
 async function fetchGithubStars(repoUrl: string): Promise<number> {
-  const cached = githubStarsCache.get(repoUrl);
+  const ownerRepo = extractOwnerRepo(repoUrl);
+  if (!ownerRepo) return 0;
+
+  const cached = githubStarsCache.get(ownerRepo);
   if (cached && Date.now() - cached.fetchedAt < GITHUB_CACHE_TTL) return cached.stars;
+
   try {
-    // repoUrl is "owner/repo" format
-    const res = await fetch(`https://api.github.com/repos/${repoUrl}`, {
-      headers: { Accept: "application/vnd.github.v3+json" },
-      signal: AbortSignal.timeout(4000),
+    const headers: Record<string, string> = { Accept: "application/vnd.github.v3+json" };
+    // Use OAuth client credentials for higher rate limit (5000 req/hr vs 60)
+    const clientId     = process.env.GITHUB_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+    if (clientId && clientSecret) {
+      headers["Authorization"] = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`;
+    }
+
+    const res = await fetch(`https://api.github.com/repos/${ownerRepo}`, {
+      headers,
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return cached?.stars ?? 0;
     const data = await res.json() as { stargazers_count?: number };
     const stars = data.stargazers_count ?? 0;
-    githubStarsCache.set(repoUrl, { stars, fetchedAt: Date.now() });
+    githubStarsCache.set(ownerRepo, { stars, fetchedAt: Date.now() });
     return stars;
   } catch {
     return cached?.stars ?? 0;
