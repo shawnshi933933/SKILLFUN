@@ -235,7 +235,7 @@ export default function CreateBundle() {
         {/* Progress */}
         <div className="mb-8">
           <Progress value={((step + 1) / STEPS.length) * 100} className="h-1.5 mb-4" />
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {STEPS.map((s, i) => (
               <div
                 key={s}
