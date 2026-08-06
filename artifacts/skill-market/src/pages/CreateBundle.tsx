@@ -458,11 +458,11 @@ export default function CreateBundle() {
                           {basePrice > 0 ? (
                             <>
                               <div className="font-mono text-sm text-foreground">{basePrice} W0G</div>
-                              <div className="text-xs text-muted-foreground">per invoke</div>
+                              <div className="text-xs text-muted-foreground">per auth</div>
                             </>
                           ) : (
                             <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
-                              {skill.mintStatus}
+                              Free
                             </Badge>
                           )}
                         </div>
