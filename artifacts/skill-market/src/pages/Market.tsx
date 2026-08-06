@@ -11,19 +11,30 @@ import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, Bot, Layers, Zap, Loader2, AlertCircle } from "lucide-react";
 
 // ── Sort options ──────────────────────────────────────────────────────────────
-type SortKey = "most_used" | "stars" | "bundles" | "newest" | "price_asc";
+type SortKey = "most_used" | "stars" | "bundles" | "newest" | "price";
+type SortDir = "asc" | "desc";
+
+/** Default direction for each sort key */
+const DEFAULT_DIR: Record<SortKey, SortDir> = {
+  most_used: "desc",
+  stars:     "desc",
+  bundles:   "desc",
+  newest:    "desc",
+  price:     "asc",
+};
 
 const SKILL_SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "most_used", label: "🔥 Most Used" },
   { key: "stars",     label: "⭐ Stars" },
   { key: "bundles",   label: "📦 Bundles" },
   { key: "newest",    label: "🕐 Newest" },
-  { key: "price_asc", label: "💰 Price" },
+  { key: "price",     label: "💰 Price" },
 ];
 
 const BUNDLE_SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "most_used", label: "🔥 Most Used" },
   { key: "newest",    label: "🕐 Newest" },
+  { key: "price",     label: "💰 Price" },
 ];
 
 /** Adapt a DbSkill to the shape SkillCard expects */
@@ -90,6 +101,16 @@ export default function Market() {
   const [encryptedOnly, setEncryptedOnly] = useState(false);
   const [selectedTags, setSelectedTags]   = useState<Set<string>>(new Set());
   const [sortKey, setSortKey]             = useState<SortKey>("most_used");
+  const [sortDir, setSortDir]             = useState<SortDir>("desc");
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir(DEFAULT_DIR[key]);
+    }
+  }
 
   const { data: skillsData, isLoading: skillsLoading, error: skillsError } = useSkills();
   const { data: bundlesData, isLoading: bundlesLoading, error: bundlesError } = useBundles();
@@ -123,17 +144,18 @@ export default function Market() {
       const matchTags      = selectedTags.size === 0 || [...selectedTags].every((t) => s.tags.includes(t));
       return matchSearch && matchEncrypted && matchTags;
     });
+    const dir = sortDir === "asc" ? 1 : -1;
     return [...list].sort((a, b) => {
       switch (sortKey) {
-        case "most_used": return (b.invocations ?? 0) - (a.invocations ?? 0);
-        case "stars":     return (b.githubStars ?? 0) - (a.githubStars ?? 0);
-        case "bundles":   return (b.bundleCount ?? 0) - (a.bundleCount ?? 0);
-        case "price_asc": return (a.basePrice ?? 0) - (b.basePrice ?? 0);
+        case "most_used": return dir * ((a.invocations ?? 0) - (b.invocations ?? 0));
+        case "stars":     return dir * ((a.githubStars ?? 0) - (b.githubStars ?? 0));
+        case "bundles":   return dir * ((a.bundleCount ?? 0) - (b.bundleCount ?? 0));
+        case "price":     return dir * ((a.basePrice ?? 0) - (b.basePrice ?? 0));
         case "newest":
-        default:          return 0; // API already returns newest-first
+        default:          return dir === 1 ? -1 : 1; // "newest" desc = API order; asc = reversed
       }
     });
-  }, [skills, search, encryptedOnly, selectedTags, sortKey]);
+  }, [skills, search, encryptedOnly, selectedTags, sortKey, sortDir]);
 
   const filteredBundles = useMemo(() => {
     const list = bundles.filter((b) => {
@@ -142,14 +164,20 @@ export default function Market() {
       const matchTags = selectedTags.size === 0 || [...selectedTags].every((t) => b.tags.includes(t));
       return matchSearch && matchTags;
     });
+    const dir = sortDir === "asc" ? 1 : -1;
     return [...list].sort((a, b) => {
       switch (sortKey) {
-        case "most_used": return (b.invocations ?? 0) - (a.invocations ?? 0);
+        case "most_used": return dir * ((a.invocations ?? 0) - (b.invocations ?? 0));
+        case "price": {
+          const priceA = a.servicePrice && a.servicePrice !== "0" ? Number(BigInt(a.servicePrice)) : 0;
+          const priceB = b.servicePrice && b.servicePrice !== "0" ? Number(BigInt(b.servicePrice)) : 0;
+          return dir * (priceA - priceB);
+        }
         case "newest":
-        default:          return 0;
+        default: return dir === 1 ? -1 : 1;
       }
     });
-  }, [bundles, search, selectedTags, sortKey]);
+  }, [bundles, search, selectedTags, sortKey, sortDir]);
 
   const totalInvocations = skills.reduce((s, k) => s + k.invocations, 0);
 
@@ -174,14 +202,14 @@ export default function Market() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
               <button
-                onClick={() => { setTab("skills"); setSelectedTags(new Set()); setSortKey("most_used"); }}
+                onClick={() => { setTab("skills"); setSelectedTags(new Set()); setSortKey("most_used"); setSortDir("desc"); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "skills" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"}`}
                 data-testid="tab-skills"
               >
                 <Zap className="w-3.5 h-3.5" /> Skills
               </button>
               <button
-                onClick={() => { setTab("bundles"); setSelectedTags(new Set()); setSortKey("most_used"); }}
+                onClick={() => { setTab("bundles"); setSelectedTags(new Set()); setSortKey("most_used"); setSortDir("desc"); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "bundles" ? "bg-accent/20 text-accent" : "text-muted-foreground hover:text-foreground"}`}
                 data-testid="tab-bundles"
               >
@@ -222,20 +250,28 @@ export default function Market() {
         {/* Sort pills */}
         <div className="flex flex-wrap items-center gap-1.5 mb-4" data-testid="sort-pills">
           <span className="text-xs text-muted-foreground mr-1">Sort:</span>
-          {(tab === "skills" ? SKILL_SORT_OPTIONS : BUNDLE_SORT_OPTIONS).map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() => setSortKey(opt.key)}
-              data-testid={`sort-${opt.key}`}
-              className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                sortKey === opt.key
-                  ? "bg-primary/20 border-primary/40 text-primary"
-                  : "bg-card border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+          {(tab === "skills" ? SKILL_SORT_OPTIONS : BUNDLE_SORT_OPTIONS).map((opt) => {
+            const isActive = sortKey === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => handleSort(opt.key)}
+                data-testid={`sort-${opt.key}`}
+                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                  isActive
+                    ? "bg-primary/20 border-primary/40 text-primary"
+                    : "bg-card border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+                {isActive && (
+                  <span className="text-[10px] leading-none">
+                    {sortDir === "asc" ? "↑" : "↓"}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Tag cloud — shown only on skills tab when there are tags */}
