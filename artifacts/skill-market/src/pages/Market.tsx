@@ -18,7 +18,7 @@ function adaptSkill(s: DbSkill) {
     name:              (meta.name as string | undefined) ?? s.repoUrl.split("/").pop() ?? s.skillId,
     description:       (meta.description as string | undefined) ?? s.repoUrl,
     basePrice:         (meta.basePrice as number | undefined) ?? 0,
-    invocations:       (meta.invocations as number | undefined) ?? 0,
+    invocations:       s.invocationCount ?? (meta.invocations as number | undefined) ?? 0,
     volume:            (meta.volume as number | undefined) ?? 0,
     creatorShare:      (meta.creatorShare as number | undefined) ?? 80,
     ownerShare:        (meta.ownerShare as number | undefined) ?? 10,

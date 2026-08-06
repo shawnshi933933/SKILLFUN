@@ -6,7 +6,7 @@
  */
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { skillsTable, paymentProofsTable, bundlesTable } from "@workspace/db";
+import { skillsTable, invocationLogsTable, bundlesTable } from "@workspace/db";
 import { count, inArray } from "drizzle-orm";
 
 const router = Router();
@@ -31,7 +31,7 @@ router.get("/stats", async (_req, res) => {
     db.select({ total: count() }).from(skillsTable)
       .where(inArray(skillsTable.mintStatus, ["minted", "claimed"])),
     db.select({ total: count() }).from(bundlesTable),
-    db.select({ total: count() }).from(paymentProofsTable),
+    db.select({ total: count() }).from(invocationLogsTable),
   ]);
 
   cache = {

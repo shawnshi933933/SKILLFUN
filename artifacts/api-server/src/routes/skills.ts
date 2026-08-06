@@ -52,14 +52,16 @@ router.get("/skills", async (req, res) => {
   // JSONB containment: meta->'tags' @> '["blockchain"]'
   if (tag)   conditions.push(sql`${skillsTable.meta}->'tags' @> ${JSON.stringify([tag.toLowerCase().trim()])}::jsonb`);
 
-  // Include bundle count via LEFT JOIN
+  // Include bundle count and real invocation count via LEFT JOINs
   const rows = await db
     .select({
       ...getTableColumns(skillsTable),
-      bundleCount: count(bundleSkillsTable.bundleId),
+      bundleCount:      count(bundleSkillsTable.bundleId),
+      invocationCount:  sql<number>`count(distinct ${invocationLogsTable.id})`,
     })
     .from(skillsTable)
-    .leftJoin(bundleSkillsTable, eq(bundleSkillsTable.skillId, skillsTable.skillId))
+    .leftJoin(bundleSkillsTable,   eq(bundleSkillsTable.skillId,   skillsTable.skillId))
+    .leftJoin(invocationLogsTable, eq(invocationLogsTable.skillId, skillsTable.skillId))
     .where(conditions.length ? and(...conditions) : undefined)
     .groupBy(skillsTable.skillId)
     .orderBy(desc(skillsTable.createdAt))

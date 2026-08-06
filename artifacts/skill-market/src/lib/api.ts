@@ -48,7 +48,8 @@ export interface DbSkill {
   createdAt:     string;
   updatedAt:     string;
   /** Number of bundles this skill is included in (server-computed) */
-  bundleCount?:  number;
+  bundleCount?:      number;
+  invocationCount?:  number;
   /** GitHub repository star count (server-fetched, cached 1 h) */
   githubStars?:  number;
 }
