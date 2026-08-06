@@ -286,7 +286,6 @@ export default function SkillDetail() {
                     <>
                       <Row label="Token ID" value={String(onChain.tokenId)} />
                       <Row label="On-Chain Owner" value={onChain.owner ?? "Self-Custody (Contract)"} mono />
-                      <Row label="Manifest Owner" value={String(onChain.manifestOwner)} mono />
                       <Row label="iNFT Data Slots" value={String(onChain.intelligentData?.length ?? 0)} />
                       {oracleData && (
                         <Row
@@ -302,7 +301,7 @@ export default function SkillDetail() {
                         const ghUser = skill.manifestOwner.split("/")[0];
                         return (
                           <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
-                            <span className="text-muted-foreground">GitHub Author</span>
+                            <span className="text-muted-foreground">Manifest Owner</span>
                             <a
                               href={`https://github.com/${ghUser}`}
                               target="_blank"
