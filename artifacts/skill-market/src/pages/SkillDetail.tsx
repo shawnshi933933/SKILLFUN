@@ -289,7 +289,7 @@ export default function SkillDetail() {
                         label="On-Chain Owner"
                         value={
                           onChain.owner?.toLowerCase() === SKILL_NFT_ADDR.toLowerCase()
-                            ? "托管中 (Platform Custody)"
+                            ? "Platform Custody"
                             : (onChain.owner ?? "Unknown")
                         }
                         mono={onChain.owner?.toLowerCase() !== SKILL_NFT_ADDR.toLowerCase()}
