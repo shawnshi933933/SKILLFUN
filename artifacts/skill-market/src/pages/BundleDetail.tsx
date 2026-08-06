@@ -290,11 +290,10 @@ if (attempt.status === 402) {
                   Refresh
                 </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Skills", value: String(skills.length) },
-                  { label: "Invocations", value: invocations.toLocaleString() },
-                  { label: "W0G Earned", value: revenueW0G > 0 ? `${revenueW0G.toFixed(4)} W0G` : "—" },
+                  { label: "Skills",        value: String(skills.length) },
+                  { label: "Invocations",   value: invocations.toLocaleString() },
                   { label: "Service Price", value: servicePriceW0G ? `${servicePriceW0G} W0G` : "Free" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-card border border-border rounded-xl p-3">
@@ -428,7 +427,7 @@ if (attempt.status === 402) {
           </div>
 
           {/* Right — Access panel */}
-          <div className="space-y-4">
+          <div className="space-y-4 pt-14">
             {/* Price card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div>
@@ -494,17 +493,6 @@ if (attempt.status === 402) {
                 )}
               </div>
 
-              {/* MCP endpoint */}
-              <div className="space-y-2">
-                <div className="text-xs text-muted-foreground">MCP Endpoint</div>
-                <div className="bg-background border border-border rounded-lg px-3 py-2 text-xs text-primary/80 break-all">
-                  POST /mcp/{bundle.bundleId}/mcp
-                </div>
-                <div className="text-xs text-muted-foreground/60">
-                  MCP JSON-RPC 2.0 · initialize · tools/list · tools/call
-                </div>
-              </div>
-
               {/* Agent Guide — copy prompt */}
               <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 space-y-2">
                 <div className="flex items-center justify-between">
@@ -544,24 +532,6 @@ if (attempt.status === 402) {
               </div>
             </div>
 
-            {/* Curator auth reminder */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-              <div className="text-xs text-muted-foreground">Curator Authorization</div>
-              <p className="text-xs text-muted-foreground/70 leading-relaxed">
-                Each Skill in this Bundle must be authorized on-chain before agents can access it.
-                Unclaimed Skills are free; claimed Skills require a W0G payment.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-primary/30 text-primary hover:bg-primary/10 gap-1"
-                onClick={() => setLocation("/app/curator/skills")}
-                data-testid="button-manage-authorizations"
-              >
-                <Shield className="w-3.5 h-3.5" />
-                Manage Authorizations
-              </Button>
-            </div>
           </div>
         </div>
       </div>
