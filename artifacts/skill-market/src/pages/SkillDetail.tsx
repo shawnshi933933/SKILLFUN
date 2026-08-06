@@ -288,10 +288,9 @@ export default function SkillDetail() {
                       {onChain.owner?.toLowerCase() === SKILL_NFT_ADDR.toLowerCase() ? (
                         <div className="flex items-start justify-between gap-4 bg-card border border-border rounded-xl px-4 py-2.5">
                           <span className="text-muted-foreground shrink-0">On-Chain Owner</span>
-                          <span className="text-right text-sm">
-                            <span className="text-amber-400 font-medium">Platform Custody</span>
-                            <span className="text-muted-foreground"> — If you own the GitHub repo, </span>
-                            <a href="/app/claim" className="text-primary underline underline-offset-2 hover:text-primary/80">claim this NFT →</a>
+                          <span className="text-right text-muted-foreground">
+                            Platform Custody —{" "}
+                            <a href="/app/claim" className="underline underline-offset-2 hover:text-foreground transition-colors">claim this NFT</a>
                           </span>
                         </div>
                       ) : (
