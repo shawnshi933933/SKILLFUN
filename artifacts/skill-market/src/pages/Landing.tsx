@@ -42,13 +42,20 @@ export default function Landing() {
 
         <div className="relative max-w-5xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-6 flex-wrap">
-            {["ERC-7857", "Model Context Protocol", "x402"].map((label) => (
-              <span
+            {[
+              { label: "ERC-7857", href: "https://docs.0g.ai/developer-hub/building-on-0g/agentic-id/erc7857" },
+              { label: "Model Context Protocol", href: "https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro" },
+              { label: "x402", href: "https://x402.org/" },
+            ].map(({ label, href }) => (
+              <a
                 key={label}
-                className="px-4 py-1.5 rounded-full border border-primary/30 text-primary bg-primary/8 text-sm font-medium"
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-1.5 rounded-full border border-primary/30 text-primary bg-primary/8 text-sm font-medium hover:bg-primary/15 transition-colors"
               >
                 {label}
-              </span>
+              </a>
             ))}
           </div>
 
