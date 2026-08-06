@@ -50,33 +50,40 @@ function toSubdomain(name: string): string {
 }
 
 // ── Sort options ──────────────────────────────────────────────────────────────
-type SortKey = "newest" | "stars" | "bundles" | "price_asc" | "price_desc" | "most_used";
+type SortKey = "newest" | "stars" | "bundles" | "price" | "most_used";
+type SortDir = "asc" | "desc";
 
-const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
-  { key: "newest",     label: "Newest",       icon: "🕐" },
-  { key: "stars",      label: "⭐ Stars",      icon: "⭐" },
-  { key: "bundles",    label: "📦 Bundles",    icon: "📦" },
-  { key: "price_asc",  label: "💰 Price ↑",   icon: "💰" },
-  { key: "price_desc", label: "💰 Price ↓",   icon: "💰" },
-  { key: "most_used",  label: "🔥 Most Used",  icon: "🔥" },
+const DEFAULT_DIR: Record<SortKey, SortDir> = {
+  newest:    "desc",
+  stars:     "desc",
+  bundles:   "desc",
+  price:     "asc",
+  most_used: "desc",
+};
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "newest",    label: "🕐 Newest"   },
+  { key: "stars",     label: "⭐ Stars"    },
+  { key: "bundles",   label: "📦 Bundles"  },
+  { key: "price",     label: "💰 Price"    },
+  { key: "most_used", label: "🔥 Most Used" },
 ];
 
-function sortSkills(skills: DbSkill[], sort: SortKey): DbSkill[] {
+function sortSkills(skills: DbSkill[], sort: SortKey, dir: SortDir): DbSkill[] {
+  const d = dir === "asc" ? 1 : -1;
   return [...skills].sort((a, b) => {
     switch (sort) {
       case "stars":
-        return (b.githubStars ?? 0) - (a.githubStars ?? 0);
+        return d * ((a.githubStars ?? 0) - (b.githubStars ?? 0));
       case "bundles":
-        return (b.bundleCount ?? 0) - (a.bundleCount ?? 0);
-      case "price_asc":
-        return getMeta<number>(a, "basePrice", 0) - getMeta<number>(b, "basePrice", 0);
-      case "price_desc":
-        return getMeta<number>(b, "basePrice", 0) - getMeta<number>(a, "basePrice", 0);
+        return d * ((a.bundleCount ?? 0) - (b.bundleCount ?? 0));
+      case "price":
+        return d * (getMeta<number>(a, "basePrice", 0) - getMeta<number>(b, "basePrice", 0));
       case "most_used":
-        return (b.invocationCount ?? 0) - (a.invocationCount ?? 0);
+        return d * ((a.invocationCount ?? 0) - (b.invocationCount ?? 0));
       case "newest":
       default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return d * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
   });
 }
@@ -105,6 +112,16 @@ export default function CreateBundle() {
   const [search, setSearch]         = useState("");
   const [activeTag, setActiveTag]   = useState<string | null>(null);
   const [sortKey, setSortKey]       = useState<SortKey>("newest");
+  const [sortDir, setSortDir]       = useState<SortDir>("desc");
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir(DEFAULT_DIR[key]);
+    }
+  }
 
   const { data: skillsData, isLoading: skillsLoading } = useSkills({ status: "minted" });
   const availableSkills = skillsData?.skills ?? [];
@@ -135,8 +152,8 @@ export default function CreateBundle() {
         return tags.includes(activeTag);
       });
     }
-    return sortSkills(list, sortKey);
-  }, [availableSkills, search, activeTag, sortKey]);
+    return sortSkills(list, sortKey, sortDir);
+  }, [availableSkills, search, activeTag, sortKey, sortDir]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const update = (key: keyof FormData, value: string | number | string[]) =>
@@ -335,20 +352,28 @@ export default function CreateBundle() {
               <div>
                 <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wide">Sort by</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {SORT_OPTIONS.map((o) => (
-                    <button
-                      key={o.key}
-                      onClick={() => setSortKey(o.key)}
-                      data-testid={`sort-${o.key}`}
-                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                        sortKey === o.key
-                          ? "bg-accent/20 border-accent/40 text-accent font-medium"
-                          : "border-border text-muted-foreground hover:border-border hover:text-foreground"
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
+                  {SORT_OPTIONS.map((o) => {
+                    const isActive = sortKey === o.key;
+                    return (
+                      <button
+                        key={o.key}
+                        onClick={() => handleSort(o.key)}
+                        data-testid={`sort-${o.key}`}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                          isActive
+                            ? "bg-accent/20 border-accent/40 text-accent font-medium"
+                            : "border-border text-muted-foreground hover:border-border hover:text-foreground"
+                        }`}
+                      >
+                        {o.label}
+                        {isActive && (
+                          <span className="text-[10px] leading-none">
+                            {sortDir === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
