@@ -61,7 +61,7 @@ export default function Landing() {
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Mint AI Agent Skills as sovereign NFTs on 0G Chain. Bundle them into MCP products. Let agents pay autonomously via x402.
+            Mint AI Agent Skills as ERC-7857 NFTs on 0G Chain. Bundle them into MCP products. Let agents pay autonomously via x402.
           </p>
 
           {/* Live stats */}
