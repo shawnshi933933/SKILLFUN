@@ -522,7 +522,7 @@ export default function SkillDetail() {
           </div>
 
           {/* Right — Action panel */}
-          <div className="space-y-4 pt-14">
+          <div className="space-y-4">
             {/* Access card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div className="flex items-baseline justify-between">
