@@ -8,7 +8,7 @@
 import { ethers } from "hardhat";
 
 const ORACLE_ADDR    = "0xD01885aE4E9d30B44C73E8f9B8ceA04869e70167";
-const NEW_SKILLNFT   = "0x4cEC76bF3ef70c81b064045D57454a20396A8587"; // V3 proxy
+const NEW_SKILLNFT   = "0x16221091Fe04BFEFe54Cd02234946c7eFDB37477"; // V3 proxy (fresh)
 
 async function main() {
   const [signer] = await ethers.getSigners();

@@ -5,8 +5,9 @@ description: UUPS proxy deployment details — new contract address, migration s
 
 ## Deployment (0G Mainnet, chainId 16661)
 
-- **Proxy (new SkillNFT address)**: `0x4cEC76bF3ef70c81b064045D57454a20396A8587`
-- **Implementation**: `0x277A0295B9a0dDbEb0bF72A677ea4836c4D44759`
+- **Proxy (new SkillNFT address)**: `0x16221091Fe04BFEFe54Cd02234946c7eFDB37477` ← 当前使用
+- **Implementation**: `0xcD63072BDcD78b3de47Dab9d9d22c39177a4ad9A`
+- ~~Previous proxy (discarded): `0x4cEC76bF3ef70c81b064045D57454a20396A8587`~~
 - **Oracle** (unchanged): `0xD01885aE4E9d30B44C73E8f9B8ceA04869e70167`
 - V2 legacy address (retired): `0x8d7473cE478FA46C16998d576879aD7c909344e0`
 
