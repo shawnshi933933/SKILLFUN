@@ -108,6 +108,7 @@ export default function CreateSkill() {
       const saved = JSON.parse(raw);
       if (saved.fs)   setFs({ data: saved.fs.data, aiFields: new Set(saved.fs.aiFields ?? []) });
       if (saved.step != null) setStep(saved.step);
+      if (saved.gh)   setGh(saved.gh);   // restore fetched skill.md content
     } catch { /* corrupt, ignore */ }
     sessionStorage.removeItem(DRAFT_KEY);
   }, []);
@@ -117,6 +118,7 @@ export default function CreateSkill() {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
       fs:   { data: fs.data, aiFields: [...fs.aiFields] },
       step,
+      gh,   // preserve fetched skill.md / skillfun.json content
     }));
     window.location.href = href;
   };
