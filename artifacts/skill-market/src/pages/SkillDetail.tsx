@@ -285,7 +285,15 @@ export default function SkillDetail() {
                   {onChain ? (
                     <>
                       <Row label="Token ID" value={String(onChain.tokenId)} />
-                      <Row label="On-Chain Owner" value={onChain.owner ?? "Self-Custody (Contract)"} mono />
+                      <Row
+                        label="On-Chain Owner"
+                        value={
+                          onChain.owner?.toLowerCase() === SKILL_NFT_ADDR.toLowerCase()
+                            ? "托管中 (Platform Custody)"
+                            : (onChain.owner ?? "Unknown")
+                        }
+                        mono={onChain.owner?.toLowerCase() !== SKILL_NFT_ADDR.toLowerCase()}
+                      />
                       <Row label="iNFT Data Slots" value={String(onChain.intelligentData?.length ?? 0)} />
                       {oracleData && (
                         <Row
