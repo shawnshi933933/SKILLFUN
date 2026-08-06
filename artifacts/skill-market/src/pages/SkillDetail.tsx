@@ -351,7 +351,6 @@ export default function SkillDetail() {
                     <Github className="w-3.5 h-3.5" /> GitHub
                   </div>
                   <LinkRow label="Repository" href={`https://github.com/${skill.repoUrl}`} text={skill.repoUrl} />
-                  <CopyRow  label="Manifest Owner" value={skill.manifestOwner} mono />
                 </div>
 
                 {/* 0G Storage */}
