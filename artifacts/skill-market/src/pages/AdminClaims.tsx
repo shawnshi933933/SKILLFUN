@@ -24,16 +24,18 @@ import { useEip712Sign } from "@/hooks/use-eip712";
 import { adminApi } from "@/lib/api";
 import type { DbClaim } from "@/lib/api";
 
-// SkillFunOracle V3 (Ownable + operators, updatable skillNFT, deployed 2026-08-03)
+// SkillFunOracle V3 (Ownable + operators, updatable skillNFT)
 const ORACLE_ADDRESS = "0xD01885aE4E9d30B44C73E8f9B8ceA04869e70167" as const;
-const SKILL_NFT_V2 = "0x8d7473cE478FA46C16998d576879aD7c909344e0" as const;
+// Default target = current canonical SkillNFT address from addresses.json
+const DEFAULT_TARGET = "0x16221091Fe04BFEFe54Cd02234946c7eFDB37477";
 
 // ---------------------------------------------------------------------------
-// SetSkillNFT panel — lets the Oracle owner wire SkillNFT V2 in one click
+// SetSkillNFT panel — Oracle owner can point to any new SkillNFT proxy
 // ---------------------------------------------------------------------------
 
 function SetSkillNFTPanel({ isOwner }: { isOwner: boolean }) {
   const { toast } = useToast();
+  const [targetAddr, setTargetAddr] = useState(DEFAULT_TARGET);
 
   // Read current skillNFT pointer from Oracle
   const { data: currentSkillNFT, refetch } = useReadContract({
@@ -63,14 +65,15 @@ function SetSkillNFTPanel({ isOwner }: { isOwner: boolean }) {
 
   useEffect(() => {
     if (isConfirmed) {
-      toast({ title: "Oracle updated", description: "skillNFT pointer now points to V2." });
+      toast({ title: "Oracle updated", description: `skillNFT → ${targetAddr.slice(0, 10)}…` });
       refetch();
     }
   }, [isConfirmed]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const isValidAddr = /^0x[0-9a-fA-F]{40}$/.test(targetAddr);
   const alreadyWired =
-    typeof currentSkillNFT === "string" &&
-    currentSkillNFT.toLowerCase() === SKILL_NFT_V2.toLowerCase();
+    typeof currentSkillNFT === "string" && isValidAddr &&
+    currentSkillNFT.toLowerCase() === targetAddr.toLowerCase();
 
   const busy = isSigning || isConfirming;
 
@@ -78,7 +81,7 @@ function SetSkillNFTPanel({ isOwner }: { isOwner: boolean }) {
     <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-5 mb-8">
       <div className="flex items-center gap-2 mb-3">
         <Terminal className="w-4 h-4 text-indigo-400" />
-        <span className="text-sm font-semibold text-indigo-300">Contract Migration — wire SkillNFT V2</span>
+        <span className="text-sm font-semibold text-indigo-300">Oracle — set SkillNFT pointer</span>
         {alreadyWired && (
           <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10 text-xs ml-auto">
             <CheckCircle2 className="w-3 h-3 mr-1" /> Already wired
@@ -96,28 +99,38 @@ function SetSkillNFTPanel({ isOwner }: { isOwner: boolean }) {
         </div>
         <ArrowRight className="w-4 h-4 text-muted-foreground mx-auto hidden sm:block" />
         <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 px-3 py-2">
-          <p className="text-xs text-muted-foreground mb-0.5">Target (V2)</p>
-          <p className="text-xs font-mono text-indigo-300 truncate">{SKILL_NFT_V2}</p>
+          <p className="text-xs text-muted-foreground mb-1">Target address</p>
+          <input
+            type="text"
+            value={targetAddr}
+            onChange={e => setTargetAddr(e.target.value.trim())}
+            placeholder="0x…"
+            className="w-full bg-transparent text-xs font-mono text-indigo-300 outline-none border-0 p-0 placeholder:text-indigo-500/50"
+          />
         </div>
       </div>
+
+      {!isValidAddr && targetAddr !== "" && (
+        <p className="text-xs text-red-400 mb-3">Invalid address format</p>
+      )}
 
       <div className="flex items-center gap-3">
         <Button
           size="sm"
           className="bg-indigo-600 hover:bg-indigo-500 text-white"
-          disabled={!isOwner || busy || alreadyWired}
+          disabled={!isOwner || busy || alreadyWired || !isValidAddr}
           title={!isOwner ? "Only the Oracle owner can call setSkillNFT" : undefined}
           onClick={() =>
             writeContract({
               address: ORACLE_ADDRESS,
               abi: SkillFunOracle_ABI as readonly object[],
               functionName: "setSkillNFT",
-              args: [SKILL_NFT_V2],
+              args: [targetAddr as `0x${string}`],
             })
           }
         >
           {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Zap className="w-3.5 h-3.5 mr-1.5" />}
-          {isSigning ? "Confirm in wallet…" : isConfirming ? "Confirming…" : alreadyWired ? "Done" : "Call setSkillNFT(V2)"}
+          {isSigning ? "Confirm in wallet…" : isConfirming ? "Confirming…" : alreadyWired ? "Done" : "Call setSkillNFT"}
         </Button>
         {!isOwner && (
           <p className="text-xs text-amber-400">Connect the Oracle owner wallet to enable</p>
