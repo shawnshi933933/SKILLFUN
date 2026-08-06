@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Bot, Lock, Shield, Clock, ArrowLeft, Hash, Zap,
+  Bot, Lock, Shield, Clock, ArrowLeft, Hash, Zap, User,
   ExternalLink, Loader2, AlertCircle, CheckCircle2,
   Github, Database, FileCode2, Download, KeyRound, RefreshCw,
 } from "lucide-react";
@@ -206,6 +206,27 @@ export default function SkillDetail() {
                   </>
                 )}
               </div>
+              {/* Minted by */}
+              {skill.ownerAddress && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <User className="w-3.5 h-3.5 shrink-0" />
+                  <span>Minted by</span>
+                  {skill.manifestOwner && (
+                    <a
+                      href={`https://github.com/${skill.manifestOwner.split("/")[0]}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-foreground font-medium hover:text-primary transition-colors"
+                    >
+                      @{skill.manifestOwner.split("/")[0]}
+                    </a>
+                  )}
+                  <span className="text-muted-foreground/40">·</span>
+                  <span className="tabular-nums">
+                    {skill.ownerAddress.slice(0, 6)}…{skill.ownerAddress.slice(-4)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Stats */}
