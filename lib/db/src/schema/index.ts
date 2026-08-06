@@ -55,6 +55,8 @@ export const skillsTable = pgTable(
      *  legacy platform-wide key (SESSION_SECRET). New skills always have a per-skill key. */
     aesKey:        text("aes_key"),
     meta:          jsonb("meta").$type<Record<string, unknown>>().default({}),
+    /** Cached GitHub star count. Persists across server restarts; refreshed every hour on request. */
+    githubStars:   integer("github_stars"),
     createdAt:     timestamp("created_at").notNull().defaultNow(),
     updatedAt:     timestamp("updated_at").notNull().defaultNow(),
   },

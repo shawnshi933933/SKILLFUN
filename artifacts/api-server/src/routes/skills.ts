@@ -37,16 +37,31 @@ function extractOwnerRepo(repoUrl: string): string | null {
   return `${parts[0]}/${parts[1]}`;
 }
 
-async function fetchGithubStars(repoUrl: string): Promise<number> {
+/**
+ * Fetch GitHub stars for a skill, with three-layer fallback:
+ *   1. In-memory cache (1 hr TTL) — fastest
+ *   2. GitHub API — refreshes the value and persists it to DB
+ *   3. DB stored value — survives server restarts when GitHub is unreachable
+ *
+ * @param repoUrl  Any repoUrl format stored in the DB
+ * @param skillId  Used to persist the result back to the skills row
+ * @param dbStars  The current value in the DB row (passed in to avoid an extra query)
+ */
+async function fetchGithubStars(
+  repoUrl: string,
+  skillId: string,
+  dbStars: number | null | undefined,
+): Promise<number> {
   const ownerRepo = extractOwnerRepo(repoUrl);
   if (!ownerRepo) return 0;
 
+  // 1. Memory cache hit
   const cached = githubStarsCache.get(ownerRepo);
   if (cached && Date.now() - cached.fetchedAt < GITHUB_CACHE_TTL) return cached.stars;
 
+  // 2. Try GitHub API
   try {
     const headers: Record<string, string> = { Accept: "application/vnd.github.v3+json" };
-    // Use OAuth client credentials for higher rate limit (5000 req/hr vs 60)
     const clientId     = process.env.GITHUB_CLIENT_ID;
     const clientSecret = process.env.GITHUB_CLIENT_SECRET;
     if (clientId && clientSecret) {
@@ -57,13 +72,28 @@ async function fetchGithubStars(repoUrl: string): Promise<number> {
       headers,
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return cached?.stars ?? 0;
+
+    if (!res.ok) {
+      // Rate-limited or error — fall back to DB value
+      return dbStars ?? cached?.stars ?? 0;
+    }
+
     const data = await res.json() as { stargazers_count?: number };
     const stars = data.stargazers_count ?? 0;
+
+    // Update memory cache
     githubStarsCache.set(ownerRepo, { stars, fetchedAt: Date.now() });
+
+    // Persist to DB asynchronously (fire-and-forget, don't block response)
+    db.update(skillsTable)
+      .set({ githubStars: stars })
+      .where(eq(skillsTable.skillId, skillId))
+      .catch(() => { /* best-effort */ });
+
     return stars;
   } catch {
-    return cached?.stars ?? 0;
+    // Network error — use DB value as cold-start fallback
+    return dbStars ?? cached?.stars ?? 0;
   }
 }
 
@@ -98,7 +128,7 @@ router.get("/skills", async (req, res) => {
   const skills = await Promise.all(
     rows.map(async (row) => ({
       ...row,
-      githubStars: await fetchGithubStars(row.repoUrl),
+      githubStars: await fetchGithubStars(row.repoUrl, row.skillId, row.githubStars),
     })),
   );
 
