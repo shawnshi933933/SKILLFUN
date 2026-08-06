@@ -178,9 +178,8 @@ if (attempt.status === 402) {
           <ArrowLeft className="w-4 h-4" /> Back to Market
         </button>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left — Info */}
-          <div className="lg:col-span-2 space-y-6">
+        {/* ── Full-width: Header + MCP + Stats ─────────────────────────── */}
+        <div className="space-y-6 mb-8">
             {/* Header */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -302,7 +301,12 @@ if (attempt.status === 402) {
                   </div>
                 ))}
               </div>
-            </div>
+            </div>{/* end Stats */}
+        </div>{/* end full-width section */}
+
+        {/* ── Grid: Tabs (left) + Sidebar (right) ──────────────────────── */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
 
             {/* Tabs */}
             <Tabs defaultValue="skills">
@@ -427,7 +431,7 @@ if (attempt.status === 402) {
           </div>
 
           {/* Right — Access panel */}
-          <div className="space-y-4 pt-14">
+          <div className="space-y-4">
             {/* Price card */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div>
