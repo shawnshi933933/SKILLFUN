@@ -1286,8 +1286,14 @@ router.post("/:bundleId/mcp", async (req, res) => {
             proofToken:  proofToken ?? null,
           }).catch((err) => logger.warn({ err, skillId: skill.skillId }, "mcp: failed to log invocation"));
           logger.info({ bundleId, toolName, skillId: skill.skillId }, "mcp tools/call success");
+          // Prepend bundle workflow so the agent is reminded on every call.
+          const workflow = bundle.workflow?.trim();
+          const fullText = workflow
+            ? `[Bundle Workflow — follow these instructions to orchestrate all Skills]\n${workflow}\n\n---\n\n[Skill Content: ${(skill.meta as Record<string,unknown>)?.name ?? skill.repoUrl}]\n${content}`
+            : content;
+
           res.json(jsonRpcOk(id, {
-            content: [{ type: "text", text: content }],
+            content: [{ type: "text", text: fullText }],
             _skillfun: {
               skillId: skill.skillId,
               contentVersion: skill.contentVersion,
