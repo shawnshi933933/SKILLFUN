@@ -1090,6 +1090,8 @@ callSkill().catch(console.error);
 
 // ---------------------------------------------------------------------------
 // GET /:bundleId/tools — free tools list (no auth)
+// Only returns skills that the Curator has already authorized on-chain.
+// Unauthorized skills are invisible to agents — they cannot be paid for or called.
 // ---------------------------------------------------------------------------
 router.get("/:bundleId/tools", async (req, res) => {
   const bundleId = req.params.bundleId as string;
@@ -1112,7 +1114,18 @@ router.get("/:bundleId/tools", async (req, res) => {
     .where(eq(bundleSkillsTable.bundleId, bundleId))
     .orderBy(asc(bundleSkillsTable.position));
 
-  const tools = bundleSkills.map(({ skill }) => buildTool(bundle.subdomain, skill));
+  // Filter to only authorized skills (parallel on-chain checks)
+  const authorizedSkills = (
+    await Promise.all(
+      bundleSkills.map(async ({ skill }) => {
+        if (skill.tokenId == null) return null; // not yet minted
+        const ok = await checkCuratorAuthorized(skill.tokenId, bundle.ownerAddress);
+        return ok ? skill : null;
+      })
+    )
+  ).filter((s): s is typeof bundleSkills[number]["skill"] => s !== null);
+
+  const tools = authorizedSkills.map((skill) => buildTool(bundle.subdomain, skill));
   res.json({ bundleId, subdomain: bundle.subdomain, tools });
 });
 
@@ -1189,7 +1202,18 @@ router.post("/:bundleId/mcp", async (req, res) => {
           .where(eq(bundleSkillsTable.bundleId, bundleId))
           .orderBy(asc(bundleSkillsTable.position));
 
-        const tools = bundleSkills.map(({ skill }) => buildTool(bundle.subdomain, skill));
+        // Only expose skills the Curator has authorized on-chain
+        const authorizedSkills = (
+          await Promise.all(
+            bundleSkills.map(async ({ skill }) => {
+              if (skill.tokenId == null) return null;
+              const ok = await checkCuratorAuthorized(skill.tokenId, bundle.ownerAddress);
+              return ok ? skill : null;
+            })
+          )
+        ).filter((s): s is typeof bundleSkills[number]["skill"] => s !== null);
+
+        const tools = authorizedSkills.map((skill) => buildTool(bundle.subdomain, skill));
         res.json(jsonRpcOk(id, { tools }));
         return;
       }
