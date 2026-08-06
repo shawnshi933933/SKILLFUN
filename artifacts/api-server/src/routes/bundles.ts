@@ -199,10 +199,11 @@ router.get("/bundles/:id/analytics", async (req, res) => {
 
 // POST /api/bundles — create bundle (requires wallet auth)
 router.post("/bundles", authMiddleware("create-bundle"), async (req, res) => {
-  const { subdomain, name, description, servicePrice, meta } = req.body as {
+  const { subdomain, name, description, workflow, servicePrice, meta } = req.body as {
     subdomain?: string;
     name?: string;
     description?: string;
+    workflow?: string;
     /** x402 price in W0G wei (as string). Null/omit = free bundle. */
     servicePrice?: string | null;
     meta?: Record<string, unknown>;
@@ -229,6 +230,7 @@ router.post("/bundles", authMiddleware("create-bundle"), async (req, res) => {
         subdomain,
         name,
         description:  description ?? null,
+        workflow:     workflow ?? null,
         servicePrice: servicePrice ?? null,
         ownerAddress: req.walletAddress!,
         meta:         meta ?? {},
