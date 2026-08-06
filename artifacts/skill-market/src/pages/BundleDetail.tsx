@@ -249,11 +249,6 @@ if (attempt.status === 402) {
                   <CopyButton text={toolsUrl} />
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                Payment: <span className="text-accent font-mono">W0G</span> via{" "}
-                <span className="font-mono">invokeSkill(tokenId)</span> → prove at{" "}
-                <span className="font-mono">/api/mcp/payment/prove</span>
-              </div>
               <button
                 onClick={() => setSnippetOpen(o => !o)}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
