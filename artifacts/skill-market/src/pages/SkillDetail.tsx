@@ -535,9 +535,6 @@ export default function SkillDetail() {
                     {basePrice > 0 ? "per Curator authorization" : "Curators authorize for free"}
                   </div>
                 </div>
-                <Badge className={`${isMinted ? "bg-emerald-500/20 text-emerald-700 border-emerald-500/30" : "bg-muted text-muted-foreground border-border"} border`}>
-                  {skill.mintStatus}
-                </Badge>
               </div>
 
               <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-xs text-muted-foreground leading-relaxed">

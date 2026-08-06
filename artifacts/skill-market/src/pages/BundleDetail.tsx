@@ -341,9 +341,6 @@ if (attempt.status === 402) {
                               {basePrice > 0 && (
                                 <div className="text-xs font-mono text-primary">{basePrice} W0G</div>
                               )}
-                              <Badge className="text-[10px] border mt-0.5" variant="outline">
-                                {skill.mintStatus}
-                              </Badge>
                             </div>
                             <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                           </div>
