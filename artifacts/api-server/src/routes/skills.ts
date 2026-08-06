@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { skillsTable, paymentProofsTable, curatorAuthorizationsTable, bundleSkillsTable, skillContentCacheTable } from "@workspace/db";
+import { skillsTable, paymentProofsTable, curatorAuthorizationsTable, bundleSkillsTable, skillContentCacheTable, invocationLogsTable } from "@workspace/db";
 import { analyzeSkillContent } from "../services/ai.js";
 import { eq, desc, and, SQL, count, isNull, getTableColumns, sql, inArray } from "drizzle-orm";
 import { generateId } from "../lib/id.js";
@@ -602,10 +602,25 @@ router.get("/skills/:id/stats", async (req, res) => {
     return;
   }
 
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(paymentProofsTable)
-    .where(eq(paymentProofsTable.skillId, skillId));
+  const [[{ total }], rawActivity] = await Promise.all([
+    db.select({ total: count() })
+      .from(invocationLogsTable)
+      .where(eq(invocationLogsTable.skillId, skillId)),
+    db.select({ agentWallet: invocationLogsTable.agentWallet, calledAt: invocationLogsTable.calledAt })
+      .from(invocationLogsTable)
+      .where(eq(invocationLogsTable.skillId, skillId))
+      .orderBy(desc(invocationLogsTable.calledAt))
+      .limit(50),
+  ]);
+
+  // Mask wallet: show first 6 + last 4 chars
+  const maskWallet = (w: string) =>
+    w.length > 10 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w;
+
+  const recentActivity = rawActivity.map((row) => ({
+    agentWalletMasked: maskWallet(row.agentWallet),
+    issuedAt: row.calledAt,
+  }));
 
   // Read basePrice from chain when possible — owner may have changed it after mint
   let basePriceWei = "0";
@@ -623,9 +638,10 @@ router.get("/skills/:id/stats", async (req, res) => {
 
   res.json({
     skillId,
-    invocations:  total,
-    revenueW0G:   total * basePriceEther,
+    invocations:  Number(total),
+    revenueW0G:   Number(total) * basePriceEther,
     basePriceWei,
+    recentActivity,
   });
 });
 

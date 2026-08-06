@@ -250,32 +250,37 @@ export default function SkillDetail() {
 
               <TabsContent value="activity" className="mt-4">
                 <div className="space-y-3">
-                  {/* Live aggregate stats */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-card border border-border rounded-xl p-3">
-                      <div className="text-xs text-muted-foreground mb-0.5">Total Invocations</div>
-                      <div className="font-semibold tabular-nums text-lg">{invocations.toLocaleString()}</div>
-                    </div>
-                    <div className="bg-card border border-border rounded-xl p-3">
-                      <div className="text-xs text-muted-foreground mb-0.5">W0G Earned</div>
-                      <div className="font-semibold tabular-nums text-lg text-emerald-600">
-                        {revenueW0G > 0 ? `${revenueW0G.toFixed(4)}` : "—"}
-                      </div>
-                    </div>
+                  {/* Total invocations */}
+                  <div className="bg-card border border-border rounded-xl p-3">
+                    <div className="text-xs text-muted-foreground mb-0.5">Total Invocations</div>
+                    <div className="font-semibold tabular-nums text-lg">{invocations.toLocaleString()}</div>
                   </div>
 
-                  {invocations === 0 ? (
+                  {/* Recent activity feed */}
+                  {statsData?.recentActivity && statsData.recentActivity.length > 0 ? (
+                    <>
+                      {statsData.recentActivity.map((event: { agentWalletMasked: string; issuedAt: string }, idx: number) => {
+                        const issuedAt   = new Date(event.issuedAt);
+                        const secondsAgo = Math.floor((Date.now() - issuedAt.getTime()) / 1000);
+                        const relTime    = secondsAgo < 60   ? `${secondsAgo}s ago`
+                                         : secondsAgo < 3600 ? `${Math.floor(secondsAgo / 60)}m ago`
+                                         : secondsAgo < 86400 ? `${Math.floor(secondsAgo / 3600)}h ago`
+                                         : issuedAt.toLocaleDateString();
+                        return (
+                          <div key={`${event.issuedAt}-${idx}`} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 text-sm">
+                            <Bot className="w-4 h-4 text-primary shrink-0" />
+                            <span className="font-mono text-xs text-foreground flex-1 truncate">{event.agentWalletMasked}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">{relTime}</span>
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
                     <div className="text-center py-6 space-y-2">
                       <Bot className="w-8 h-8 text-muted-foreground/40 mx-auto" />
                       <p className="text-sm text-muted-foreground">No agent invocations yet</p>
-                      <p className="text-xs text-muted-foreground/60">
-                        Live x402 proof issuances will appear here once agents start invoking this skill
-                      </p>
+                      <p className="text-xs text-muted-foreground/60">Live invocation records will appear here once agents start invoking this skill</p>
                     </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground text-center pt-1">
-                      Counts reflect on-chain verified proof issuances via x402 MCP
-                    </p>
                   )}
                 </div>
               </TabsContent>
@@ -547,28 +552,6 @@ export default function SkillDetail() {
                   This skill is pending on-chain registration
                 </p>
               )}
-            </div>
-
-            {/* Revenue model */}
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-              <div className="text-xs text-muted-foreground">Revenue Model</div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-sm bg-accent/60" />
-                  <span className="text-muted-foreground">Authorization fee</span>
-                </div>
-                <span className="font-medium text-accent">100% → Owner</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-sm bg-primary/60" />
-                  <span className="text-muted-foreground">Per-invocation (x402)</span>
-                </div>
-                <span className="font-medium text-primary">100% → Curator</span>
-              </div>
-              <p className="text-xs text-muted-foreground/60 pt-1 border-t border-border leading-relaxed">
-                Curators pay <span className="text-foreground font-semibold">{basePrice > 0 ? `${basePrice} W0G` : "0 W0G"}</span> to authorize, then keep all agent invocation fees.
-              </p>
             </div>
 
             {/* Security */}
