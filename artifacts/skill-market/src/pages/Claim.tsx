@@ -92,8 +92,17 @@ export default function Claim() {
         return parts.some((p, i) => p === user && i < parts.length - 1);
       });
 
+      // Build a set of tokenIds already owned directly by this wallet
+      const ownedTokenIds = new Set(
+        (skillsRes.skills ?? [])
+          .filter(s => address && s.ownerAddress?.toLowerCase() === address.toLowerCase())
+          .map(s => s.tokenId)
+          .filter((id): id is number => id != null)
+      );
+
       setSkills(claimable);
-      setMyClaims(claimsRes.claims ?? []);
+      // Exclude claim records for skills the user already owns on-chain
+      setMyClaims((claimsRes.claims ?? []).filter(c => !ownedTokenIds.has(c.tokenId)));
     } catch (err) {
       console.error("session check failed", err);
       setPageState("no-github");
