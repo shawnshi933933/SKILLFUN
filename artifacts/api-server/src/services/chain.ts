@@ -1,5 +1,5 @@
 import { createPublicClient, http, formatEther } from "viem";
-import { ZEROG_MAINNET, SkillNFT_ABI, SkillFunOracle_ABI, getAddresses } from "@workspace/abi";
+import { ZEROG_MAINNET, SkillNFTV3_ABI as SkillNFT_ABI, SkillFunOracle_ABI, getAddresses } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
 import { cached, cacheKey, TTL } from "./cache.js";
 import { getWalletClient, getPublicClient } from "./wallet.js";
@@ -37,7 +37,7 @@ export async function getSkillOnChain(tokenId: number) {
   const key = cacheKey(CHAIN_ID, "getSkillOnChain", tokenId);
   return cached(key, TTL.SKILL_METADATA, () =>
     rpcCall("getSkillOnChain", async () => {
-      const [manifestOwner, intelligentData, owner] = await Promise.all([
+      const [manifestOwner, intelligentData, owner, minter] = await Promise.all([
         client.readContract({
           address: addresses.SkillNFT as `0x${string}`,
           abi: SkillNFT_ABI,
@@ -56,8 +56,19 @@ export async function getSkillOnChain(tokenId: number) {
           functionName: "ownerOf",
           args: [BigInt(tokenId)],
         }).catch(() => null), // not minted yet
+        client.readContract({
+          address: addresses.SkillNFT as `0x${string}`,
+          abi: SkillNFT_ABI,
+          functionName: "minter",
+          args: [BigInt(tokenId)],
+        }).catch(() => null), // pre-V3 fallback
       ]);
-      return { tokenId, manifestOwner, intelligentData, owner };
+      const minterAddr = minter as string | null;
+      return {
+        tokenId, manifestOwner, intelligentData, owner,
+        minter: (minterAddr && minterAddr !== "0x0000000000000000000000000000000000000000")
+          ? minterAddr : null,
+      };
     })
   );
 }

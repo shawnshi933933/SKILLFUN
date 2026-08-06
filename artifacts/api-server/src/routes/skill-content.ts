@@ -21,7 +21,7 @@ import {
   skillContentCacheTable,
 } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { ZEROG_MAINNET, SkillNFT_ABI, getAddresses } from "@workspace/abi";
+import { ZEROG_MAINNET, SkillNFTV3_ABI, getAddresses } from "@workspace/abi";
 import { downloadSkillContent } from "../services/storage.js";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
@@ -100,7 +100,7 @@ router.get("/skills/:tokenId/content", async (req, res) => {
   try {
     isAuthorized = await chainClient.readContract({
       address: SKILL_NFT_ADDRESS,
-      abi: SkillNFT_ABI,
+      abi: SkillNFTV3_ABI,
       functionName: "isAuthorized",
       args: [BigInt(tokenId), curatorWallet as `0x${string}`],
     }) as boolean;

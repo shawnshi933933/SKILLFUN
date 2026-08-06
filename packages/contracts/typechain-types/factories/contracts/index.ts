@@ -5,3 +5,4 @@ export * as interfaces from "./interfaces";
 export { SkillFunOracle__factory } from "./SkillFunOracle__factory";
 export { SkillFunVerifierStub__factory } from "./SkillFunVerifierStub__factory";
 export { SkillNFT__factory } from "./SkillNFT__factory";
+export { SkillNFTV3__factory } from "./SkillNFTV3__factory";

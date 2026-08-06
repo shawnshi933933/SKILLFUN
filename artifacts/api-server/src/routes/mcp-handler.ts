@@ -32,7 +32,7 @@ import {
 } from "@workspace/db";
 import { eq, asc, and } from "drizzle-orm";
 import { downloadSkillContent } from "../services/storage.js"; // used in getSkillContent helper
-import { getAddresses, ZEROG_MAINNET, SkillNFT_ABI } from "@workspace/abi";
+import { getAddresses, ZEROG_MAINNET, SkillNFTV3_ABI } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
 
 const router = Router();
@@ -173,7 +173,7 @@ async function checkCuratorAuthorized(tokenId: number, curatorWallet: string): P
   try {
     const authorized = await chainClient.readContract({
       address: SKILL_NFT_ADDRESS as `0x${string}`,
-      abi: SkillNFT_ABI,
+      abi: SkillNFTV3_ABI,
       functionName: "isAuthorized",
       args: [BigInt(tokenId), curatorWallet as `0x${string}`],
     }) as boolean;

@@ -314,23 +314,30 @@ export default function SkillDetail() {
                           </div>
                         );
                       })()}
-                      {/* Minted by — link to explorer Transfer events */}
+                      {/* Minted by — from contract minter() or explorer fallback */}
                       {skill.tokenId != null && (
                         <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
-                          <div>
-                            <span className="text-muted-foreground">Minted by</span>
-                            <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                              Original minter is recorded in the Transfer event (from=0x0) on-chain
-                            </p>
-                          </div>
-                          <a
-                            href={`${EXPLORER}/token/${SKILL_NFT_ADDR}?a=${skill.tokenId}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1 text-primary hover:underline text-[11px] shrink-0 ml-4"
-                          >
-                            View on Explorer <ExternalLink className="w-3 h-3" />
-                          </a>
+                          <span className="text-muted-foreground">Minted by</span>
+                          {onChain?.minter ? (
+                            <a
+                              href={`${EXPLORER}/address/${onChain.minter}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1 text-primary hover:underline font-mono text-[11px]"
+                            >
+                              {onChain.minter.slice(0, 6)}…{onChain.minter.slice(-4)}
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <a
+                              href={`${EXPLORER}/token/${SKILL_NFT_ADDR}?a=${skill.tokenId}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1 text-primary hover:underline text-[11px]"
+                            >
+                              View Transfer event <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
                         </div>
                       )}
                     </>

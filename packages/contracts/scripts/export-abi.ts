@@ -10,7 +10,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const CONTRACTS = ["SkillFunOracle", "SkillNFT"] as const;
+const CONTRACTS = ["SkillFunOracle", "SkillNFT", "SkillNFTV3"] as const;
 const ARTIFACTS_DIR = path.resolve(__dirname, "../artifacts/contracts");
 const ABI_SRC_DIR = path.resolve(__dirname, "../../../packages/abi/src");
 
@@ -18,7 +18,8 @@ function main() {
   fs.mkdirSync(ABI_SRC_DIR, { recursive: true });
 
   for (const name of CONTRACTS) {
-    const artifactPath = path.join(ARTIFACTS_DIR, `${name}.sol`, `${name}.json`);
+    const artifactPath = path.join(ARTIFACTS_DIR, `${name}.sol`, `${name}.json`)
+      .replace("SkillNFTV3.sol/SkillNFTV3.json", "SkillNFTV3.sol/SkillNFTV3.json");
     if (!fs.existsSync(artifactPath)) {
       console.error(`❌ Artifact not found: ${artifactPath}`);
       console.error("   Did you run `hardhat compile` first?");

@@ -1,4 +1,4 @@
 - [SkillFun Architecture](skillfun-arch.md) — core design decisions: ERC-7857 on 0G Chain, Oracle-based claim, two-step flow
 - [0G Storage Mainnet Config](0g-storage-mainnet.md) — indexer DNS is NXDOMAIN; use 4 direct boot node IPs on port 5678 instead
 - [Oracle Ownable Upgrade](oracle-ownable-upgrade.md) — V3 Oracle + new SkillNFT deployed; owner is 0xc56f70…; mutable oracle/skillNFT pointers
-- [SkillNFT V2 deployment](skillnft-v2-deployment.md) — new contract with authorizedUpdateDataHash deployed but not wired; Oracle owner must call setSkillNFT to activate
+- [SkillNFT V3 UUPS Proxy](skillnft-v3-proxy.md) — V3 proxy at 0x4cEC76bF…; adds minter(); Oracle wiring PENDING (owner 0xC56f70… must call setSkillNFT)

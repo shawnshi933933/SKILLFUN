@@ -8,6 +8,7 @@
 
 import SkillFunOracleAbi from "./SkillFunOracle.abi.json";
 import SkillNFTAbi from "./SkillNFT.abi.json";
+import SkillNFTV3Abi from "./SkillNFTV3.abi.json";
 import addressesJson from "./addresses.json";
 
 // ---------------------------------------------------------------------------
@@ -15,6 +16,8 @@ import addressesJson from "./addresses.json";
 // ---------------------------------------------------------------------------
 export const SkillFunOracle_ABI = SkillFunOracleAbi as readonly object[];
 export const SkillNFT_ABI = SkillNFTAbi as readonly object[];
+/** V3 (UUPS proxy) — includes minter(), adminImportToken(), setMinterBatch() */
+export const SkillNFTV3_ABI = SkillNFTV3Abi as readonly object[];
 
 // ---------------------------------------------------------------------------
 // Address registry

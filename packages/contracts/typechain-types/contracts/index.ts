@@ -6,3 +6,4 @@ export type { interfaces };
 export type { SkillFunOracle } from "./SkillFunOracle";
 export type { SkillFunVerifierStub } from "./SkillFunVerifierStub";
 export type { SkillNFT } from "./SkillNFT";
+export type { SkillNFTV3 } from "./SkillNFTV3";

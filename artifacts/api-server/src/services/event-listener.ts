@@ -18,7 +18,7 @@ import {
   skillsTable,
 } from "@workspace/db";
 import { eq, isNull } from "drizzle-orm";
-import { ZEROG_MAINNET, SkillNFT_ABI, getAddresses } from "@workspace/abi";
+import { ZEROG_MAINNET, SkillNFTV3_ABI, getAddresses } from "@workspace/abi";
 import { logger } from "../lib/logger.js";
 import { nanoid } from "nanoid";
 

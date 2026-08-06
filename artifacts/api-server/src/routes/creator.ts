@@ -11,7 +11,7 @@ import { createPublicClient, http, formatUnits } from "viem";
 import { db } from "@workspace/db";
 import { skillsTable, curatorAuthorizationsTable } from "@workspace/db";
 import { eq, and, inArray, isNull } from "drizzle-orm";
-import { SkillNFT_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
+import { SkillNFTV3_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
 
@@ -79,13 +79,13 @@ router.get("/creator/skills", async (req, res) => {
         const [owner, price] = await Promise.all([
           chainClient.readContract({
             address: SKILL_NFT_ADDR,
-            abi: SkillNFT_ABI,
+            abi: SkillNFTV3_ABI,
             functionName: "ownerOf",
             args: [BigInt(skill.tokenId!)],
           }) as Promise<string>,
           chainClient.readContract({
             address: SKILL_NFT_ADDR,
-            abi: SkillNFT_ABI,
+            abi: SkillNFTV3_ABI,
             functionName: "basePrice",
             args: [BigInt(skill.tokenId!)],
           }) as Promise<bigint>,

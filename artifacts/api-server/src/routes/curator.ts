@@ -23,7 +23,7 @@ import {
   bundleSkillsTable,
 } from "@workspace/db";
 import { eq, and, inArray, notInArray } from "drizzle-orm";
-import { SkillNFT_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
+import { SkillNFTV3_ABI, getAddresses, ZEROG_MAINNET } from "@workspace/abi";
 import { apiError, ErrorCode } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
 
@@ -78,25 +78,25 @@ async function readOnChain(tokenId: number, curatorWallet: string): Promise<{
   const [isAuth, epoch, owner, price] = await Promise.allSettled([
     chainClient.readContract({
       address: SKILL_NFT_ADDRESS,
-      abi: SkillNFT_ABI,
+      abi: SkillNFTV3_ABI,
       functionName: "isAuthorized",
       args: [BigInt(tokenId), curatorWallet as `0x${string}`],
     }),
     chainClient.readContract({
       address: SKILL_NFT_ADDRESS,
-      abi: SkillNFT_ABI,
+      abi: SkillNFTV3_ABI,
       functionName: "authEpoch",
       args: [BigInt(tokenId)],
     }),
     chainClient.readContract({
       address: SKILL_NFT_ADDRESS,
-      abi: SkillNFT_ABI,
+      abi: SkillNFTV3_ABI,
       functionName: "ownerOf",
       args: [BigInt(tokenId)],
     }),
     chainClient.readContract({
       address: SKILL_NFT_ADDRESS,
-      abi: SkillNFT_ABI,
+      abi: SkillNFTV3_ABI,
       functionName: "basePrice",
       args: [BigInt(tokenId)],
     }),

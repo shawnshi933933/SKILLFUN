@@ -77,6 +77,8 @@ export interface OnChainSkillData {
   manifestOwner:   string;
   intelligentData: unknown[];
   owner:           string | null;
+  /** Address that called registerSkill() — available on V3 proxy, null for pre-V3 tokens */
+  minter:          string | null;
 }
 
 export interface ChainBalance {
