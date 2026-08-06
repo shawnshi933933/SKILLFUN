@@ -167,10 +167,9 @@ export default function SkillDetail() {
           <ArrowLeft className="w-4 h-4" /> Back to Market
         </button>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left — Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Header */}
+        {/* Header + Stats — full width above the grid */}
+        <div className="space-y-6 mb-8">
+          {/* Header */}
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <Badge variant="outline" className="border-border text-muted-foreground">v{version}</Badge>
@@ -239,8 +238,11 @@ export default function SkillDetail() {
                 ))}
               </div>
             </div>
+        </div>
 
-            {/* Tabs */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Left — Tabs */}
+          <div className="lg:col-span-2 min-w-0 overflow-hidden">
             <Tabs defaultValue="activity">
               <TabsList className="bg-card border border-border">
                 <TabsTrigger value="activity">Activity</TabsTrigger>
