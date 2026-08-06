@@ -123,15 +123,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── 0G Strip ─────────────────────────────────────────────────────── */}
-      <div className="bg-primary/5 border-t border-primary/15 py-4 px-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs font-bold tracking-[0.2em] text-primary uppercase">Powered by 0G</span>
-          <span className="text-muted-foreground/40">·</span>
-          <span className="text-xs text-muted-foreground">0G Chain (16661) · 0G Storage · 0G DA</span>
-        </div>
-      </div>
 
       <footer className="border-t border-border py-8 px-4 text-center text-sm text-muted-foreground">
         SkillFun — ERC-7857 iNFT Registry · MCP · x402 A2A Payments · Built on 0G Chain
