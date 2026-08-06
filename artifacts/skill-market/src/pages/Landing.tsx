@@ -41,9 +41,16 @@ export default function Landing() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
         <div className="relative max-w-5xl mx-auto text-center">
-          <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/8 px-4 py-1.5 text-sm">
-            ERC-7857 iNFT · MCP · x402 A2A Payments · 0G Chain
-          </Badge>
+          <div className="flex items-center justify-center gap-3 mb-6 flex-wrap">
+            {["ERC-7857", "Model Context Protocol", "x402"].map((label) => (
+              <span
+                key={label}
+                className="px-4 py-1.5 rounded-full border border-primary/30 text-primary bg-primary/8 text-sm font-medium"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
             A Skill is a
@@ -126,8 +133,21 @@ export default function Landing() {
 
       <div className="bg-primary/5 border-t border-primary/15 py-4" />
 
-      <footer className="border-t border-border py-8 px-4 text-center text-sm text-muted-foreground">
-        SkillFun — ERC-7857 iNFT Registry · MCP · x402 A2A Payments · Built on 0G Chain
+      <footer className="border-t border-border py-8 px-4">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          {[
+            "ERC-7857",
+            "Model Context Protocol",
+            "x402",
+          ].map((label) => (
+            <span
+              key={label}
+              className="px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-xs font-medium text-primary tracking-wide"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
       </footer>
     </div>
   );
