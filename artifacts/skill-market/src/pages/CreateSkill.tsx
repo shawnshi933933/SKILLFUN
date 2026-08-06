@@ -707,12 +707,8 @@ export default function CreateSkill() {
           {step === 2 && (
             <div className="space-y-5">
               <h2 className="text-lg font-semibold">Economics</h2>
-              <p className="text-sm text-muted-foreground">
-                You own this skill — set the price agents pay per invocation. Curators who include
-                your Skill in a Bundle will pay this amount to <code className="text-primary/80">purchaseAuthorization</code>.
-              </p>
 
-              <Field label="Authorization Fee (W0G)" hint="Fee a Curator pays when authorizing this Skill into their Bundle. Leave 0 to make it free to curate.">
+              <Field label="Authorization Fee (W0G)" hint="Fee a Curator pays to include this Skill in a Bundle. Leave 0 to make it free.">
                 <div className="flex items-center gap-2">
                   <Input
                     type="number" min="0" step="0.001" placeholder="0.01"
