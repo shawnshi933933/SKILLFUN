@@ -206,27 +206,6 @@ export default function SkillDetail() {
                   </>
                 )}
               </div>
-              {/* Minted by */}
-              {skill.ownerAddress && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                  <User className="w-3.5 h-3.5 shrink-0" />
-                  <span>Minted by</span>
-                  {skill.manifestOwner && (
-                    <a
-                      href={`https://github.com/${skill.manifestOwner.split("/")[0]}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-foreground font-medium hover:text-primary transition-colors"
-                    >
-                      @{skill.manifestOwner.split("/")[0]}
-                    </a>
-                  )}
-                  <span className="text-muted-foreground/40">·</span>
-                  <span className="tabular-nums">
-                    {skill.ownerAddress.slice(0, 6)}…{skill.ownerAddress.slice(-4)}
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Stats */}
@@ -317,6 +296,43 @@ export default function SkillDetail() {
                             : oracleData.verifiedOwner}
                           mono
                         />
+                      )}
+                      {/* GitHub Author — extracted from manifestOwner */}
+                      {skill.manifestOwner && (() => {
+                        const ghUser = skill.manifestOwner.split("/")[0];
+                        return (
+                          <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
+                            <span className="text-muted-foreground">GitHub Author</span>
+                            <a
+                              href={`https://github.com/${ghUser}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1.5 text-primary hover:underline font-medium"
+                            >
+                              <Github className="w-3 h-3" />
+                              @{ghUser}
+                            </a>
+                          </div>
+                        );
+                      })()}
+                      {/* Minted by — link to explorer Transfer events */}
+                      {skill.tokenId != null && (
+                        <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
+                          <div>
+                            <span className="text-muted-foreground">Minted by</span>
+                            <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                              Original minter is recorded in the Transfer event (from=0x0) on-chain
+                            </p>
+                          </div>
+                          <a
+                            href={`${EXPLORER}/token/${SKILL_NFT_ADDR}?a=${skill.tokenId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline text-[11px] shrink-0 ml-4"
+                          >
+                            View on Explorer <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
                       )}
                     </>
                   ) : (
