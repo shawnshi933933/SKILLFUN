@@ -1,13 +1,27 @@
 import { Link, useLocation } from "wouter";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Menu, X, Plus } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, Menu, X, Plus, BookOpen } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { DOC_SECTIONS, type DocSectionId } from "@/pages/Docs";
 
 export default function Navbar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showDocsMenu, setShowDocsMenu] = useState(false);
+  const docsRef = useRef<HTMLDivElement>(null);
+
+  // Close docs dropdown on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (docsRef.current && !docsRef.current.contains(e.target as Node)) {
+        setShowDocsMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const navLinks = [
     { href: "/app/market", label: "Market", external: false },
@@ -22,6 +36,20 @@ export default function Navbar() {
     if (base === "/app/dashboard") return location === "/app/dashboard" || location.startsWith("/app/creator") || location.startsWith("/app/curator");
     return location === base || location.startsWith(base + "/");
   };
+
+  const isDocsActive = location.startsWith("/app/docs");
+
+  function navigateToDocSection(id: DocSectionId) {
+    setShowDocsMenu(false);
+    setShowMobileMenu(false);
+    if (location === "/app/docs") {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setLocation("/app/docs");
+      // Give the page time to render before scrolling
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 200);
+    }
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
@@ -68,6 +96,36 @@ export default function Navbar() {
                 </Link>
               )
             ))}
+
+            {/* Docs dropdown */}
+            <div className="relative" ref={docsRef}>
+              <button
+                onClick={() => setShowDocsMenu(!showDocsMenu)}
+                data-testid="link-nav-docs"
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                  isDocsActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-black/5"
+                }`}
+              >
+                Docs <ChevronDown className={`w-3 h-3 transition-transform ${showDocsMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              {showDocsMenu && (
+                <div className="absolute left-0 mt-1 w-52 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+                  {DOC_SECTIONS.map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => navigateToDocSection(id)}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-black/5 cursor-pointer text-left transition-colors"
+                    >
+                      <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right side */}
@@ -151,6 +209,26 @@ export default function Navbar() {
                 </Link>
               )
             ))}
+
+            {/* Docs — mobile: flat list of sections */}
+            <div className="px-4 pt-2 pb-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                <BookOpen className="w-3.5 h-3.5" /> Docs
+              </div>
+              <div className="flex flex-col gap-0.5 pl-1">
+                {DOC_SECTIONS.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => navigateToDocSection(id)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors text-muted-foreground hover:text-foreground hover:bg-black/5"
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <Link href="/app/create">
               <div className="flex items-center px-4 py-3 rounded-xl text-sm font-medium border border-primary/20 text-primary mt-2 cursor-pointer" onClick={() => setShowMobileMenu(false)}>
                 + Create Skill

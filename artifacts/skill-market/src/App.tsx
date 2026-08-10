@@ -20,6 +20,7 @@ import Profile from "@/pages/Profile";
 import CuratorSkills from "@/pages/CuratorSkills";
 import CreatorSkills from "@/pages/CreatorSkills";
 import AdminClaims from "@/pages/AdminClaims";
+import Docs from "@/pages/Docs";
 
 import "@rainbow-me/rainbowkit/styles.css";
 
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/app/curator/skills" component={CuratorSkills} />
       <Route path="/app/creator/skills" component={CreatorSkills} />
       <Route path="/app/admin/claims" component={AdminClaims} />
+      <Route path="/app/docs" component={Docs} />
       <Route component={NotFound} />
     </Switch>
   );
