@@ -89,14 +89,14 @@ export default function Landing() {
             {/* Creator */}
             <button
               onClick={() => setLocation("/app/create")}
-              className="group bg-primary/8 hover:bg-primary/15 border border-primary/25 hover:border-primary/45 rounded-2xl p-5 text-left transition-all"
+              className="group bg-primary/8 hover:bg-primary/15 border border-primary/25 hover:border-primary/45 rounded-2xl p-5 text-left transition-all flex flex-col"
               data-testid="cta-mint-skill"
             >
               <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center mb-4 group-hover:bg-primary/25 transition-colors">
                 <Code2 className="w-5 h-5 text-primary" />
               </div>
               <div className="font-semibold text-sm mb-1">Mint Skill NFT</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Mint your GitHub repo as an ERC-7857 NFT. Content is encrypted and stored on 0G Storage.</div>
+              <div className="text-xs text-muted-foreground leading-relaxed flex-1">Mint your GitHub repo as an ERC-7857 NFT. Content is encrypted and stored on 0G Storage.</div>
               <div className="mt-3 flex items-center gap-1 text-xs text-primary font-medium">
                 Start creating <ArrowRight className="w-3 h-3" />
               </div>
@@ -105,14 +105,14 @@ export default function Landing() {
             {/* Curator */}
             <button
               onClick={() => setLocation("/app/curator/skills")}
-              className="group bg-accent/8 hover:bg-accent/15 border border-accent/25 hover:border-accent/45 rounded-2xl p-5 text-left transition-all"
+              className="group bg-accent/8 hover:bg-accent/15 border border-accent/25 hover:border-accent/45 rounded-2xl p-5 text-left transition-all flex flex-col"
               data-testid="cta-curate-bundle"
             >
               <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/25 flex items-center justify-center mb-4 group-hover:bg-accent/25 transition-colors">
                 <Layers className="w-5 h-5 text-accent" />
               </div>
               <div className="font-semibold text-sm mb-1">Curate a Bundle</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Bundle Skills into one MCP endpoint. Set your price and accept x402 payments from agents.</div>
+              <div className="text-xs text-muted-foreground leading-relaxed flex-1">Bundle Skills into one MCP endpoint. Set your price and accept x402 payments from agents.</div>
               <div className="mt-3 flex items-center gap-1 text-xs text-accent font-medium">
                 Open curator panel <ArrowRight className="w-3 h-3" />
               </div>
@@ -121,14 +121,14 @@ export default function Landing() {
             {/* Agent */}
             <button
               onClick={() => setLocation("/app/market?tab=bundles")}
-              className="group bg-amber-50 hover:bg-amber-100/70 border border-amber-200 hover:border-amber-300 rounded-2xl p-5 text-left transition-all"
+              className="group bg-amber-50 hover:bg-amber-100/70 border border-amber-200 hover:border-amber-300 rounded-2xl p-5 text-left transition-all flex flex-col"
               data-testid="cta-connect-agent"
             >
               <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center mb-4 group-hover:bg-amber-200/70 transition-colors">
                 <Bot className="w-5 h-5 text-amber-700" />
               </div>
               <div className="font-semibold text-sm mb-1">Connect as Agent</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Discover Bundles, call via MCP, pay autonomously with x402. No human approval needed.</div>
+              <div className="text-xs text-muted-foreground leading-relaxed flex-1">Discover Bundles, call via MCP, pay autonomously with x402. No human approval needed.</div>
               <div className="mt-3 flex items-center gap-1 text-xs text-amber-700 font-medium">
                 Browse bundles <ArrowRight className="w-3 h-3" />
               </div>
