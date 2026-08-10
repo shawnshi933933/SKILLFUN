@@ -112,7 +112,7 @@ export default function Landing() {
                 <Layers className="w-5 h-5 text-accent" />
               </div>
               <div className="font-semibold text-sm mb-1">Curate a Bundle</div>
-              <div className="text-xs text-muted-foreground leading-relaxed">Bundle Skills into a product with one MCP endpoint. Set your service price and accept x402 payments from agents.</div>
+              <div className="text-xs text-muted-foreground leading-relaxed">Bundle Skills into one MCP endpoint. Set your price and accept x402 payments from agents.</div>
               <div className="mt-3 flex items-center gap-1 text-xs text-accent font-medium">
                 Open curator panel <ArrowRight className="w-3 h-3" />
               </div>
