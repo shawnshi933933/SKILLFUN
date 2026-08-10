@@ -245,7 +245,7 @@ export default function Docs() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2"><span className="text-primary mt-1">•</span> <span><strong className="text-foreground">Provenance</strong> — Skills are ERC-7857 NFTs tied to their GitHub repo. Ownership is verifiable on-chain.</span></li>
                   <li className="flex items-start gap-2"><span className="text-accent mt-1">•</span> <span><strong className="text-foreground">Composability</strong> — Curators bundle multiple Skills under one MCP endpoint, creating ready-to-use Agent toolsets.</span></li>
-                  <li className="flex items-start gap-2"><span className="text-amber-600 mt-1">•</span> <span><strong className="text-foreground">Autonomous payment</strong> — Agents pay per invocation via x402, a machine-native HTTP payment protocol. No wallets, no sign-ins for the agent.</span></li>
+                  <li className="flex items-start gap-2"><span className="text-amber-600 mt-1">•</span> <span><strong className="text-foreground">Autonomous payment</strong> — Agents pay per invocation via x402, a machine-native HTTP payment protocol. The agent uses its own on-chain wallet autonomously — no human sign-in or approval required.</span></li>
                 </ul>
               </SubSection>
 
